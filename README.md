@@ -150,6 +150,20 @@ humans and `curl`. Both resolve the same frozen bytes. The per-version index is
 catalogue would describe an old version with a target it never shipped, whereas
 projecting it from the digest-checked items cannot drift.
 
+**That index is also the browse surface for an agent.** Each entry carries the
+item's `title` and `description` (not just `name`/`type`/`relativeUrl`), because
+the published items do — so one request answers "what exists" and "which one is
+this page", on the exact base a project is already pinned to. Generated
+projects' styling rules point at it as the step before writing markup
+(`specs/027` in genproj), which is what makes *install a block* cheaper than
+*write a layout*:
+
+```bash
+curl -s http://ryzen:3012/r/v1.10.1/index.json \
+  | python3 -c 'import json,sys
+for item in json.load(sys.stdin): print(item["name"], "--", item.get("description",""))'
+```
+
 Publishing is a separate, deliberate act, and it is the whole of the version story:
 
 ```bash
