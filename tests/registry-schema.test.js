@@ -55,7 +55,7 @@ describe("registry documents validate against the shadcn-svelte schemas", () => 
       (item) => item.type === "registry:block",
     );
 
-    expect(blockItems.length).toBe(9);
+    expect(blockItems.length).toBe(10);
 
     for (const block of blockItems) {
       const item = await load(`registry/${block.name}.json`);

@@ -105,7 +105,7 @@ depend on the day it ran.
 
 ## Registry
 
-This repo is the source of the `@nb` theme and the nine house blocks, and it
+This repo is the source of the `@nb` theme and the ten house blocks, and it
 serves them over HTTP. There is no static `registry/` directory exposed to
 the network: `src/routes/r/[...path]/+server.js` reads the JSON from disk because
 it has to resolve a version against a manifest and verify a digest, which a
@@ -252,7 +252,7 @@ There is one consumer-side consequence worth knowing: the merge also injects
 `@import "shadcn-svelte/tailwind.css";`, so `shadcn-svelte` has to be a
 dependency of the project at build time.
 
-### The nine blocks
+### The ten blocks
 
 `blocks/` holds the house **layouts** — the second half of the problem this
 registry exists for. The theme makes a new project _look_ right; the blocks make
@@ -272,15 +272,16 @@ form, so those are deliberately absent.
 | `status-view`    | `nb/StatusView.svelte`    | four lanes, count in each head, pill per row                                          |
 | `detail-panel`   | `nb/DetailPanel.svelte`   | header, metadata grid, prose body, `history.back()`                                   |
 | `burst-timeline` | `nb/BurstTimeline.svelte` | horizontal/vertical bars, `showValues`, `caption`, audit grid                         |
+| `data-table`     | `nb/DataTable.svelte`     | column labels, tabular numerics, hairline rows, a `row` slot of cells                 |
 | `request-form`   | `nb/RequestForm.svelte`   | schema-driven form, one message per failed constraint                                 |
 
 ```bash
 npm run build:blocks            # blocks/*/*.svelte -> registry/<name>.json -> registry.json
-npm run publish:item filter-panel 1.7.0
+npm run publish:item data-table 1.8.0
 ```
 
-Browse them at **`/`** — the landing page imports the same nine files the
-registry publishes and renders all nine, so a block that does not render breaks
+Browse them at **`/`** — the landing page imports the same ten files the
+registry publishes and renders all ten, so a block that does not render breaks
 the build. (`/blocks` was a second page for this; it now 308s to `/`, because
 asking someone to press a button to reach the only content was a wasted tap —
 and on an iPhone home screen the button sat under the status bar.)
@@ -289,6 +290,26 @@ and on an iPhone home screen the button sat under the status bar.)
 colour (a translucent tint is `color-mix(in srgb, var(--bg) 88%, transparent)`,
 derived from the token so a palette change moves the blocks with it), and the
 served item's `content` is byte-identical to the source file.
+
+### What 1.8.0 added, and why
+
+One new block, and it is the first one found by a screen that is *not* Svelte.
+Converting `data-download` (FastAPI + Jinja, no build step) started with a
+question — what does this screen need that a ranked list cannot give — and the
+answer was a table: the request book is six columns, two of them numbers that
+have to line up, and the plan-type page is a parameter schema. One block covers
+both, because the difference between them is what is *in* a cell:
+
+| added | why it needs a block of its own |
+| --- | --- |
+| `columns` (`label`, `width`, `align`) | `result-list` ranks rows and stacks a title over meta; a table's first job is that `$0.0412` sits under `$0.0412` and an id cannot push it out of line |
+| `row(item, index)` returning cells | the two screens differ entirely inside a cell — a state pill with a tooltip versus an enum, a type and a constraint list — so the block owns the shell and the consumer owns the cells |
+| `.num` / `.wrap` cell modifiers | right-aligned tabular figures, and the one cell that is prose in a row of one-liners |
+| the header disappears under 600px | six columns at 390px is a scrollbar or a truncated id; a record wraps instead, and the labels were never worth the vertical space there |
+
+The lesson from the *caller* side is the one worth keeping: a Python app with no
+frontend build cannot install a Svelte block, so the honest first step is to
+write down what its screens need — and that list is block requirements.
 
 ### What 1.7.0 added, and why
 

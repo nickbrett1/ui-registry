@@ -150,6 +150,23 @@
       ]
     },
     {
+      "name": "data-table",
+      "title": "Data Table",
+      "type": "registry:block",
+      "author": "nickbrett1 <https://github.com/nickbrett1>",
+      "description": "Column-aligned records in a card: header labels, right-aligned tabular numerics, hairline rows, and a cell slot. Wraps per record under 600px. Lifted from data-download's request book and plan-type schema.",
+      "dependencies": [],
+      "devDependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "type": "registry:file",
+          "path": "blocks/data-table/DataTable.svelte",
+          "target": "nb/DataTable.svelte"
+        }
+      ]
+    },
+    {
       "name": "request-form",
       "title": "Request Form",
       "type": "registry:block",

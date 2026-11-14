@@ -11,7 +11,7 @@ const BLOCKS_DIR = path.join(ROOT, "blocks");
 const COMPONENT_DIR = "nb";
 
 /**
- * The nine blocks are the house *layouts*, and the rules that make them a design
+ * The ten blocks are the house *layouts*, and the rules that make them a design
  * system rather than nine components are all checkable:
  *
  *   1. **No block owns a colour.** Every colour is `var(--…)` from the theme; a
@@ -59,11 +59,12 @@ const THEME_CLASSES = [
   ".seg",
 ];
 
-describe("the nine blocks", () => {
-  it("are exactly the nine the design note names", async () => {
+describe("the ten blocks", () => {
+  it("are exactly the ten the design note names", async () => {
     expect(await blockDirs()).toEqual([
       "app-shell",
       "burst-timeline",
+      "data-table",
       "detail-panel",
       "empty-state",
       "filter-panel",

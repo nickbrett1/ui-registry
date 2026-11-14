@@ -7,10 +7,10 @@
    * (the header sat under the status bar) and had to press to reach the only
    * content that mattered.
    *
-   * The nine blocks are imported from `blocks/` -- the same bytes
+   * The ten blocks are imported from `blocks/` -- the same bytes
    * `registry.json` publishes, not a copy. If a block stops rendering, this page
-   * stops building, which is the cheapest possible check that nine published
-   * items are nine working components.
+   * stops building, which is the cheapest possible check that ten published
+   * items are ten working components.
    */
   import published from "../../registry/versions/manifest.json";
 
@@ -22,6 +22,7 @@
   import StatusView from "../../blocks/status-view/StatusView.svelte";
   import DetailPanel from "../../blocks/detail-panel/DetailPanel.svelte";
   import BurstTimeline from "../../blocks/burst-timeline/BurstTimeline.svelte";
+  import DataTable from "../../blocks/data-table/DataTable.svelte";
   import RequestForm from "../../blocks/request-form/RequestForm.svelte";
 
   // The version is *read*, not written down: importing the published manifest
@@ -57,7 +58,27 @@
     { name: "status-view", note: "four lanes, counts in the head" },
     { name: "detail-panel", note: "header, metadata grid, prose" },
     { name: "burst-timeline", note: "horizontal or vertical bars, values, a caption you set" },
+    { name: "data-table", note: "column-aligned records, tabular numerics, a cell slot" },
     { name: "request-form", note: "schema-driven, one message per failed rule" },
+  ];
+
+  // The request book: the screen this block was lifted from. Six columns, two
+  // of them numeric-and-tabular, one a pill, one prose.
+  const requests = [
+    { id: "req_9f2a41c8", state: "succeeded", tone: "ok", type: "databento_batch_download", estimate: "$0.0412", age: "1h 04m", why: "—" },
+    { id: "req_4c81be07", state: "running", tone: "info", type: "databento_batch_download", estimate: "$0.1180", age: "12m", why: "lease valid, progress 82%" },
+    { id: "req_b31d5e0a", state: "approved", tone: "info", type: "replay_csv", estimate: "$0.0021", age: "3h 51m", why: "unclaimed past the window" },
+    { id: "req_0a7c9d33", state: "blocked", tone: "warn", type: "databento_batch_download", estimate: "—", age: "2d 06h", why: "waiting on a plan · $25" },
+    { id: "req_e55f10b2", state: "failed", tone: "bad", type: "replay_csv", estimate: "$0.0009", age: "4d 01h", why: "repeat_failure ×3" },
+  ];
+
+  const requestColumns = [
+    { label: "request", width: "minmax(9rem, 1.3fr)" },
+    { label: "state", width: "7.5rem" },
+    { label: "type", width: "minmax(7rem, 1fr)" },
+    { label: "estimate", align: "end" },
+    { label: "age", align: "end" },
+    { label: "why it matters", width: "minmax(10rem, 1.7fr)" },
   ];
 
   const stats = [
@@ -134,7 +155,7 @@
       <span class="micro">house design system</span>
       <h1 class="title">@nb UI Registry</h1>
       <p class="hint lede">
-        One theme and nine blocks. Everything below is the published source, rendered —
+        One theme and ten blocks. Everything below is the published source, rendered —
         there is no screenshot and no separate gallery.
       </p>
     </div>
@@ -148,11 +169,11 @@
         <dt class="micro">one theme</dt>
         <dd>
           Colour, type, spacing and radii as CSS variables. Blocks read the variables
-          and never a hex value, so re-skinning is one file, not nine.
+          and never a hex value, so re-skinning is one file, not ten.
         </dd>
       </div>
       <div class="fact">
-        <dt class="micro">nine blocks</dt>
+        <dt class="micro">ten blocks</dt>
         <dd>
           The screens the house apps actually have — a shell, a KPI row, results,
           facets, lanes, a detail page, a chart, a form, an empty state.
@@ -254,6 +275,23 @@
             onclear={() => (selected = {})}
           />
         </div>
+      {:else if block.name === "data-table"}
+        <DataTable
+          title="The request book"
+          titleTag="h3"
+          columns={requestColumns}
+          items={requests}
+          emptyMessage="No requests yet."
+        >
+          {#snippet row(request)}
+            <span class="id"><code class="num">{request.id}</code></span>
+            <span><span class="pill {request.tone}">{request.state}</span></span>
+            <span>{request.type}</span>
+            <span class="num">{request.estimate}</span>
+            <span class="num">{request.age}</span>
+            <span class="why">{request.why}</span>
+          {/snippet}
+        </DataTable>
       {:else if block.name === "empty-state"}
         <EmptyState cause="filters" onclear={() => {}} />
       {:else if block.name === "status-view"}
@@ -290,7 +328,7 @@
   {/each}
 
   <footer class="foot hint">
-    <span>@nb/theme v{manifest.version} · nine blocks · published by <code class="num">npm run publish:item</code></span>
+    <span>@nb/theme v{manifest.version} · ten blocks · published by <code class="num">npm run publish:item</code></span>
   </footer>
 </div>
 

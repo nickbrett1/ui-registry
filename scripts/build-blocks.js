@@ -80,6 +80,13 @@ const BLOCKS = [
       "Interval burst sparkline chart + historical audit grid with labelled comparison columns ('Explains').",
   },
   {
+    name: "data-table",
+    title: "Data Table",
+    component: "DataTable.svelte",
+    description:
+      "Column-aligned records in a card: header labels, right-aligned tabular numerics, hairline rows, and a cell slot. Wraps per record under 600px. Lifted from data-download's request book and plan-type schema.",
+  },
+  {
     name: "request-form",
     title: "Request Form",
     component: "RequestForm.svelte",
