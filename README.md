@@ -276,7 +276,7 @@ form, so those are deliberately absent.
 
 ```bash
 npm run build:blocks            # blocks/*/*.svelte -> registry/<name>.json -> registry.json
-npm run publish:item app-shell 1.6.0
+npm run publish:item app-shell 1.6.1
 ```
 
 Browse them at **`/`** — the landing page imports the same nine files the
@@ -289,6 +289,18 @@ and on an iPhone home screen the button sat under the status bar.)
 colour (a translucent tint is `color-mix(in srgb, var(--bg) 88%, transparent)`,
 derived from the token so a palette change moves the blocks with it), and the
 served item's `content` is byte-identical to the source file.
+
+### What 1.6.1 fixed
+
+Two CSS defects in the bar, found by putting a real app in the shell at 390px
+wide:
+
+| what                                       | why it mattered                                                                                                                                                         |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| the wordmark wrapped                       | "Stratechery Search" broke over two lines, so the sticky bar was 82px tall on the screen where height is dearest. It is a wordmark: one line, `text-overflow: ellipsis` |
+| the tail of the bar did not hold its width | `.bar-end` shrank with the brand, so the `actions` nav wrapped into a second row instead of the titles giving way                                                       |
+
+Both are inside the block, so no consumer had to learn them twice.
 
 ### What 1.6.0 added, and why
 

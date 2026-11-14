@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { render } from "@testing-library/svelte";
 import { createRawSnippet } from "svelte";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 
 import AppShell from "../blocks/app-shell/AppShell.svelte";
 import ResultList from "../blocks/result-list/ResultList.svelte";
@@ -24,6 +26,28 @@ import BurstTimeline from "../blocks/burst-timeline/BurstTimeline.svelte";
  * 1.3.0 — these props are additive, not a redesign of what consumers already
  * installed — while the new path works.
  */
+// These two are CSS, so they cannot be asserted through the DOM in jsdom (no
+// layout). They are read from the source instead -- the same reason
+// tests/smoke.test.js reads app.css for the safe-area variables: the failure
+// mode is invisible on a desktop and obvious on a phone.
+const appShellSource = await readFile(
+  path.join(process.cwd(), "blocks", "app-shell", "AppShell.svelte"),
+  "utf8",
+);
+
+describe("AppShell: the bar survives a real product name", () => {
+  it("truncates the wordmark instead of wrapping the sticky bar", () => {
+    expect(appShellSource).toMatch(
+      /\.wordmark \{[^}]*white-space: nowrap;[^}]*text-overflow: ellipsis;/,
+    );
+    expect(appShellSource).toMatch(/\.titles \{[^}]*min-width: 0;/);
+  });
+
+  it("keeps the actions end of the bar at its own width", () => {
+    expect(appShellSource).toMatch(/\.bar-end \{[^}]*flex: 0 0 auto;/);
+  });
+});
+
 describe("AppShell: the slots a real app needs", () => {
   const mark = createRawSnippet(() => ({
     render: () => `<svg id="brand-mark"></svg>`,

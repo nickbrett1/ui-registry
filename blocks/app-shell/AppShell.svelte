@@ -143,11 +143,19 @@
     gap: 10px;
     flex-wrap: wrap;
     justify-content: flex-end;
+    /* The bar's tail takes the width it needs and the *titles* give way: a nav
+       squeezed by a long wordmark wraps into two rows, which makes the sticky
+       bar tall on exactly the screen where height is dearest. */
+    flex: 0 0 auto;
   }
 
   .titles {
     display: flex;
     flex-direction: column;
+    /* The product name is a wordmark, not a paragraph: a title that wraps makes
+       the sticky bar two rows tall on a phone, where the height is the most
+       expensive thing on the screen. It truncates instead. */
+    min-width: 0;
   }
 
   .wordmark {
@@ -156,6 +164,9 @@
     font-weight: 600;
     letter-spacing: -0.01em;
     color: var(--ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .back {
