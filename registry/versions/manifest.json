@@ -65,6 +65,13 @@
       "publishedAt": "2026-11-14T17:01:35.313Z"
     },
     {
+      "name": "app-shell",
+      "version": "1.10.1",
+      "sha256": "a4686c9dcda878f06288d1450488fe2f7f1045d9f9756860e563b0a040f251f6",
+      "bytes": 10340,
+      "publishedAt": "2026-11-14T17:11:39.709Z"
+    },
+    {
       "name": "bar-series",
       "version": "1.9.0",
       "sha256": "afa2b1a3a9eebec36c95f94732a1797aad48357ce842c73c5e9826b85efa0529",

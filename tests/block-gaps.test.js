@@ -161,6 +161,24 @@ describe("AppShell: the app's views are visible, not hidden behind a pill (1.10.
   });
 });
 
+describe("AppShell: the notch inset does not eat the page title (1.10.1)", () => {
+  it("pins the bar at 0 and puts the inset in its padding, not its offset", () => {
+    // Found on a phone after 1.10.0 shipped: `position: sticky; top: 47px`
+    // paints the bar 47px lower while its flow box stays at the top, so it
+    // covers the first 47px of content -- measured, the page's own `.lede` sat
+    // at 79-101 and the bar at 47-102, so elementFromPoint at the lede centre
+    // returned the bar. Padding moves the flow with the bar; `top` does not.
+    expect(appShellSource).toMatch(
+      /\.topbar \{[^}]*top: 0;[^}]*padding-top: var\(--safe-top, 0px\);/,
+    );
+    expect(appShellSource).not.toMatch(/(?<!padding-)top: var\(--safe-top/);
+  });
+
+  it("uses the dynamic viewport height, so the footer is not below the toolbar", () => {
+    expect(appShellSource).toMatch(/min-height: 100dvh;/);
+  });
+});
+
 describe("ResultList: rich rows and a real heading", () => {
   const items = [
     { title: "Interval scheduling under load", meta: "2026-11-12" },
