@@ -253,15 +253,13 @@
             subtitle="house design system"
             status="live"
             titleTag="h3"
+            nav={[
+              { label: "Requests", href: "#app-shell", current: true },
+              { label: "Plan types", href: "#app-shell", current: false },
+            ]}
           >
             {#snippet mark()}
               <span class="fake-mark" aria-hidden="true"></span>
-            {/snippet}
-            {#snippet actions()}
-              <nav class="fake-nav" aria-label="Primary">
-                <a href="#app-shell">runs</a>
-                <a href="#app-shell">plans</a>
-              </nav>
             {/snippet}
             {#snippet back()}
               <button class="btn fake-back" type="button">← back</button>
@@ -497,12 +495,6 @@
     border-radius: 4px;
     background: var(--accent-soft);
     border: 1px solid var(--accent);
-  }
-
-  .fake-nav {
-    display: flex;
-    gap: 10px;
-    font-size: 11px;
   }
 
   .fake-back {

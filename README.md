@@ -264,7 +264,7 @@ form, so those are deliberately absent.
 
 | block            | installed as              | what it is                                                                            |
 | ---------------- | ------------------------- | ------------------------------------------------------------------------------------- |
-| `app-shell`      | `nb/AppShell.svelte`      | sticky blurred top bar, `mark`/`actions`/`back` slots, `titleTag`, 68rem main, footer |
+| `app-shell`      | `nb/AppShell.svelte`      | sticky blurred top bar, `mark`/`nav`/`actions`/`back` slots, `titleTag`, 68rem main, footer |
 | `stat-strip`     | `nb/StatStrip.svelte`     | label · big tabular value · sub-line, collapsing to one column                        |
 | `result-list`    | `nb/ResultList.svelte`    | ranked rows + `row` slot, `titleTag` heading, "n more" fold                           |
 | `filter-panel`   | `nb/FilterPanel.svelte`   | facets: checkbox list or one-from-N radios, optional bars and a note, `adaptFacets`   |
@@ -291,6 +291,29 @@ and on an iPhone home screen the button sat under the status bar.)
 colour (a translucent tint is `color-mix(in srgb, var(--bg) 88%, transparent)`,
 derived from the token so a palette change moves the blocks with it), and the
 served item's `content` is byte-identical to the source file.
+
+### What 1.10.0 added, and why
+
+Two fixes, both found by looking at the ported `data-download` on a phone.
+
+**`app-shell` grew `nav`.** The port had put its other view in the `actions`
+slot as `<a class="pill">Plan types</a>` — and a pill is what a *state* looks
+like in this system. On a 390px screen the only hint that a second screen
+existed sat next to the title in the same shape as a status badge, so "what
+views are there?" had no answer. Navigation is the bar's job and it has one
+shape, so the block owns it: `nav={[{ label, href, current }]}` renders a tab
+row with `aria-current="page"`, the active tab tinted with `--accent-soft`,
+and the micro subtitle dropped below 520px — the subtitle repeats what the
+highlighted tab already says, and it was the thing pushing the second tab out
+of reach. The bar came out *shorter* (61px → 55px) with more in it.
+
+**The theme grew the page intro.** `.lede` and `.sub-lede` are names a page
+reaches for by instinct; the theme did not define them, so `data-download`'s
+intro rendered at body size in full ink, indistinguishable from the paragraph
+under it. Two rules, plus `.notice.accent`, `.notice code`, `.quiet` and
+`.muted`, which the old bespoke sheet had defined and the port had silently
+lost. A class a consumer writes and the theme ignores is worse than a missing
+feature: it looks like it worked.
 
 ### What 1.9.0 added, and why
 

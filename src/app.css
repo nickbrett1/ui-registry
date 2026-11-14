@@ -157,6 +157,22 @@ code {
   color: var(--ink-muted);
   margin: 16px 0 6px;
 }
+/* The page intro. Two rules, and the port that dropped them is why they are
+   here: `lede` and `sub-lede` are class names a page reaches for by instinct,
+   and if the theme does not define them the intro renders as body text at full
+   ink, indistinguishable from the paragraph beneath it. */
+.lede {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--ink);
+}
+.sub-lede {
+  margin: 0 0 16px;
+  color: var(--ink-muted);
+  max-width: 60ch;
+}
 
 .card {
   background: var(--bg-raised);
@@ -293,10 +309,28 @@ input[type="checkbox"] {
   border-left-color: var(--accent);
   background: var(--accent-soft);
 }
+/* `accent` is the name consumers already write; `info` is the tone. Both must
+   work, or a notice silently loses its colour in a port. */
+.notice.accent {
+  border-left-color: var(--accent);
+  background: var(--accent-soft);
+}
+.notice code {
+  color: var(--mark);
+}
 
 .hint {
   color: var(--ink-muted);
   font-size: 11px;
+}
+
+/* Two quiet greys, because "de-emphasised" and "absent" are different weights
+   and every table cell has to pick one. */
+.quiet {
+  color: var(--ink-faint);
+}
+.muted {
+  color: var(--ink-muted);
 }
 
 /* The one thing that may be warm: a matched term inside a snippet. */

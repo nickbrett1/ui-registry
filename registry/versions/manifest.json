@@ -58,6 +58,13 @@
       "publishedAt": "2026-11-14T16:58:16.508Z"
     },
     {
+      "name": "app-shell",
+      "version": "1.10.0",
+      "sha256": "034fd9ae9a1fa5104a31e217076b9ab2d7e3e16ef43124ffc8dc95833d3186c6",
+      "bytes": 9607,
+      "publishedAt": "2026-11-14T17:01:35.313Z"
+    },
+    {
       "name": "bar-series",
       "version": "1.9.0",
       "sha256": "afa2b1a3a9eebec36c95f94732a1797aad48357ce842c73c5e9826b85efa0529",
@@ -602,6 +609,13 @@
       "sha256": "d2a6348a1145dd931ddd48e9b61ea815d5f02f0d736a49e0618fd3e2a9f00067",
       "bytes": 7682,
       "publishedAt": "2026-11-14T16:58:16.414Z"
+    },
+    {
+      "name": "theme",
+      "version": "1.10.0",
+      "sha256": "53ee736abf4409fa1635163ce54b3db695b17b5954f1c57250d4e216e3065afd",
+      "bytes": 8253,
+      "publishedAt": "2026-11-14T17:01:10.713Z"
     }
   ]
 }

@@ -107,6 +107,60 @@ describe("AppShell: the slots a real app needs", () => {
   });
 });
 
+describe("AppShell: the app's views are visible, not hidden behind a pill (1.10.0)", () => {
+  const views = [
+    { label: "Requests", href: "/", current: true },
+    { label: "Plan types", href: "/plan-types", current: false },
+  ];
+
+  it("renders every view in the bar, and marks the one you are on", () => {
+    const { container } = render(AppShell, {
+      title: "data-download",
+      nav: views,
+    });
+    const links = container.querySelectorAll(".main-nav a");
+    expect([...links].map((a) => a.textContent.trim())).toEqual([
+      "Requests",
+      "Plan types",
+    ]);
+    expect(links[0].getAttribute("aria-current")).toBe("page");
+    // Not "false": the attribute has to be absent on the other tabs, or every
+    // tab announces itself as the current page.
+    expect(links[1].hasAttribute("aria-current")).toBe(false);
+  });
+
+  it("is navigation, not the actions slot: a destination does not look like a state", () => {
+    // The bug this closes: data-download put `<a class="pill">Plan types</a>`
+    // in `actions`, where it sat next to the status pill and read as one.
+    expect(appShellSource).toMatch(
+      /\.main-nav a\[aria-current="page"\] \{[^}]*background: var\(--accent-soft\);[^}]*color: var\(--accent\);/,
+    );
+    expect(appShellSource).toMatch(
+      /\.pill\.back|\.main-nav a \{[\s\S]*?border-radius: var\(--radius-sm\)/,
+    );
+  });
+
+  it("names the nav for a screen reader, defaulting to 'Sections'", () => {
+    const { container } = render(AppShell, { nav: views });
+    expect(
+      container.querySelector("nav.main-nav")?.getAttribute("aria-label"),
+    ).toBe("Sections");
+  });
+
+  it("renders no nav at all when none is given, so 1.9.0 output is unchanged", () => {
+    const { container } = render(AppShell, { title: "data-download" });
+    expect(container.querySelector(".main-nav")).toBeNull();
+  });
+
+  it("drops the micro subtitle on a narrow phone rather than the second view", () => {
+    // The subtitle repeats what the highlighted tab says; the tabs are the only
+    // way to discover the other views. Height is too expensive to spend twice.
+    expect(appShellSource).toMatch(
+      /@media \(max-width: 520px\) \{[\s\S]*?\.has-nav \.titles \.micro \{\s*display: none;/,
+    );
+  });
+});
+
 describe("ResultList: rich rows and a real heading", () => {
   const items = [
     { title: "Interval scheduling under load", meta: "2026-11-12" },
