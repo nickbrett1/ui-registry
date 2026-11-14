@@ -286,7 +286,7 @@ form, so those are deliberately absent.
 
 | block            | installed as              | what it is                                                                            |
 | ---------------- | ------------------------- | ------------------------------------------------------------------------------------- |
-| `app-shell`      | `nb/AppShell.svelte`      | sticky blurred top bar, `mark`/`nav`/`actions`/`back` slots, `titleTag`, 68rem main, footer |
+| `app-shell`      | `nb/AppShell.svelte`      | sticky blurred top bar, `mark`/`nav`/`actions`/`back` slots, `titleTag`, 68rem main, footer, `embedded` for a card |
 | `stat-strip`     | `nb/StatStrip.svelte`     | label · big tabular value · sub-line, collapsing to one column                        |
 | `result-list`    | `nb/ResultList.svelte`    | ranked rows + `row` slot, `titleTag` heading, "n more" fold                           |
 | `filter-panel`   | `nb/FilterPanel.svelte`   | facets: checkbox list or one-from-N radios, optional bars and a note, `adaptFacets`   |
@@ -313,6 +313,29 @@ and on an iPhone home screen the button sat under the status bar.)
 colour (a translucent tint is `color-mix(in srgb, var(--bg) 88%, transparent)`,
 derived from the token so a palette change moves the blocks with it), and the
 served item's `content` is byte-identical to the source file.
+
+### What 1.11.0 added: a card is not a viewport
+
+`deepseek-balance` renders as a Homepage dashboard card — an iframe whose parent
+resizes the card to fit. Its reporter posts `document.body.offsetHeight` every
+1500ms, which is Homepage's `homepage-iframe-resize` contract. After adopting
+`app-shell` the card grew unbounded blank space below its content, and the
+reason was the shell, not the widget: `.shell { min-height: 100dvh }` makes
+`<body>` at least as tall as the *iframe*, so the reporter measured the frame it
+was already given instead of what it contained. Every poll could therefore only
+ever ask for a taller frame — a feedback loop with no fixed point.
+
+`embedded` says "this shell is not a page". It drops the viewport min-height
+(`.shell.embedded { min-height: 0 }`) so the shell is exactly as tall as its
+content, and it drops the default house footer, because a card has no room for
+chrome and the parent owns the surroundings. An explicit `footer` snippet still
+renders — then the consumer asked for it. Defaults are untouched: a normal page
+still fills the viewport and still ends in the footer strip.
+
+The rule: **a component that can be embedded must not assume it owns the
+viewport.** `min-height: 100dvh` is a statement about the window; in an iframe
+the window belongs to someone else, and any self-measuring contract around it
+turns that statement into a growth loop.
 
 ### What 1.10.1 fixed: a sticky bar may not spend the inset as an offset
 

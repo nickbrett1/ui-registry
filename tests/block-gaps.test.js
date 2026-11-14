@@ -179,6 +179,44 @@ describe("AppShell: the notch inset does not eat the page title (1.10.1)", () =>
   });
 });
 
+describe("AppShell: a card is not a viewport (1.11.0)", () => {
+  // Found on gethomepage: the deepseek-balance widget is iframed into a
+  // dashboard card and reports `document.body.offsetHeight` to its parent
+  // every 1500ms (Homepage's `homepage-iframe-resize` contract). The shell's
+  // `min-height: 100dvh` makes <body> at least as tall as the iframe, so the
+  // reporter measured the *frame*, not the content, and each poll asked for a
+  // taller one -- unbounded blank space under the widget. A shell that is a
+  // card must not claim a viewport.
+  it("drops the viewport min-height only when embedded", () => {
+    expect(appShellSource).toMatch(/\.shell \{[^}]*min-height: 100dvh;/);
+    expect(appShellSource).toMatch(/\.shell\.embedded \{[^}]*min-height: 0;/);
+  });
+
+  it("hangs the class off the prop, so the default install is unchanged", () => {
+    expect(appShellSource).toMatch(/class:embedded/);
+    expect(appShellSource).toMatch(/embedded = false,/);
+  });
+
+  it("omits the house footer inside a card, where the parent owns the chrome", () => {
+    const card = render(AppShell, { title: "DeepSeek Balance", embedded: true });
+    expect(card.container.querySelector("footer")).toBeNull();
+    expect(card.container.textContent).not.toContain("house design system");
+  });
+
+  it("still renders a footer the caller explicitly asked for", () => {
+    const footer = createRawSnippet(() => ({
+      render: () => `<span id="own-footer">refreshed 2m ago</span>`,
+    }));
+    const card = render(AppShell, { title: "DeepSeek Balance", embedded: true, footer });
+    expect(card.container.querySelector("#own-footer")).not.toBeNull();
+  });
+
+  it("keeps the footer on a normal page", () => {
+    const page = render(AppShell, { title: "data-download" });
+    expect(page.container.textContent).toContain("house design system");
+  });
+});
+
 describe("ResultList: rich rows and a real heading", () => {
   const items = [
     { title: "Interval scheduling under load", meta: "2026-11-12" },
