@@ -100,6 +100,27 @@ const BLOCKS = [
     description:
       "Schema-driven input form with constraint error presentation (one message per failed rule). Lifted from data-download §7.8.",
   },
+  {
+    name: "meter-strip",
+    title: "Meter Strip",
+    component: "MeterStrip.svelte",
+    description:
+      "A capacity bar (used against a ceiling, as a filled bar with a role=progressbar) over a row of figures. Lifted from devdash, where the same strip is both the page's header and the NAS dashboard's iframe.",
+  },
+  {
+    name: "action-list",
+    title: "Action List",
+    component: "ActionList.svelte",
+    description:
+      "One row per thing you operate: name, state pill, metadata badges, and the actions that are valid for that row right now. Per-row slots for the buttons, a note and an aside. Lifted from devdash's project list.",
+  },
+  {
+    name: "log-view",
+    title: "Log View",
+    component: "LogView.svelte",
+    description:
+      "A job's output in a panel: head with a state pill, an optional notice, a monospace pane that scrolls itself, and an action row. The pane is bindable so the caller can follow its tail. Lifted from devdash's build/provision log.",
+  },
 ];
 
 const RAW_HEX_RE = /#(?:[0-9a-fA-F]{3}){1,2}\b/g;

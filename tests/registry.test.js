@@ -1,5 +1,12 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { readFile, mkdir, writeFile, symlink, rm } from "node:fs/promises";
+import {
+  readFile,
+  mkdir,
+  writeFile,
+  symlink,
+  rm,
+  access,
+} from "node:fs/promises";
 import { createHash } from "node:crypto";
 import path from "node:path";
 import { GET } from "../src/routes/r/[...path]/+server.js";
@@ -67,21 +74,27 @@ describe("GET /r - public, deliberately", () => {
 
     const body = await response.json();
     expect(body.name).toBe("nb");
-    // The live catalogue: one theme and the eleven blocks it styles.
-    expect(body.items.map((item) => item.name)).toEqual([
-      "theme",
-      "app-shell",
-      "stat-strip",
-      "result-list",
-      "filter-panel",
-      "empty-state",
-      "status-view",
-      "detail-panel",
-      "burst-timeline",
-      "bar-series",
-      "data-table",
-      "request-form",
-    ]);
+    // What the route serves is the committed index, unedited: the same names,
+    // in the same order. A literal list here would be a count that goes stale
+    // the moment a block is added -- and a stale list is exactly what hid the
+    // generator's copy of the block names drifting in genproj.
+    const committed = JSON.parse(
+      await readFile(path.join(ROOT, "registry.json"), "utf8"),
+    );
+    expect(body.items.map((item) => item.name)).toEqual(
+      committed.items.map((item) => item.name),
+    );
+    // The two things that are not a count: the theme comes first (the theme is
+    // what every block names a role against), and every item named in the index
+    // has a document on disk. The document itself is served only with a pin,
+    // which the version tests below cover.
+    expect(body.items[0].name).toBe("theme");
+    for (const item of body.items) {
+      await expect(
+        access(path.join(ROOT, "registry", `${item.name}.json`)),
+        `registry/${item.name}.json is missing`,
+      ).resolves.toBeUndefined();
+    }
   });
 
   it("treats a bare /r as the index", async () => {

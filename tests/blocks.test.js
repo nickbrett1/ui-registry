@@ -11,7 +11,7 @@ const BLOCKS_DIR = path.join(ROOT, "blocks");
 const COMPONENT_DIR = "nb";
 
 /**
- * The eleven blocks are the house *layouts*, and the rules that make them a design
+ * The blocks are the house *layouts*, and the rules that make them a design
  * system rather than nine components are all checkable:
  *
  *   1. **No block owns a colour.** Every colour is `var(--…)` from the theme; a
@@ -59,21 +59,17 @@ const THEME_CLASSES = [
   ".seg",
 ];
 
-describe("the eleven blocks", () => {
-  it("are exactly the eleven the design note names", async () => {
-    expect(await blockDirs()).toEqual([
-      "app-shell",
-      "bar-series",
-      "burst-timeline",
-      "data-table",
-      "detail-panel",
-      "empty-state",
-      "filter-panel",
-      "request-form",
-      "result-list",
-      "stat-strip",
-      "status-view",
-    ]);
+describe("the blocks", () => {
+  it("are exactly the blocks the registry publishes, and no more", async () => {
+    // Derived from the published catalogue rather than written down. A literal
+    // list is a copy, and a copy is the thing that drifts: genproj had one for
+    // the block names and it silently fell a block behind the catalogue.
+    const index = JSON.parse(await readFile(path.join(ROOT, "registry.json"), "utf8"));
+    const published = index.items
+      .filter((item) => item.type === "registry:block")
+      .map((item) => item.name)
+      .sort();
+    expect(await blockDirs()).toEqual(published);
   });
 
   it("every block compiles", async () => {

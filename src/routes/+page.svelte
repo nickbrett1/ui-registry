@@ -25,6 +25,9 @@
   import BarSeries from "../../blocks/bar-series/BarSeries.svelte";
   import DataTable from "../../blocks/data-table/DataTable.svelte";
   import RequestForm from "../../blocks/request-form/RequestForm.svelte";
+  import MeterStrip from "../../blocks/meter-strip/MeterStrip.svelte";
+  import ActionList from "../../blocks/action-list/ActionList.svelte";
+  import LogView from "../../blocks/log-view/LogView.svelte";
 
   // The version is *read*, not written down: importing the published manifest
   // means the page cannot advertise a version the registry does not serve, which
@@ -62,6 +65,9 @@
     { name: "bar-series", note: "a computed value axis, caller-formatted labels, a dashed projection" },
     { name: "data-table", note: "column-aligned records, tabular numerics, a cell slot" },
     { name: "request-form", note: "schema-driven, one message per failed rule" },
+    { name: "meter-strip", note: "a ratio against a ceiling, as a bar, then the figures" },
+    { name: "action-list", note: "one row per thing you operate: state, badges, the valid actions" },
+    { name: "log-view", note: "a job's output; the pane scrolls itself and can be followed" },
   ];
 
   // The request book: the screen this block was lifted from. Six columns, two
@@ -165,6 +171,56 @@
     { label: "11-12", value: 15.1, display: "¥15.10" },
     { label: "11-13", value: 19.8, display: "¥19.80" },
     { label: "11-14", value: 27.4, display: "¥27.40", projected: true },
+  ];
+
+  // The devdash shapes these three blocks came from: a memory strip over a row
+  // of counts, container rows that carry the actions valid for *their* state,
+  // and a build log that outlives the tap that started it.
+  const capacity = {
+    label: "VM memory",
+    used: 2.1,
+    total: 8,
+    usedLabel: "2.1 GB",
+    totalLabel: "8 GB",
+    figures: [
+      { value: "4.2 GB", label: "devcontainers", hint: "memory the containers are holding" },
+      { value: "3", label: "running" },
+      { value: "5", label: "containers" },
+    ],
+  };
+
+  const operations = [
+    {
+      name: "devdash",
+      state: "running",
+      tone: "ok",
+      meta: "312 MB",
+      badges: [{ label: "live session", tone: "info" }, { label: "window open" }],
+      connect: "tailnet · devdash.tail86fd19.ts.net",
+    },
+    {
+      name: "data-scout",
+      state: "stopped",
+      tone: "",
+      meta: "—",
+      badges: [{ label: "built 2 days ago" }],
+    },
+    {
+      name: "genproj",
+      state: "blocked",
+      tone: "warn",
+      meta: "—",
+      badges: [{ label: "no human build" }],
+      note: "Waiting on a plan — the container is not the thing to fix.",
+    },
+  ];
+
+  const buildLog = [
+    "$ docker compose up -d --build",
+    " => [web 1/4] FROM node:22-bookworm",
+    " => [web 4/4] RUN npm ci --no-audit --no-fund",
+    " => exporting to image",
+    " ✓ container is up, healthcheck pending",
   ];
 
   let formValues = $state({ planType: "delta", from: "", limit: 500 });
@@ -351,12 +407,49 @@
         />
       {:else if block.name === "request-form"}
         <RequestForm {fields} bind:values={formValues} errors={formErrors} submitLabel="Create request" onsubmit={() => {}} />
+      {:else if block.name === "meter-strip"}
+        <MeterStrip {...capacity} />
+      {:else if block.name === "action-list"}
+        <ActionList items={operations} label="devcontainers">
+          {#snippet aside(item)}
+            {#if item.connect}
+              <code class="num connect">{item.connect}</code>
+            {/if}
+          {/snippet}
+          {#snippet actions(item)}
+            {#if item.state === "running"}
+              <button type="button">Close</button>
+            {/if}
+            <button type="button">Open</button>
+            <button type="button">Rebuild</button>
+          {/snippet}
+          {#snippet note(item)}
+            {#if item.note}
+              <p class="hint row-note">{item.note}</p>
+            {/if}
+          {/snippet}
+        </ActionList>
+      {:else if block.name === "log-view"}
+        <LogView
+          title="provision data-scout"
+          state="running"
+          tone="running"
+          lines={buildLog}
+          emptyMessage="Waiting for output…"
+        >
+          {#snippet notice()}
+            <p class="hint">Running — a first container build takes minutes.</p>
+          {/snippet}
+          {#snippet actions()}
+            <button type="button">New window</button>
+          {/snippet}
+        </LogView>
       {/if}
     </section>
   {/each}
 
   <footer class="foot hint">
-    <span>@nb/theme v{manifest.version} · eleven blocks · published by <code class="num">npm run publish:item</code></span>
+    <span>@nb/theme v{manifest.version} · {blocks.length} blocks · published by <code class="num">npm run publish:item</code></span>
   </footer>
 </div>
 
@@ -391,6 +484,16 @@
   .lede {
     margin: 6px 0 0;
     max-width: 40rem;
+  }
+
+  .connect {
+    font-size: 12px;
+    color: var(--ink-muted);
+    overflow-wrap: anywhere;
+  }
+
+  .row-note {
+    margin: 0;
   }
 
   .about,

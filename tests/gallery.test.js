@@ -1,6 +1,13 @@
 import { describe, it, expect } from "vitest";
 import { render } from "@testing-library/svelte";
 import Page from "../src/routes/+page.svelte";
+import index from "../registry.json";
+
+// The published block list is the source of truth, not a literal: a list here
+// that happens to match today is exactly what let the generator's copy of the
+// block names drift in genproj. `registry.json` is generated from `blocks/`, so
+// this is the one place that says "every published block is rendered here".
+const publishedBlocks = index.items.filter((item) => item.type === "registry:block").map((item) => item.name);
 
 /**
  * The landing page *is* the gallery: the eleven blocks are imported from
@@ -10,47 +17,23 @@ import Page from "../src/routes/+page.svelte";
  * is where an undefined prop or a missing `$derived` shows up.
  */
 describe("the blocks on the landing page", () => {
-  it("renders all eleven blocks", () => {
+  it("renders every published block", () => {
     const { container } = render(Page);
     const sections = container.querySelectorAll("section.block");
-    expect(sections.length).toBe(11);
+    expect(sections.length).toBe(publishedBlocks.length);
   });
 
   it("names every block the registry publishes", () => {
     const { container } = render(Page);
     const text = container.textContent;
-    for (const name of [
-      "app-shell",
-      "stat-strip",
-      "result-list",
-      "filter-panel",
-      "empty-state",
-      "status-view",
-      "detail-panel",
-      "burst-timeline",
-      "bar-series",
-      "data-table",
-      "request-form",
-    ]) {
+    for (const name of publishedBlocks) {
       expect(text).toContain(name);
     }
   });
 
   it("gives each block a heading and an anchor, so the page can be browsed", () => {
     const { container } = render(Page);
-    for (const name of [
-      "app-shell",
-      "stat-strip",
-      "result-list",
-      "filter-panel",
-      "empty-state",
-      "status-view",
-      "detail-panel",
-      "burst-timeline",
-      "bar-series",
-      "data-table",
-      "request-form",
-    ]) {
+    for (const name of publishedBlocks) {
       const section = container.querySelector(`section.block#${name}`);
       expect(section).not.toBeNull();
       // A heading, not a styled div: on a page this long the outline is the

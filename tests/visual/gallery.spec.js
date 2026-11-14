@@ -1,6 +1,12 @@
 import { expect, test } from "@playwright/test";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
+// The published list, read from disk rather than imported: this file runs under
+// Playwright's transform, and the point of the check is the committed index.
+const INDEX = JSON.parse(
+  readFileSync(new URL("../../registry.json", import.meta.url), "utf8"),
+);
+
 /**
  * Phase 4's gate, in the two halves the config explains: styles are a test,
  * screenshots are evidence.
@@ -81,7 +87,13 @@ test.describe("the gallery, measured", () => {
     const ids = await page
       .locator("section.block")
       .evaluateAll((sections) => sections.map((section) => section.id));
-    expect(ids.length).toBeGreaterThanOrEqual(11);
+    // Not a literal count: the gallery must measure every block the registry
+    // publishes, which is what this file is the gate for.
+    const published = INDEX.items
+      .filter((item) => item.type === "registry:block")
+      .map((item) => item.name)
+      .sort();
+    expect(ids.sort()).toEqual(published);
 
     const current = readBaseline();
     const next = UPDATE ? {} : null;
@@ -112,7 +124,10 @@ test.describe("the gallery, measured", () => {
     }
 
     if (next) {
-      const merged = { ...current, ...next };
+      // Re-read at write time and merge on top: `UPDATE_VISUAL=1 npm run
+      // shots:baseline` runs serially (see package.json) because two projects
+      // writing one JSON file means the last writer deletes the other's keys.
+      const merged = { ...readBaseline(), ...next };
       writeFileSync(BASELINE, `${JSON.stringify(merged, null, 2)}\n`);
     }
   });
