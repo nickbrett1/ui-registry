@@ -1,6 +1,8 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { createServer } from "node:http";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { POST, GET } from "../src/routes/mcp/+server.js";
 
@@ -65,7 +67,17 @@ describe("POST /mcp", () => {
 
   it("browses the newest published version", async () => {
     const result = await tool("browse_registry", {});
-    expect(result.structuredContent.items.length).toBe(12);
+    // The newest version is a release, so it holds the whole catalogue -- one
+    // theme and every block. Derived, not a literal: this is the same "count
+    // that goes stale" trap as the gallery's list of names.
+    // `process.cwd()` rather than `import.meta.url`: under jsdom the module URL
+    // resolves to the dev-server origin, not a file (same trap as tokens.test.js).
+    const catalogue = JSON.parse(
+      readFileSync(resolve(process.cwd(), "registry.json"), "utf8"),
+    );
+    expect(
+      result.structuredContent.items.map((item) => item.name).sort(),
+    ).toEqual(catalogue.items.map((item) => item.name).sort());
     expect(result.structuredContent.items.map((item) => item.name)).toContain(
       "app-shell",
     );

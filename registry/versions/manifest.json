@@ -2,6 +2,13 @@
   "$comment": "Published registry versions. Every entry is immutable: `npm run publish:item` refuses to overwrite an existing (name, version) with different bytes. The route verifies each read against these digests.",
   "items": [
     {
+      "name": "action-list",
+      "version": "1.13.0",
+      "sha256": "217dea7e14d7fafa7d8248479c6e7997323a32c8a4b1e847b16406e031a64078",
+      "bytes": 5468,
+      "publishedAt": "2026-11-14T21:37:34.757Z"
+    },
+    {
       "name": "app-shell",
       "version": "1.3.0",
       "sha256": "bf41c79f2514d9b51e034e5179b359201491cf63c306fd62e232187e97030f83",
@@ -86,6 +93,13 @@
       "publishedAt": "2026-11-14T21:03:11.670Z"
     },
     {
+      "name": "app-shell",
+      "version": "1.13.0",
+      "sha256": "7e8624c612250d1ec927c504fd093cfc69165f9b2b0c74ba77fdc103ddd79188",
+      "bytes": 12768,
+      "publishedAt": "2026-11-14T21:37:34.447Z"
+    },
+    {
       "name": "bar-series",
       "version": "1.9.0",
       "sha256": "afa2b1a3a9eebec36c95f94732a1797aad48357ce842c73c5e9826b85efa0529",
@@ -119,6 +133,13 @@
       "sha256": "afa2b1a3a9eebec36c95f94732a1797aad48357ce842c73c5e9826b85efa0529",
       "bytes": 8709,
       "publishedAt": "2026-11-14T21:03:11.841Z"
+    },
+    {
+      "name": "bar-series",
+      "version": "1.13.0",
+      "sha256": "afa2b1a3a9eebec36c95f94732a1797aad48357ce842c73c5e9826b85efa0529",
+      "bytes": 8709,
+      "publishedAt": "2026-11-14T21:37:34.656Z"
     },
     {
       "name": "burst-timeline",
@@ -205,6 +226,13 @@
       "publishedAt": "2026-11-14T21:03:11.820Z"
     },
     {
+      "name": "burst-timeline",
+      "version": "1.13.0",
+      "sha256": "4a0a0b5a6c090be4955de9630970b6708786fdc9adfb8f5837bc077b4f311fbc",
+      "bytes": 7566,
+      "publishedAt": "2026-11-14T21:37:34.628Z"
+    },
+    {
       "name": "data-table",
       "version": "1.8.0",
       "sha256": "35332e73be2b1c7c7a4643b6a46c5a8b0e01047e2b16273fbbb22e9dc3bf1040",
@@ -245,6 +273,13 @@
       "sha256": "35332e73be2b1c7c7a4643b6a46c5a8b0e01047e2b16273fbbb22e9dc3bf1040",
       "bytes": 5235,
       "publishedAt": "2026-11-14T21:03:11.862Z"
+    },
+    {
+      "name": "data-table",
+      "version": "1.13.0",
+      "sha256": "35332e73be2b1c7c7a4643b6a46c5a8b0e01047e2b16273fbbb22e9dc3bf1040",
+      "bytes": 5235,
+      "publishedAt": "2026-11-14T21:37:34.680Z"
     },
     {
       "name": "detail-panel",
@@ -331,6 +366,13 @@
       "publishedAt": "2026-11-14T21:03:11.798Z"
     },
     {
+      "name": "detail-panel",
+      "version": "1.13.0",
+      "sha256": "9a1bea7e149ed9f679de0c042056890bad2a69554d262b4bb3b146f36f8fc023",
+      "bytes": 3696,
+      "publishedAt": "2026-11-14T21:37:34.603Z"
+    },
+    {
       "name": "empty-state",
       "version": "1.3.0",
       "sha256": "a319d34b12bd64a81aa1c20ed8af0669404ba15b79ca1342c9191f7b2a327b63",
@@ -413,6 +455,13 @@
       "sha256": "a319d34b12bd64a81aa1c20ed8af0669404ba15b79ca1342c9191f7b2a327b63",
       "bytes": 2777,
       "publishedAt": "2026-11-14T21:03:11.757Z"
+    },
+    {
+      "name": "empty-state",
+      "version": "1.13.0",
+      "sha256": "a319d34b12bd64a81aa1c20ed8af0669404ba15b79ca1342c9191f7b2a327b63",
+      "bytes": 2777,
+      "publishedAt": "2026-11-14T21:37:34.551Z"
     },
     {
       "name": "filter-panel",
@@ -499,6 +548,27 @@
       "publishedAt": "2026-11-14T21:03:11.736Z"
     },
     {
+      "name": "filter-panel",
+      "version": "1.13.0",
+      "sha256": "0e3a6e689b16fc35bd1d763448d0287097a5bdb3af5b18eb1fddc355de19fc37",
+      "bytes": 9865,
+      "publishedAt": "2026-11-14T21:37:34.527Z"
+    },
+    {
+      "name": "log-view",
+      "version": "1.13.0",
+      "sha256": "01d295c6747a1816e89a04f0acb5291494c6da22bb1541d3cf0152d3f36a69c8",
+      "bytes": 4438,
+      "publishedAt": "2026-11-14T21:37:34.781Z"
+    },
+    {
+      "name": "meter-strip",
+      "version": "1.13.0",
+      "sha256": "da166590f85ebe1f3ccd6772bbf466f167159f61d229dbdd3b6a78e283dce72c",
+      "bytes": 4065,
+      "publishedAt": "2026-11-14T21:37:34.733Z"
+    },
+    {
       "name": "request-form",
       "version": "1.3.0",
       "sha256": "9cad6109c7c7e74966868c0d9f7ceeebf5f90026cc93476766d59eb75f54f74f",
@@ -581,6 +651,13 @@
       "sha256": "9cad6109c7c7e74966868c0d9f7ceeebf5f90026cc93476766d59eb75f54f74f",
       "bytes": 4862,
       "publishedAt": "2026-11-14T21:03:11.884Z"
+    },
+    {
+      "name": "request-form",
+      "version": "1.13.0",
+      "sha256": "9cad6109c7c7e74966868c0d9f7ceeebf5f90026cc93476766d59eb75f54f74f",
+      "bytes": 4862,
+      "publishedAt": "2026-11-14T21:37:34.708Z"
     },
     {
       "name": "result-list",
@@ -667,6 +744,13 @@
       "publishedAt": "2026-11-14T21:03:11.716Z"
     },
     {
+      "name": "result-list",
+      "version": "1.13.0",
+      "sha256": "3ac1156a4f4c18f59a3e38dc037bbd0b8dc51c6178bc43d2bd7e8df2ae99a71d",
+      "bytes": 5071,
+      "publishedAt": "2026-11-14T21:37:34.497Z"
+    },
+    {
       "name": "stat-strip",
       "version": "1.3.0",
       "sha256": "72ca1724bd5ba94ece15e4f2eec61f1624b398002186052ce7fdf96e0e522a64",
@@ -751,6 +835,13 @@
       "publishedAt": "2026-11-14T21:03:11.697Z"
     },
     {
+      "name": "stat-strip",
+      "version": "1.13.0",
+      "sha256": "72ca1724bd5ba94ece15e4f2eec61f1624b398002186052ce7fdf96e0e522a64",
+      "bytes": 2179,
+      "publishedAt": "2026-11-14T21:37:34.472Z"
+    },
+    {
       "name": "status-view",
       "version": "1.3.0",
       "sha256": "a0fcea3eeed9491fe313d84e173c96cf8ce8d5b2de103d6d6d65e576a1823e87",
@@ -833,6 +924,13 @@
       "sha256": "a0fcea3eeed9491fe313d84e173c96cf8ce8d5b2de103d6d6d65e576a1823e87",
       "bytes": 3582,
       "publishedAt": "2026-11-14T21:03:11.777Z"
+    },
+    {
+      "name": "status-view",
+      "version": "1.13.0",
+      "sha256": "a0fcea3eeed9491fe313d84e173c96cf8ce8d5b2de103d6d6d65e576a1823e87",
+      "bytes": 3582,
+      "publishedAt": "2026-11-14T21:37:34.578Z"
     },
     {
       "name": "theme",
@@ -938,6 +1036,13 @@
       "sha256": "53ee736abf4409fa1635163ce54b3db695b17b5954f1c57250d4e216e3065afd",
       "bytes": 8253,
       "publishedAt": "2026-11-14T21:03:11.645Z"
+    },
+    {
+      "name": "theme",
+      "version": "1.13.0",
+      "sha256": "53ee736abf4409fa1635163ce54b3db695b17b5954f1c57250d4e216e3065afd",
+      "bytes": 8253,
+      "publishedAt": "2026-11-14T21:37:34.424Z"
     }
   ]
 }

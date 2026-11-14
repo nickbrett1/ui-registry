@@ -437,6 +437,24 @@ colour (a translucent tint is `color-mix(in srgb, var(--bg) 88%, transparent)`,
 derived from the token so a palette change moves the blocks with it), and the
 served item's `content` is byte-identical to the source file.
 
+### What 1.13.0 added: three blocks devdash had been writing inline
+
+Migrating `devdash` onto the system is what produced these, and each one is a
+pattern that recurred in a third place rather than an invention:
+
+- `meter-strip` — a ratio against a ceiling. `stat-strip` states figures; here
+  the bar *is* the fact, so it is a `role="progressbar"` with the reading beside
+  it (clamped to 0–100, and 0 when the ceiling is 0 rather than a NaN width).
+- `action-list` — one row per thing you *operate*, as against `result-list`,
+  which is something you read and rank. Per-row slots for the actions, a note
+  and an aside, because which action is valid is the row's business.
+- `log-view` — a job's output. The one place a `pre` is right, with the pane
+  bindable so the caller can follow its tail without the block guessing.
+
+The gallery's footer, the visual gate and the tests stopped counting blocks.
+Five places asserted a literal 11 or 12, which is how genproj's copy of
+`NB_BLOCKS` went stale; they now derive the list from `registry.json`.
+
 ### What 1.12.0 added: a page may end where its content ends
 
 `app-shell`'s `footer` now has three states instead of two. Omitted is the house
