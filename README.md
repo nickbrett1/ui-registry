@@ -347,9 +347,9 @@ Who consumes what, as of 1.15.0:
 
 | repo | pin | takes |
 |---|---|---|
-| `data-download` | 1.12.0 | `app-shell`, `stat-strip`, `bar-series`, `data-table` |
+| `data-download` | 1.15.0 | its ten vendored blocks — `app-shell`, `request-form`, `filter-panel`, `result-list`, `detail-panel`, `burst-timeline`, the rest — plus the theme (its ten blocks are byte-identical from 1.12.0 to 1.15.0, so the pin gained roles, not components) |
 | `stratechery-search` | 1.15.0 | `app-shell`, `result-list`, `filter-panel`, the rest — and its components now name roles instead of values |
-| `deepseek-balance` | 1.11.0 | `app-shell`, `stat-strip` |
+| `deepseek-balance` | 1.15.0 | `app-shell`, `stat-strip`, `bar-series`, `data-table` + the theme, generated from the published item (only `app-shell` changed: it gains `footer={false}`) |
 | `devdash` | 1.15.0 | `meter-strip`, `action-list`, `log-view` + the whole theme (and raises `--tap` to 2.75rem) |
 | `data-scout` | 1.14.0 | the **theme only** — it is Python-rendered static HTML, so it has no Svelte to install a block into |
 
@@ -462,8 +462,8 @@ served item's `content` is byte-identical to the source file.
 
 ### What 1.15.0 added: the ink, accent and ground roles the theme was already using
 
-`stratechery-search` is where this theme came from and the last consumer still on
-`1.11.0`. Re-pinning it turned up a dozen colour literals in its components that
+`stratechery-search` is where this theme came from, and it was one of the two
+consumers still on `1.11.0`. Re-pinning it turned up a dozen colour literals in its components that
 were not one-offs: every one of them was a *role the theme was already
 spelling out in its own rules but had not named*. So they are named, and the
 theme's own rules use them too.
