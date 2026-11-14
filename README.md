@@ -343,12 +343,12 @@ The first run found two real forks: `stratechery-search`'s `app-shell` was two
 minor versions behind (no `nav` slot) and `data-download` had hand-edited the
 strip out of its shell, which is why app-shell 1.12.0 grew `footer={false}`.
 
-Who consumes what, as of 1.14.0:
+Who consumes what, as of 1.15.0:
 
 | repo | pin | takes |
 |---|---|---|
 | `data-download` | 1.12.0 | `app-shell`, `stat-strip`, `bar-series`, `data-table` |
-| `stratechery-search` | 1.11.0 | `app-shell`, `result-list`, `filter-panel` (and 15 literals still to move onto roles) |
+| `stratechery-search` | 1.15.0 | `app-shell`, `result-list`, `filter-panel`, the rest — and its components now name roles instead of values |
 | `deepseek-balance` | 1.11.0 | `app-shell`, `stat-strip` |
 | `devdash` | 1.14.0 | `meter-strip`, `action-list`, `log-view` + the whole theme |
 | `data-scout` | 1.14.0 | the **theme only** — it is Python-rendered static HTML, so it has no Svelte to install a block into |
@@ -383,11 +383,14 @@ browser chrome has no cascade to read a variable from, so that one value has to
 be written down. Named colours are not caught on purpose: word-boundary matching
 on prose fails no allowlist survives.
 
-Run against the three consumers, it passed `deepseek-balance` and
-`data-download` and failed `stratechery-search` on 15 literals across six of its
-own hand-written components — true, and older than the registry. That is the
-gate working: it found a UI that had never been on the theme, and the fix is a
-token sweep rather than an exemption.
+Run against the consumers, it passed `deepseek-balance`, `data-download`,
+`devdash` and `data-scout` and failed `stratechery-search` on 15 literals across
+six of its own hand-written components — true, and older than the registry. That
+is the gate working: it found a UI that had never finished moving onto the
+theme. The fix was not an exemption and not 15 local tokens: four of the
+literals were roles the theme had not named (`--ink-strong`, `--accent-line`,
+`--accent-line-strong`, `--bg-overlay`), so they were added upstream in 1.15.0
+and the sweep followed.
 
 ### What a block looks like is measured, in two halves
 
