@@ -201,6 +201,22 @@ names the wrong problem and sends you looking in the theme. A release publishes
 all twelve; the unchanged ones are byte-identical re-publishes that
 `publish:item` reports as no-ops.
 
+Two flags make it safe to ask before acting, because a mistaken publish is
+unrecoverable — the rule above exists precisely so that it is:
+
+```bash
+npm run publish:item theme 1.13.0 -- --dry-run   # what would happen; writes nothing
+npm run publish:item -- --list                   # what is published, and whether the
+                                                 # working copy still matches it
+```
+
+`--dry-run` runs every check a real publish runs (name, version, immutability,
+stray file) and then prints the target path and digest instead of writing. It
+exits non-zero for a publish that *would* be refused, so it is a pre-flight, not
+a rehearsal. `--list` answers the question nothing else answers: an item whose
+working copy differs from its newest published version is either a change
+waiting for a version number, or one that shipped only inside a release.
+
 That writes `registry/versions/v1.0.0/theme.json` and appends `{name, version,
 sha256, bytes, publishedAt}` to `registry/versions/manifest.json`. Re-publishing
 the same version with different bytes is **refused** — to change a published item

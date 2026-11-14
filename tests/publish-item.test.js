@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { execFileSync } from "node:child_process";
-import { readFile, writeFile } from "node:fs/promises";
+import { access, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 /**
@@ -50,7 +50,11 @@ function run(args) {
     });
     return { code: 0, stdout, stderr: "" };
   } catch (error) {
-    return { code: error.status ?? 1, stdout: error.stdout ?? "", stderr: error.stderr ?? "" };
+    return {
+      code: error.status ?? 1,
+      stdout: error.stdout ?? "",
+      stderr: error.stderr ?? "",
+    };
   }
 }
 
@@ -82,5 +86,54 @@ describe("publish-item", () => {
   it("rejects a non-semver version and an unknown item", () => {
     expect(run(["theme", "1.0"]).code).toBe(1);
     expect(run(["nope", "1.0.0"]).code).toBe(1);
+  });
+});
+
+describe("publish-item --dry-run and --list", () => {
+  it("says what it would do and writes nothing", async () => {
+    const next = nextPatch(await latestThemeVersion());
+    const result = run(["theme", next, "--dry-run"]);
+    expect(result.code).toBe(0);
+    expect(result.stdout).toContain("would publish");
+    expect(result.stdout).toContain("nothing written");
+
+    // The claim is that nothing was written, so it is checked rather than trusted.
+    const created = await access(
+      path.join(ROOT, "registry", "versions", `v${next}`, "theme.json"),
+    ).then(
+      () => true,
+      () => false,
+    );
+    expect(created).toBe(false);
+    expect(
+      JSON.parse(await readFile(MANIFEST, "utf8")).items.some(
+        (entry) => entry.version === next,
+      ),
+    ).toBe(false);
+  });
+
+  it("is a no-op dry run for a version already published with identical content", async () => {
+    const version = await latestThemeVersion();
+    const result = run(["theme", version, "--dry-run"]);
+    expect(result.code).toBe(0);
+    expect(result.stdout).toContain("already published, identical");
+  });
+
+  it("lists what is published, and whether the working copy still matches", async () => {
+    const result = run(["--list"]);
+    expect(result.code).toBe(0);
+    // Every item in the manifest appears, with the state of its working copy --
+    // the column that answers "is there an unpublished change?".
+    const manifest = JSON.parse(await readFile(MANIFEST, "utf8"));
+    for (const name of new Set(manifest.items.map((entry) => entry.name))) {
+      expect(result.stdout).toContain(name);
+    }
+    expect(result.stdout).toMatch(/working copy (current|differs)/);
+  });
+
+  it("refuses an unknown flag and names the ones it has", () => {
+    const result = run(["--bogus"]);
+    expect(result.code).toBe(1);
+    expect(result.stderr).toContain("--dry-run");
   });
 });
