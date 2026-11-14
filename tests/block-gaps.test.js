@@ -25,13 +25,19 @@ import BurstTimeline from "../blocks/burst-timeline/BurstTimeline.svelte";
  * installed — while the new path works.
  */
 describe("AppShell: the slots a real app needs", () => {
-  const mark = createRawSnippet(() => ({ render: () => `<svg id="brand-mark"></svg>` }));
+  const mark = createRawSnippet(() => ({
+    render: () => `<svg id="brand-mark"></svg>`,
+  }));
   const actions = createRawSnippet(() => ({
     render: () => `<nav id="primary-nav"><a href="/runs">runs</a></nav>`,
   }));
 
   it("renders a mark before the titles and actions on the right of the bar", () => {
-    const { container } = render(AppShell, { title: "data-download", mark, actions });
+    const { container } = render(AppShell, {
+      title: "data-download",
+      mark,
+      actions,
+    });
     expect(container.querySelector("#brand-mark")).not.toBeNull();
     expect(container.querySelector("#primary-nav")).not.toBeNull();
     // The nav is in the bar, not in the main column: that was the whole gap.
@@ -53,7 +59,11 @@ describe("ResultList: rich rows and a real heading", () => {
   ];
 
   it("renders its title as the element titleTag names", () => {
-    const { container } = render(ResultList, { items, title: "Elsewhere", titleTag: "h2" });
+    const { container } = render(ResultList, {
+      items,
+      title: "Elsewhere",
+      titleTag: "h2",
+    });
     const heading = container.querySelector("h2.section-title");
     expect(heading).not.toBeNull();
     expect(heading.textContent).toContain("Elsewhere");
@@ -67,12 +77,15 @@ describe("ResultList: rich rows and a real heading", () => {
 
   it("lets a row carry its own markup while the block keeps the rank and the fold", () => {
     const row = createRawSnippet((item) => ({
-      render: () => `<div class="rich-row">${item.title} <mark>passage</mark></div>`,
+      render: () =>
+        `<div class="rich-row">${item.title} <mark>passage</mark></div>`,
     }));
     const { container } = render(ResultList, { items, initialCount: 2, row });
 
     expect(container.querySelectorAll(".rich-row").length).toBe(2);
-    expect(container.querySelector(".rich-row mark").textContent).toBe("passage");
+    expect(container.querySelector(".rich-row mark").textContent).toBe(
+      "passage",
+    );
     // Rank numbering and the fold still belong to the block.
     expect(container.querySelector(".rank").textContent).toBe("1");
     expect(container.textContent).toContain("Show 1 more…");
@@ -81,14 +94,19 @@ describe("ResultList: rich rows and a real heading", () => {
   it("does not render the snippet body when no row snippet is given", () => {
     const { container } = render(ResultList, { items });
     expect(container.querySelector(".rich-row")).toBeNull();
-    expect(container.querySelector(".row-title").textContent).toBe(items[0].title);
+    expect(container.querySelector(".row-title").textContent).toBe(
+      items[0].title,
+    );
   });
 });
 
 describe("FilterPanel: accepting the API's facet shape", () => {
   // What stratechery-search's endpoint actually sends.
   const raw = {
-    state: [{ value: "done", count: 42 }, { value: "stuck", count: 3 }],
+    state: [
+      { value: "done", count: 42 },
+      { value: "stuck", count: 3 },
+    ],
   };
   const labels = { state: "State" };
   const adaptFacets = (payload) =>
@@ -99,7 +117,11 @@ describe("FilterPanel: accepting the API's facet shape", () => {
     }));
 
   it("renders facets through the adapter, with counts", () => {
-    const { container } = render(FilterPanel, { facets: raw, adaptFacets, selected: {} });
+    const { container } = render(FilterPanel, {
+      facets: raw,
+      adaptFacets,
+      selected: {},
+    });
     expect(container.querySelector(".facet-label").textContent).toBe("State");
     expect(container.querySelectorAll(".facet-option").length).toBe(2);
     expect(container.querySelector(".option-count").textContent).toBe("42");
@@ -107,11 +129,20 @@ describe("FilterPanel: accepting the API's facet shape", () => {
 
   it("still renders a canonical facet list with no adapter", () => {
     const canonical = [
-      { key: "kind", label: "Kind", options: [{ value: "request", label: "Request", count: 28 }] },
+      {
+        key: "kind",
+        label: "Kind",
+        options: [{ value: "request", label: "Request", count: 28 }],
+      },
     ];
-    const { container } = render(FilterPanel, { facets: canonical, selected: {} });
+    const { container } = render(FilterPanel, {
+      facets: canonical,
+      selected: {},
+    });
     expect(container.querySelector(".facet-label").textContent).toBe("Kind");
-    expect(container.querySelector(".option-label").textContent).toBe("Request");
+    expect(container.querySelector(".option-label").textContent).toBe(
+      "Request",
+    );
   });
 });
 
@@ -128,7 +159,9 @@ describe("BurstTimeline: orientation and caption", () => {
       chartLabel: "passages per year",
     });
     expect(container.querySelector(".chart-bars.horizontal")).not.toBeNull();
-    expect(container.querySelector(".chart-title").textContent).toBe("passages per year");
+    expect(container.querySelector(".chart-title").textContent).toBe(
+      "passages per year",
+    );
     // The largest bucket fills its track, and the axis it fills is width.
     const fill = container.querySelectorAll(".bar-fill")[1];
     expect(fill.getAttribute("style")).toContain("--pct: 100%");
@@ -137,7 +170,9 @@ describe("BurstTimeline: orientation and caption", () => {
   it("defaults to vertical bars captioned 'recent bursts', as at 1.3.0", () => {
     const { container } = render(BurstTimeline, { intervals });
     expect(container.querySelector(".chart-bars.horizontal")).toBeNull();
-    expect(container.querySelector(".chart-title").textContent).toBe("recent bursts");
+    expect(container.querySelector(".chart-title").textContent).toBe(
+      "recent bursts",
+    );
   });
 
   it("hides the caption when chartLabel is empty", () => {
