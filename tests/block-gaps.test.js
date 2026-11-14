@@ -215,6 +215,20 @@ describe("AppShell: a card is not a viewport (1.11.0)", () => {
     const page = render(AppShell, { title: "data-download" });
     expect(page.container.textContent).toContain("house design system");
   });
+
+  it("lets a page say it has no footer, without pretending to be a card", () => {
+    // 1.12.0. `embedded` was the only way to drop the strip, and it also drops
+    // the page's min-height -- so a page whose content *is* the ending had to
+    // fork the block. data-download did, and the fork was invisible until the
+    // drift check diffed it.
+    const page = render(AppShell, { title: "data-download", footer: false });
+    expect(page.container.querySelector("footer")).toBeNull();
+    expect(page.container.textContent).not.toContain("house design system");
+    // Still a page: the viewport-height rule is untouched.
+    expect(page.container.querySelector(".shell").classList).not.toContain(
+      "embedded",
+    );
+  });
 });
 
 describe("ResultList: rich rows and a real heading", () => {

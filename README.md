@@ -127,7 +127,7 @@ deliberate bump wherever a project pins.
 
 ## Registry
 
-This repo is the source of the `@nb` theme and the ten house blocks, and it
+This repo is the source of the `@nb` theme and the eleven house blocks, and it
 serves them over HTTP. There is no static `registry/` directory exposed to
 the network: `src/routes/r/[...path]/+server.js` reads the JSON from disk because
 it has to resolve a version against a manifest and verify a digest, which a
@@ -296,6 +296,37 @@ There is one consumer-side consequence worth knowing: the merge also injects
 `@import "shadcn-svelte/tailwind.css";`, so `shadcn-svelte` has to be a
 dependency of the project at build time.
 
+### Keeping a consumer on published bytes
+
+`shadcn-svelte add` copies bytes into a repo and then forgets them. Nothing in
+the consumer knows a release happened, so the only signal that a block fix
+shipped used to be a human noticing a bug — which is exactly how app-shell
+1.11.0 arrived (a Homepage card grew unbounded blank space, found by looking at
+a dashboard, not by CI).
+
+`scripts/check-nb-blocks.mjs` is the reference copy of a small script each
+consumer repo carries at `scripts/check-nb-blocks.mjs` and runs in its own
+pipeline. It reads the pin from the consumer's `.nb-registry.json` (the version,
+once, in the repo whose bytes are at stake) and the base from
+`COMPONENTS_REGISTRY_URL` (the host — never a pin, the same rule as genproj),
+then asks two questions:
+
+| Question | Failure means |
+|---|---|
+| does every vendored block still match `v<pin>`? | a block was edited locally, so the next install either loses the edit or silently reverts an upstream fix |
+| is every vendored file published at `v<pin>`? | a renamed block, a local invention wearing the house name, or a pin whose index does not actually carry that block |
+
+Formatting is not drift: comments, whitespace and prettier's trailing commas are
+stripped from both sides before comparing, because a consumer's own
+`prettier --write` reformats what it installs. A changed prop, class, string or
+element still fails. It also prints when a newer release exists, and does **not**
+fail for it — an upgrade changes a live UI and is a decision, so the pin moves in
+the same PR that re-vendors.
+
+The first run found two real forks: `stratechery-search`'s `app-shell` was two
+minor versions behind (no `nav` slot) and `data-download` had hand-edited the
+strip out of its shell, which is why app-shell 1.12.0 grew `footer={false}`.
+
 ### The eleven blocks
 
 `blocks/` holds the house **layouts** — the second half of the problem this
@@ -308,7 +339,7 @@ form, so those are deliberately absent.
 
 | block            | installed as              | what it is                                                                            |
 | ---------------- | ------------------------- | ------------------------------------------------------------------------------------- |
-| `app-shell`      | `nb/AppShell.svelte`      | sticky blurred top bar, `mark`/`nav`/`actions`/`back` slots, `titleTag`, 68rem main, footer, `embedded` for a card |
+| `app-shell`      | `nb/AppShell.svelte`      | sticky blurred top bar, `mark`/`nav`/`actions`/`back` slots, `titleTag`, 68rem main, footer (`footer={false}` for none), `embedded` for a card |
 | `stat-strip`     | `nb/StatStrip.svelte`     | label · big tabular value · sub-line, collapsing to one column                        |
 | `result-list`    | `nb/ResultList.svelte`    | ranked rows + `row` slot, `titleTag` heading, "n more" fold                           |
 | `filter-panel`   | `nb/FilterPanel.svelte`   | facets: checkbox list or one-from-N radios, optional bars and a note, `adaptFacets`   |
@@ -335,6 +366,24 @@ and on an iPhone home screen the button sat under the status bar.)
 colour (a translucent tint is `color-mix(in srgb, var(--bg) 88%, transparent)`,
 derived from the token so a palette change moves the blocks with it), and the
 served item's `content` is byte-identical to the source file.
+
+### What 1.12.0 added: a page may end where its content ends
+
+`app-shell`'s `footer` now has three states instead of two. Omitted is the house
+strip on a page and nothing in a card; a snippet is the caller's own strip;
+`false` is no footer at all, on a page.
+
+The third state exists because `data-download` wanted it and, finding no way to
+say it, **edited the block after installing it** — deleting the default footer
+from its vendored copy and asserting the absence in its own tests. `embedded`
+was the only lever, and it was the wrong one: a card's rules (no
+`min-height: 100dvh`) applied to a page that needs them. That fork was invisible
+for three releases; the consumer drift check found it in its first run.
+
+Two things follow, and both are the point of the exercise rather than a
+side-effect. A block edited in place is a block the next `add --overwrite`
+silently reverts — so the fix belongs upstream, in a release. And a system whose
+answer to "not this one thing" is "fork it" gets forked, quietly, everywhere.
 
 ### What 1.11.0 added: a card is not a viewport
 
