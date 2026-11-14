@@ -293,23 +293,32 @@ served item's `content` is byte-identical to the source file.
 
 ### What 1.8.0 added, and why
 
-One new block, and it is the first one found by a screen that is *not* Svelte.
+One new block, and it is the first one found by a screen that is _not_ Svelte.
 Converting `data-download` (FastAPI + Jinja, no build step) started with a
 question — what does this screen need that a ranked list cannot give — and the
 answer was a table: the request book is six columns, two of them numbers that
 have to line up, and the plan-type page is a parameter schema. One block covers
-both, because the difference between them is what is *in* a cell:
+both, because the difference between them is what is _in_ a cell:
 
-| added | why it needs a block of its own |
-| --- | --- |
-| `columns` (`label`, `width`, `align`) | `result-list` ranks rows and stacks a title over meta; a table's first job is that `$0.0412` sits under `$0.0412` and an id cannot push it out of line |
-| `row(item, index)` returning cells | the two screens differ entirely inside a cell — a state pill with a tooltip versus an enum, a type and a constraint list — so the block owns the shell and the consumer owns the cells |
-| `.num` / `.wrap` cell modifiers | right-aligned tabular figures, and the one cell that is prose in a row of one-liners |
-| the header disappears under 600px | six columns at 390px is a scrollbar or a truncated id; a record wraps instead, and the labels were never worth the vertical space there |
+| added                                 | why it needs a block of its own                                                                                                                                                        |
+| ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `columns` (`label`, `width`, `align`) | `result-list` ranks rows and stacks a title over meta; a table's first job is that `$0.0412` sits under `$0.0412` and an id cannot push it out of line                                 |
+| `row(item, index)` returning cells    | the two screens differ entirely inside a cell — a state pill with a tooltip versus an enum, a type and a constraint list — so the block owns the shell and the consumer owns the cells |
+| `.num` / `.wrap` cell modifiers       | right-aligned tabular figures, and the one cell that is prose in a row of one-liners                                                                                                   |
+| the header disappears under 600px     | six columns at 390px is a scrollbar or a truncated id; a record wraps instead, and the labels were never worth the vertical space there                                                |
 
-The lesson from the *caller* side is the one worth keeping: a Python app with no
+The lesson from the _caller_ side is the one worth keeping: a Python app with no
 frontend build cannot install a Svelte block, so the honest first step is to
 write down what its screens need — and that list is block requirements.
+
+Then `data-download` went the whole way, and is now the first consumer of this
+registry that is **not** Svelte-native: `web/` is Vite + Svelte 5 building static
+files, FastAPI serves them, and the ten blocks are installed at `1.8.0` exactly
+as a SvelteKit app would install them. What that proved is the boundary is
+per-consumer, not per-framework: the app kept its store, its four `v_*` views,
+its token scopes and its `/v1/*` API, and gave up only the markup. A registry
+item is a file plus a stylesheet — it does not need the consumer to be an SPA,
+only to have a build step.
 
 ### What 1.7.0 added, and why
 
@@ -318,11 +327,11 @@ The last thing keeping a real app off the blocks. `filter-panel` could only offe
 a **range** — a year picker is one choice from N, drawn as a histogram so you can
 see which years have anything in them:
 
-| added                     | why a facet needs it                                                                                                                                                                       |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `mode: "single"`          | one choice from N renders as radios sharing `nb-facet-<key>`, selecting replaces rather than appends, and clicking the active one clears the facet (how you get back to "any year")       |
-| `layout: "bars"`          | the count was a number at the end of a row; as a bar behind the row it becomes a histogram, scaled to the largest count in _that_ facet, so `26` next to `12` reads as twice as tall     |
-| `note`                    | one line under the group ("one run, or all of them"): the place for the caveat a facet owes its reader, where `label` is too short to carry it                                             |
+| added            | why a facet needs it                                                                                                                                                                 |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `mode: "single"` | one choice from N renders as radios sharing `nb-facet-<key>`, selecting replaces rather than appends, and clicking the active one clears the facet (how you get back to "any year")  |
+| `layout: "bars"` | the count was a number at the end of a row; as a bar behind the row it becomes a histogram, scaled to the largest count in _that_ facet, so `26` next to `12` reads as twice as tall |
+| `note`           | one line under the group ("one run, or all of them"): the place for the caveat a facet owes its reader, where `label` is too short to carry it                                       |
 
 All three are per-facet fields with defaults (`"multiple"`, `"list"`, no note),
 so an install of the canonical tag filter is unchanged — see
