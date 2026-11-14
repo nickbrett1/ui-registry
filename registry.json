@@ -8,17 +8,10 @@
       "title": "nb theme",
       "type": "registry:theme",
       "author": "nickbrett1 <https://github.com/nickbrett1>",
-      "description": "The house theme: slate ground, hairline borders as rgba tints, 10px uppercase micro-labels, tabular figures, pill state, 8px card radius, and the single warm cream note reserved for search-match highlight. Lifted verbatim from stratechery-search. Installs as src/nb-theme.css rather than src/app.css so a Tailwind v4 consumer keeps its own @import \"tailwindcss\" and adds one visible import line instead of relying on the CLI to merge.",
-      "dependencies": [],
+      "description": "The house theme: slate ground, hairline borders as rgba tints, 10px uppercase micro-labels, tabular figures, pill state, 8px card radius, and the single warm cream note reserved for search-match highlight. Lifted verbatim from stratechery-search. A `registry:theme` item, so it installs as cssVars plus a css string that the CLI merges into the consumer's own stylesheet: there is no target file, the consumer keeps its @import \"tailwindcss\", and no import line is added.",
       "devDependencies": [],
       "registryDependencies": [],
-      "files": [
-        {
-          "path": "src/app.css",
-          "type": "registry:theme",
-          "target": "src/nb-theme.css"
-        }
-      ]
+      "files": []
     }
   ]
 }

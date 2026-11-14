@@ -79,15 +79,18 @@ describe("GET /r - public, deliberately", () => {
 
 describe("GET /r - documents", () => {
   it("serves the theme item with its CSS inlined", async () => {
-    const response = await call("theme.json", "?version=1.1.0");
+    const response = await call("theme.json", "?version=1.2.0");
     expect(response.status).toBe(200);
-    expect(response.headers.get("x-registry-version")).toBe("1.1.0");
+    expect(response.headers.get("x-registry-version")).toBe("1.2.0");
 
     const body = await response.json();
     expect(body.type).toBe("registry:theme");
-    expect(body.files).toHaveLength(1);
-    expect(body.files[0].target).toBe("src/nb-theme.css");
-    expect(body.files[0].content).toContain("--bg: #0f172a");
+    // A theme item has no `files` and no `target` (see the note below): its
+    // payload is cssVars + a css string that the CLI merges into the consumer's
+    // own stylesheet.
+    expect(body.files).toBeUndefined();
+    expect(body.cssVars.theme["--bg"]).toBe("#0f172a");
+    expect(Object.keys(body.css)).toContain(".card");
   });
 
   it("returns 404 for an item that does not exist", async () => {
@@ -270,9 +273,9 @@ describe("GET /r - the CLI shape (version in the path)", () => {
   // spellings are served.
 
   it("serves the versioned index as the array the CLI parses", async () => {
-    const response = await call("v1.1.0/index.json");
+    const response = await call("v1.2.0/index.json");
     expect(response.status).toBe(200);
-    expect(response.headers.get("x-registry-version")).toBe("1.1.0");
+    expect(response.headers.get("x-registry-version")).toBe("1.2.0");
 
     const body = await response.json();
     // An array, not `{name, items}`: the CLI rejects the object shape with
@@ -287,12 +290,12 @@ describe("GET /r - the CLI shape (version in the path)", () => {
   });
 
   it("serves an item at a version by path", async () => {
-    const response = await call("v1.1.0/theme.json");
+    const response = await call("v1.2.0/theme.json");
     expect(response.status).toBe(200);
 
     const body = await response.json();
-    expect(body.files[0].target).toBe("src/nb-theme.css");
-    expect(body.files[0].content).toContain("--bg: #0f172a");
+    expect(body.cssVars.theme["--bg"]).toBe("#0f172a");
+    expect(Object.keys(body.css)).toContain(".card");
   });
 
   it("also serves the style-prefixed spelling, for the base-URL fallback path", async () => {
@@ -300,13 +303,13 @@ describe("GET /r - the CLI shape (version in the path)", () => {
     // appended by the CLI. Same documents, and any well-formed style segment is
     // accepted: this registry has one style, and rejecting names would break the
     // CLI for no gain.
-    const index = await call("v1.1.0/styles/vega/index.json");
+    const index = await call("v1.2.0/styles/vega/index.json");
     expect(index.status).toBe(200);
     expect(Array.isArray(await index.json())).toBe(true);
 
-    expect((await call("v1.1.0/styles/vega/theme.json")).status).toBe(200);
-    expect((await call("v1.1.0/styles/new-york/theme.json")).status).toBe(200);
-    expect((await call("v1.1.0/styles/nb/theme.json")).status).toBe(200);
+    expect((await call("v1.2.0/styles/vega/theme.json")).status).toBe(200);
+    expect((await call("v1.2.0/styles/new-york/theme.json")).status).toBe(200);
+    expect((await call("v1.2.0/styles/nb/theme.json")).status).toBe(200);
   });
 
   it("projects the index from the frozen items, so an old version is described honestly", async () => {
@@ -319,7 +322,29 @@ describe("GET /r - the CLI shape (version in the path)", () => {
     expect(body[0].relativeUrl).toBe("theme.json");
 
     const item = await (await call("v1.0.0/theme.json")).json();
+    // v1.0.0 is the pre-2026-11-14 shape: a file with `target: src/app.css`.
     expect(item.files[0].target).toBe("src/app.css");
+  });
+
+  it("keeps each published shape exactly as it shipped, across a shape change", async () => {
+    // Three versions, three shapes, none of them rewritten:
+    //   1.0.0  files[].target = src/app.css          (before the target decision)
+    //   1.1.0  files[].target = src/nb-theme.css     (before theme items were
+    //                                                 understood to have no target)
+    //   1.2.0  cssVars + css, no files at all
+    // The last change is the kind a registry either handles honestly or not at
+    // all: the item's *schema* moved, and 1.1.0 still serves what 1.1.0 served.
+    const v100 = await (await call("v1.0.0/theme.json")).json();
+    const v110 = await (await call("v1.1.0/theme.json")).json();
+    const v120 = await (await call("v1.2.0/theme.json")).json();
+
+    expect(v100.files[0].target).toBe("src/app.css");
+    expect(v110.files[0].target).toBe("src/nb-theme.css");
+    expect(v120.files).toBeUndefined();
+    expect(v120.cssVars.theme["--bg"]).toBe("#0f172a");
+
+    // Every one of them still declares the type that says what it is.
+    for (const item of [v100, v110, v120]) expect(item.type).toBe("registry:theme");
   });
 
   it("404s an unpublished version in the path shape", async () => {
@@ -330,13 +355,13 @@ describe("GET /r - the CLI shape (version in the path)", () => {
 
   it("refuses traversal through the style or name segment", async () => {
     const attacks = [
-      "v1.1.0/styles/../../etc/passwd",
-      "v1.1.0/styles/../../registry.json",
-      "v1.1.0/styles/vega/../../../etc/passwd",
-      "v1.1.0/styles/vega/..%2f..%2f..%2fetc%2fpasswd",
-      "v1.1.0/styles/vega/theme.json%00.png",
-      "v1.1.0/../../etc/passwd",
-      "v1.1.0/theme.json%00.png",
+      "v1.2.0/styles/../../etc/passwd",
+      "v1.2.0/styles/../../registry.json",
+      "v1.2.0/styles/vega/../../../etc/passwd",
+      "v1.2.0/styles/vega/..%2f..%2f..%2fetc%2fpasswd",
+      "v1.2.0/styles/vega/theme.json%00.png",
+      "v1.2.0/../../etc/passwd",
+      "v1.2.0/theme.json%00.png",
     ];
     for (const attack of attacks) {
       const response = await call(attack);
@@ -346,14 +371,14 @@ describe("GET /r - the CLI shape (version in the path)", () => {
   });
 
   it("500s when a versioned item is edited in place, rather than projecting a lie", async () => {
-    const published = path.join(ROOT, "registry", "versions", "v1.1.0", "theme.json");
+    const published = path.join(ROOT, "registry", "versions", "v1.2.0", "theme.json");
     const original = await readFile(published, "utf8");
     try {
       await writeFile(published, `${original.trimEnd()}\n\n`, "utf8");
-      expect((await call("v1.1.0/theme.json")).status).toBe(500);
+      expect((await call("v1.2.0/theme.json")).status).toBe(500);
       // The index is built from the same bytes, so it must fail too rather than
       // describe a document it could not verify.
-      expect((await call("v1.1.0/index.json")).status).toBe(500);
+      expect((await call("v1.2.0/index.json")).status).toBe(500);
     } finally {
       await writeFile(published, original, "utf8");
     }
@@ -361,27 +386,49 @@ describe("GET /r - the CLI shape (version in the path)", () => {
 });
 
 describe("the theme has one source of truth", () => {
-  it("registry/theme.json is a faithful inline of src/app.css", async () => {
-    // The drift guard. `npm run build:theme` regenerates the served item; without
-    // this test the token sheet would exist twice and diverge -- which is the
-    // exact failure this registry exists to end.
+  it("registry/theme.json is a faithful split of src/app.css", async () => {
+    // The drift guard. `npm run build:theme` regenerates the served item by
+    // splitting the sheet into `:root` variables (`cssVars.theme`) and the rules
+    // after it (`css`). Both halves are checked against the source, so a token
+    // edited in `src/app.css` without a rebuild fails here rather than shipping
+    // as a design system that disagrees with the app it was derived from.
+    const { splitThemeSheet } = await import("../scripts/build-theme-item.js");
     const css = await readFile(path.join(ROOT, "src", "app.css"), "utf8");
     const item = JSON.parse(await readFile(path.join(ROOT, "registry", "theme.json"), "utf8"));
+    const expected = splitThemeSheet(css);
 
-    expect(item.files[0].content).toBe(css);
-    expect(item.meta.bytes).toBe(Buffer.byteLength(css, "utf8"));
+    expect(item.cssVars.theme).toEqual(expected.cssVars);
+    // `css` is the object form the item schema requires, not the raw string.
+    expect(item.css).toEqual(expected.cssObject);
+    expect(item.files).toBeUndefined();
+    // Provenance still names the source, because the served item no longer
+    // carries the file itself.
+    expect(item.meta.source).toBe("src/app.css");
+    expect(item.meta.sha256).toHaveLength(64);
   });
 
-  it("registers src/app.css as the theme source, installed as src/nb-theme.css", async () => {
-    // `path` is the file in this repo; `target` is where the CLI writes it in the
-    // consumer. They differ so a Tailwind v4 consumer keeps its own
-    // `@import "tailwindcss"` instead of having it replaced.
+  it("keeps the one non-token declaration from :root", async () => {
+    // `color-scheme: dark` is not a custom property, so it cannot travel in
+    // `cssVars`. Dropping it during the split would give a fresh project light
+    // scrollbars and light form controls on a dark ground -- visible, wrong, and
+    // blamed on the theme rather than on the generator.
+    const item = JSON.parse(await readFile(path.join(ROOT, "registry", "theme.json"), "utf8"));
+    expect(item.css[":root"]).toEqual({ "color-scheme": "dark" });
+    expect(item.cssVars.theme["--bg"]).toBe("#0f172a");
+  });
+
+  it("registers the theme as a variable-carrying item, not a file with a target", async () => {
+    // `target` is meaningless for `registry:theme`: the CLI resolves it against
+    // the basename of the consumer's stylesheet *as a directory*, which is how
+    // `target: src/nb-theme.css` came to write `app.css/src/nb-theme.css`.
     const index = JSON.parse(await readFile(path.join(ROOT, "registry.json"), "utf8"));
     const theme = index.items.find((item) => item.name === "theme");
 
     expect(theme.type).toBe("registry:theme");
-    expect(theme.files).toEqual([
-      { path: "src/app.css", type: "registry:theme", target: "src/nb-theme.css" },
-    ]);
+    // `files: []` rather than no `files` key: the published index schema requires
+    // the property, and "this item ships no files" is now the truth -- the theme
+    // travels as cssVars + css and is merged, not copied.
+    expect(theme.files).toEqual([]);
+    expect(theme.description).toContain("cssVars");
   });
 });
