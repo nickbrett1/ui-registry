@@ -300,6 +300,27 @@ colour (a translucent tint is `color-mix(in srgb, var(--bg) 88%, transparent)`,
 derived from the token so a palette change moves the blocks with it), and the
 served item's `content` is byte-identical to the source file.
 
+### What 1.10.1 fixed: a sticky bar may not spend the inset as an offset
+
+1.10.0 shipped with `position: sticky; top: var(--safe-top)`, and on a notched
+iPhone the page's own title vanished behind the bar. Not a near miss: with a
+47px inset the bar painted 47–102, `.lede` occupied 79–101, and
+`elementFromPoint` at the title's centre returned `.topbar-inner`.
+
+The rule this cost: **a sticky element with a nonzero `top` is painted offset
+while its flow box stays put, so every pixel of that offset is a pixel of
+content it covers.** A safe-area inset belongs in the bar's own `padding-top` —
+then the box grows, the flow moves with it, and the bar's background (rather
+than a bare strip of body colour) covers the status-bar band. `.shell` also
+takes `min-height: 100dvh` after the `100vh`, because `100vh` is taller than the
+visible area while an iOS toolbar is showing.
+
+It is testable without a device: Chromium's `env(safe-area-inset-top)` is always
+0, so `tests/block-gaps.test.js` asserts the declaration (`top: 0` with
+`padding-top: var(--safe-top)`, and no offset form), and the consumer's
+Playwright suite sets `--safe-top: 47px` on the document element and asserts the
+title starts at or below the bar's bottom.
+
 ### What 1.10.0 added, and why
 
 Two fixes, both found by looking at the ported `data-download` on a phone.
