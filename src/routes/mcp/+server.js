@@ -314,12 +314,18 @@ async function handle(message, origin) {
   if (id === undefined) return null;
 
   if (method === "initialize") {
+    // Counted, not written down: this sentence said "eleven blocks" until the
+    // catalogue served fourteen, and it is the first thing a model reads.
+    const { catalogue } = await context();
+    const blockCount = (catalogue?.items ?? []).filter(
+      (item) => item.type === "registry:block",
+    ).length;
     return rpcResult(id, {
       protocolVersion: PROTOCOL_VERSION,
       capabilities: { tools: { listChanged: false } },
       serverInfo: { name: "ui-registry", version: "1.0.0" },
       instructions:
-        "The house design system: one theme and eleven blocks. Browse or search, read the item " +
+        `The house design system: one theme and ${blockCount} blocks. Browse or search, read the item ` +
         "you want with get_item, then install it with the command install_command returns.",
     });
   }

@@ -21,9 +21,18 @@ describe("generated app smoke test", () => {
     );
   });
 
-  it("says what the registry is, in three plain facts", () => {
+  it("says what the registry is, in three plain facts", async () => {
     render(Page);
-    for (const term of ["one theme", "eleven blocks", "pinned by version"]) {
+    // The block count is *counted* from the catalogue. It said "eleven" while
+    // the registry served fourteen -- a literal the page had no way to notice,
+    // pinned here by an assertion that also could not notice.
+    const catalogue = JSON.parse(
+      await readFile(path.join(ROOT, "registry.json"), "utf8"),
+    );
+    const blocks = catalogue.items.filter(
+      (item) => item.type === "registry:block",
+    ).length;
+    for (const term of ["one theme", `${blocks} blocks`, "pinned by version"]) {
       expect(screen.getByText(term)).toBeInTheDocument();
     }
   });

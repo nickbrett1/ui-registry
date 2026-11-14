@@ -7,12 +7,19 @@
    * (the header sat under the status bar) and had to press to reach the only
    * content that mattered.
    *
-   * The eleven blocks are imported from `blocks/` -- the same bytes
-   * `registry.json` publishes, not a copy. If a block stops rendering, this page
-   * stops building, which is the cheapest possible check that eleven published
-   * items are ten working components.
+   * The blocks are imported from `blocks/` -- the same bytes `registry.json`
+   * publishes, not a copy. If a block stops rendering, this page stops building,
+   * which is the cheapest possible check that every published block is a working
+   * component. How many that is gets *counted*, never written down: this page
+   * said "eleven" while the registry served fourteen, which is the same staleness
+   * as genproj's copy of NB_BLOCKS.
    */
   import published from "../../registry/versions/manifest.json";
+  import catalogue from "../../registry.json";
+
+  const blockCount = catalogue.items.filter(
+    (item) => item.type === "registry:block",
+  ).length;
 
   import AppShell from "../../blocks/app-shell/AppShell.svelte";
   import StatStrip from "../../blocks/stat-strip/StatStrip.svelte";
@@ -46,6 +53,7 @@
   const palette = [
     { token: "bg", means: "the ground; every surface is a tint of it" },
     { token: "ink", means: "body text" },
+    { token: "ink-strong", means: "the strongest ink: a heading, or the thing under the pointer" },
     { token: "accent", means: "links, the active tab, anything you can press" },
     { token: "ok", means: "succeeded, matched, done" },
     { token: "warn", means: "waiting, pending, slow" },
@@ -233,7 +241,7 @@
       <span class="micro">house design system</span>
       <h1 class="title">@nb UI Registry</h1>
       <p class="hint lede">
-        One theme and eleven blocks. Everything below is the published source, rendered —
+        One theme and {blockCount} blocks. Everything below is the published source, rendered —
         there is no screenshot and no separate gallery.
       </p>
     </div>
@@ -251,7 +259,7 @@
         </dd>
       </div>
       <div class="fact">
-        <dt class="micro">eleven blocks</dt>
+        <dt class="micro">{blockCount} blocks</dt>
         <dd>
           The screens the house apps actually have — a shell, a KPI row, results,
           facets, lanes, a detail page, a chart, a form, an empty state.

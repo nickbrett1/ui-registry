@@ -10,7 +10,7 @@ import index from "../registry.json";
 const publishedBlocks = index.items.filter((item) => item.type === "registry:block").map((item) => item.name);
 
 /**
- * The landing page *is* the gallery: the eleven blocks are imported from
+ * The landing page *is* the gallery: every published block is imported from
  * `blocks/` — the same bytes `registry.json` publishes — and rendered inline.
  *
  * `tests/blocks.test.js` proves they compile; this proves they *render*, which

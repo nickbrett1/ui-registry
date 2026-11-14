@@ -127,7 +127,7 @@ deliberate bump wherever a project pins.
 
 ## Registry
 
-This repo is the source of the `@nb` theme and the eleven house blocks, and it
+This repo is the source of the `@nb` theme and the house blocks, and it
 serves them over HTTP. There is no static `registry/` directory exposed to
 the network: `src/routes/r/[...path]/+server.js` reads the JSON from disk because
 it has to resolve a version against a manifest and verify a digest, which a
@@ -456,6 +456,37 @@ and on an iPhone home screen the button sat under the status bar.)
 colour (a translucent tint is `color-mix(in srgb, var(--bg) 88%, transparent)`,
 derived from the token so a palette change moves the blocks with it), and the
 served item's `content` is byte-identical to the source file.
+
+### What 1.15.0 added: the ink, accent and ground roles the theme was already using
+
+`stratechery-search` is where this theme came from and the last consumer still on
+`1.11.0`. Re-pinning it turned up a dozen colour literals in its components that
+were not one-offs: every one of them was a *role the theme was already
+spelling out in its own rules but had not named*. So they are named, and the
+theme's own rules use them too.
+
+| literal | sites | role |
+| --- | --- | --- |
+| `#fff`, `#f1f5f9` | 11 — hover ink, the active nav item, a page `h1` | `--ink-strong` |
+| `rgba(125, 211, 252, 0.4 \| 0.45)` | 5 — the border of a hovered or primary control | `--accent-line` |
+| `rgba(125, 211, 252, 0.55)` | 1 — the border of a *selected* one | `--accent-line-strong` |
+| `rgba(125, 211, 252, 0.1)` | 1 — the fill behind a selected chip | `--accent-soft` (0.14) |
+| `rgba(15, 23, 42, 0.93)` | 1 — a sticky row that scrolls over the page | `--bg-overlay` |
+
+Two of these are judgement calls, recorded so they can be argued with:
+`--accent-soft` already existed at 0.14 and a second 0.1 tint would be a
+distinction no screen makes; and hover/selected collapse three accent
+opacities into two, because "under the pointer" and "this is the one you
+picked" are the only two states a consumer was actually drawing.
+
+The theme's own `.seg button.on`, `.btn:hover` and `.btn.primary` borders now
+name these roles, so the literals are gone from the theme as well — one file
+still holds values, and that file is the one that is *made* of values.
+
+While in here: the landing page and the MCP `initialize` instructions both said
+"eleven blocks" while the catalogue served fourteen. Both now count
+`registry.json`. Fourteen is not the interesting number; that the text could
+drift from the catalogue was.
 
 ### What 1.14.0 added: `--tap`, because 34px is the wrong height on a phone
 

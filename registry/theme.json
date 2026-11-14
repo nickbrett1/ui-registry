@@ -15,14 +15,18 @@
       "--bg-sunken": "rgba(15, 23, 42, 0.35)",
       "--bg-hover": "rgba(51, 65, 85, 0.5)",
       "--bg-selected": "#334155",
+      "--bg-overlay": "rgba(15, 23, 42, 0.93)",
       "--line": "rgba(148, 163, 184, 0.14)",
       "--line-strong": "rgba(148, 163, 184, 0.25)",
       "--ink": "#e2e8f0",
       "--ink-dim": "#cbd5e1",
       "--ink-muted": "rgba(226, 232, 240, 0.62)",
       "--ink-faint": "rgba(226, 232, 240, 0.42)",
+      "--ink-strong": "#f1f5f9",
       "--accent": "#7dd3fc",
       "--accent-soft": "rgba(125, 211, 252, 0.14)",
+      "--accent-line": "rgba(125, 211, 252, 0.4)",
+      "--accent-line-strong": "rgba(125, 211, 252, 0.55)",
       "--ok": "#6ee7b7",
       "--ok-bg": "rgba(52, 211, 153, 0.15)",
       "--warn": "#fdba74",
@@ -170,7 +174,7 @@
     },
     ".seg button.on": {
       "background": "var(--bg-selected)",
-      "color": "#f1f5f9"
+      "color": "var(--ink-strong)"
     },
     ".seg button:disabled": {
       "opacity": "0.35",
@@ -188,7 +192,7 @@
     },
     ".btn:hover:not(:disabled)": {
       "background": "var(--bg-hover)",
-      "color": "#f1f5f9"
+      "color": "var(--ink-strong)"
     },
     ".btn:disabled": {
       "opacity": "0.35",
@@ -196,7 +200,7 @@
     },
     ".btn.primary": {
       "background": "var(--accent-soft)",
-      "border-color": "rgba(125, 211, 252, 0.4)",
+      "border-color": "var(--accent-line)",
       "color": "var(--accent)"
     },
     "input[type=\"search\"], input[type=\"text\"]": {
@@ -275,8 +279,8 @@
   },
   "meta": {
     "source": "src/app.css",
-    "sha256": "dd81751b6dfb8a6d05c0a4b21fab9074a8f1ea6e276d5449abd494b22dbbdc90",
-    "bytes": 9566,
-    "variables": 33
+    "sha256": "5742f863c32da534bcd3ffc4ec7eaa7c1a8502d7968cc97950039f7c20131694",
+    "bytes": 10779,
+    "variables": 37
   }
 }
