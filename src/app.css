@@ -49,6 +49,17 @@
   --mark: #fce4b8;
   --mark-bg: rgba(252, 228, 184, 0.18);
 
+  /* On an iPhone home screen the app launches with the status bar drawn *over*
+   the page (`apple-mobile-web-app-status-bar-style: black-translucent` plus
+   `viewport-fit=cover` in app.html). `viewport-fit` is what makes these four
+   insets non-zero; a page that ignores them starts under the clock, which is
+   how "browse the blocks" ended up invisible behind the time. Any sticky
+   element must also offset its `top` by --safe-top instead of 0. */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+
   /* geometry + type */
   --radius: 8px;
   --radius-sm: 6px;

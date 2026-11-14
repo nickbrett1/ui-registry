@@ -33,6 +33,10 @@
       "--neutral-bg": "rgba(148, 163, 184, 0.15)",
       "--mark": "#fce4b8",
       "--mark-bg": "rgba(252, 228, 184, 0.18)",
+      "--safe-top": "env(safe-area-inset-top, 0px)",
+      "--safe-right": "env(safe-area-inset-right, 0px)",
+      "--safe-bottom": "env(safe-area-inset-bottom, 0px)",
+      "--safe-left": "env(safe-area-inset-left, 0px)",
       "--radius": "8px",
       "--radius-sm": "6px",
       "--radius-pill": "999px",
@@ -245,8 +249,8 @@
   },
   "meta": {
     "source": "src/app.css",
-    "sha256": "bb012ad9268850e5776e7772757d7ef833109d14f591276da84a990e55410862",
-    "bytes": 7449,
-    "variables": 28
+    "sha256": "ad25afd51b4ff67882168b1ecccc6b8d6fb5c59ab7f06a153f91b7a89f55a0dd",
+    "bytes": 8098,
+    "variables": 32
   }
 }

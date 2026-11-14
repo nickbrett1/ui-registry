@@ -1,24 +1,23 @@
 import { describe, it, expect } from "vitest";
 import { render } from "@testing-library/svelte";
-import Gallery from "../src/routes/blocks/+page.svelte";
+import Page from "../src/routes/+page.svelte";
 
 /**
- * The gallery imports all nine blocks from `blocks/` — the same bytes
- * `registry.json` publishes — so rendering it is a real check that nine
- * published items are nine working components rather than nine JSON documents.
+ * The landing page *is* the gallery: the nine blocks are imported from
+ * `blocks/` — the same bytes `registry.json` publishes — and rendered inline.
  *
  * `tests/blocks.test.js` proves they compile; this proves they *render*, which
  * is where an undefined prop or a missing `$derived` shows up.
  */
-describe("the block gallery", () => {
+describe("the blocks on the landing page", () => {
   it("renders all nine blocks", () => {
-    const { container } = render(Gallery);
+    const { container } = render(Page);
     const sections = container.querySelectorAll("section.block");
     expect(sections.length).toBe(9);
   });
 
   it("names every block the registry publishes", () => {
-    const { container } = render(Gallery);
+    const { container } = render(Page);
     const text = container.textContent;
     for (const name of [
       "app-shell",
@@ -35,8 +34,30 @@ describe("the block gallery", () => {
     }
   });
 
+  it("gives each block a heading and an anchor, so the page can be browsed", () => {
+    const { container } = render(Page);
+    for (const name of [
+      "app-shell",
+      "stat-strip",
+      "result-list",
+      "filter-panel",
+      "empty-state",
+      "status-view",
+      "detail-panel",
+      "burst-timeline",
+      "request-form",
+    ]) {
+      const section = container.querySelector(`section.block#${name}`);
+      expect(section).not.toBeNull();
+      // A heading, not a styled div: on a page this long the outline is the
+      // navigation, and a <code> label is not a heading.
+      expect(section.querySelector("h2").textContent).toContain(name);
+      expect(container.querySelector(`a[href="#${name}"]`)).not.toBeNull();
+    }
+  });
+
   it("renders the blocks' own words, not placeholders", () => {
-    const { container } = render(Gallery);
+    const { container } = render(Page);
     const text = container.textContent;
     // One distinctive string per block family: the shell's title, a stat label,
     // a status lane, the empty state's cause-aware copy, and a form constraint.

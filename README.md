@@ -264,28 +264,51 @@ form, so those are deliberately absent.
 
 | block            | installed as              | what it is                                                      |
 | ---------------- | ------------------------- | --------------------------------------------------------------- |
-| `app-shell`      | `nb/AppShell.svelte`      | sticky blurred top bar, wordmark, back pill, 68rem main, footer |
+| `app-shell`      | `nb/AppShell.svelte`      | sticky blurred top bar, `mark` + `actions` slots, 68rem main, footer |
 | `stat-strip`     | `nb/StatStrip.svelte`     | label · big tabular value · sub-line, collapsing to one column  |
-| `result-list`    | `nb/ResultList.svelte`    | ranked rows with pill + snippet and a "n more" fold             |
-| `filter-panel`   | `nb/FilterPanel.svelte`   | facet card on desktop; chip row + bottom sheet under 600px      |
+| `result-list`    | `nb/ResultList.svelte`    | ranked rows + `row` slot, `titleTag` heading, "n more" fold     |
+| `filter-panel`   | `nb/FilterPanel.svelte`   | facet card on desktop, sheet under 600px, `adaptFacets`         |
 | `empty-state`    | `nb/EmptyState.svelte`    | cause-aware zero results (filters vs query vs error)            |
 | `status-view`    | `nb/StatusView.svelte`    | four lanes, count in each head, pill per row                    |
 | `detail-panel`   | `nb/DetailPanel.svelte`   | header, metadata grid, prose body, `history.back()`             |
-| `burst-timeline` | `nb/BurstTimeline.svelte` | interval chart + audit grid with an "Explains" column           |
+| `burst-timeline` | `nb/BurstTimeline.svelte` | horizontal or vertical bars, `chartLabel`, audit grid           |
 | `request-form`   | `nb/RequestForm.svelte`   | schema-driven form, one message per failed constraint           |
 
 ```bash
 npm run build:blocks            # blocks/*/*.svelte -> registry/<name>.json -> registry.json
-npm run publish:item app-shell 1.3.0
+npm run publish:item app-shell 1.4.0
 ```
 
-Browse them at **`/blocks`** — the gallery imports the same nine files the
-registry publishes, so a block that does not render breaks the build.
+Browse them at **`/`** — the landing page imports the same nine files the
+registry publishes and renders all nine, so a block that does not render breaks
+the build. (`/blocks` was a second page for this; it now 308s to `/`, because
+asking someone to press a button to reach the only content was a wasted tap —
+and on an iPhone home screen the button sat under the status bar.)
 
 **Two rules, both enforced by `tests/blocks.test.js`:** no block hardcodes a
 colour (a translucent tint is `color-mix(in srgb, var(--bg) 88%, transparent)`,
 derived from the token so a palette change moves the blocks with it), and the
 served item's `content` is byte-identical to the source file.
+
+### What 1.4.0 added, and why
+
+Four gaps that converting `stratechery-search` onto the blocks found. Each is an
+additive prop with a default that keeps 1.3.0 behaviour, so an existing install
+neither breaks nor changes output:
+
+| block | prop | the gap it closes |
+| --- | --- | --- |
+| `app-shell` | `mark`, `actions` | no place for a logo or primary nav; `status` was the only right-hand slot |
+| `result-list` | `row(item, index)` | a row could carry four strings, so highlighted passages and a per-passage fold could not move in |
+| `result-list` | `titleTag` (default `"div"`) | the title was not a heading, so the section vanished from the outline and a page had to render its own `h2` and pass no title |
+| `filter-panel` | `adaptFacets` | only one facet shape was accepted; an API's `by_*` maps had to be reshaped by every caller, on every render |
+| `burst-timeline` | `orientation`, `chartLabel` | vertical-only, and "recent bursts" was hard-coded over intervals that were not bursts |
+
+The theme also gained four safe-area variables (`--safe-top` and friends, from
+`env(safe-area-inset-*)`) at 1.4.0. `app-shell` spends them on its sticky bar,
+main column and footer, and the registry's own page spends them on its header —
+which is what stops an app launched from a home screen from drawing its header
+under the status bar.
 
 **Install targets are relative to the components alias, not the project root.**
 That is measured, not assumed: a target of `src/lib/components/nb/AppShell.svelte`

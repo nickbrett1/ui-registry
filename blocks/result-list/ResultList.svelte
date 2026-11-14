@@ -5,12 +5,27 @@
    * Generalised from stratechery-search: one row per article with title,
    * meta, status pill, and an optional matching snippet. Folds after
    * `initialCount` rows with an explicit disclosure button.
+   *
+   * Two additions in 1.4.0, both because a real result row is richer than
+   * {href, title, pill, meta, snippet} and the alternative was to stop using
+   * the block:
+   *
+   *   `row(item, index)` -- replace the body of a row entirely. A search hit
+   *       carries more than one highlighted passage, a "N more passages" fold
+   *       and per-passage metadata; none of that is a string field. The rank,
+   *       the row chrome and the outer fold still come from the block.
+   *   `titleTag` -- the title's element. Defaults to a `div` so existing output
+   *       does not change, but a page that needs a section heading in its
+   *       outline passes `"h2"`, instead of rendering its own heading and
+   *       passing no title at all.
    */
   let {
     items = [],
     initialCount = 5,
     title = "",
+    titleTag = "div",
     emptyMessage = "No results to display.",
+    row,
   } = $props();
 
   let expanded = $state(false);
@@ -23,7 +38,9 @@
 
 <div class="result-list-wrap">
   {#if title}
-    <div class="section-title">{title} ({items.length})</div>
+    <svelte:element this={titleTag} class="section-title">
+      {title} ({items.length})
+    </svelte:element>
   {/if}
 
   {#if items.length === 0}
@@ -36,6 +53,9 @@
         <div class="result-row" class:border-top={index > 0}>
           <div class="row-main">
             <span class="rank num">{index + 1}</span>
+            {#if row}
+              {@render row(item, index)}
+            {:else}
             <div class="row-body">
               <div class="row-head">
                 {#if item.href}
@@ -54,6 +74,7 @@
                 <div class="row-snippet">{item.snippet}</div>
               {/if}
             </div>
+            {/if}
           </div>
         </div>
       {/each}
