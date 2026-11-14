@@ -94,14 +94,36 @@ secret in `common`, identical in `dev`, `stg` and `prd`:
 
 ```bash
 doppler secrets get COMPONENTS_REGISTRY_URL --project common --config dev --plain
-# http://ryzen:3012/r/v1.2.0
+# http://ryzen:3012/r
 ```
 
-Consumers and generators read it at run time (`doppler run -- npx shadcn-svelte
-add theme ...`), so re-pointing every consumer at a new published version is one
-Doppler edit and not a sweep of repositories. The value names the version on
-purpose — see "Registry" below: a floating "latest" URL would make an install
-depend on the day it ran.
+**It is the host, not the pin.** The version is appended by the caller:
+
+```bash
+COMPONENTS_REGISTRY_URL="$(doppler secrets get COMPONENTS_REGISTRY_URL \
+  --project common --config dev --plain)/v1.11.0" \
+  npx shadcn-svelte@1.8.1 add theme --yes --overwrite
+```
+
+Two reasons, and the second is the one that bit.
+
+1. **One copy of the version.** The pin has to live *somewhere* per consumer —
+   a project's look must not change because someone published a release, so
+   there is no floating "latest" (see "Registry" below, and note the endpoint
+   answers `{"error":"version required"}` to an unpinned item read). If the
+   secret carried the version too, there would be two copies, and the second
+   one would be the one nobody checked. genproj composes the pin from its
+   catalog's `themeVersion`; a hand-written command carries its own.
+2. **A versioned secret makes every consumer move at once, invisibly.** The
+   secret is read at install time, so changing it changes what *every* project
+   installs the next time it re-runs the command — including projects that
+   pinned deliberately. Host-in-the-secret means moving the estate's *address*
+   is silent (an operator's business) while moving its *version* is always a
+   visible edit in the thing that pins it.
+
+The estate-wide consequence: re-pointing the registry host is one Doppler edit
+and no repository sweep; releasing a new version is a `publish:release` plus a
+deliberate bump wherever a project pins.
 
 ## Registry
 
