@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { render } from "@testing-library/svelte";
+import { render, fireEvent } from "@testing-library/svelte";
 import { createRawSnippet } from "svelte";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
@@ -199,6 +199,92 @@ describe("FilterPanel: accepting the API's facet shape", () => {
     expect(container.querySelector(".option-label").textContent).toBe(
       "Request",
     );
+  });
+});
+
+describe("FilterPanel: a facet that is one choice from N (1.7.0)", () => {
+  const years = [
+    {
+      key: "year",
+      label: "Year",
+      mode: "single",
+      layout: "bars",
+      note: "one year, or none",
+      options: [
+        { value: "2018", label: "2018", count: 2 },
+        { value: "2026", label: "2026", count: 8 },
+      ],
+    },
+  ];
+
+  it("renders radios, not checkboxes, and reports one value", () => {
+    const { container } = render(FilterPanel, { facets: years, selected: {} });
+    const inputs = [...container.querySelectorAll("input")];
+    expect(inputs.map((input) => input.type)).toEqual(["radio", "radio"]);
+    // One group name shared, or the browser treats them as separate groups.
+    expect(new Set(inputs.map((input) => input.name)).size).toBe(1);
+  });
+
+  it("replaces the selection instead of adding to it", async () => {
+    const seen = [];
+    const { container } = render(FilterPanel, {
+      facets: years,
+      selected: {},
+      onchange: (next) => seen.push(next),
+    });
+    const inputs = [...container.querySelectorAll("input")];
+    await fireEvent.click(inputs[0]);
+    await fireEvent.click(inputs[1]);
+    expect(seen[0]).toEqual({ year: ["2018"] });
+    // A checkbox model would have said ["2018", "2026"], which the API behind
+    // this facet cannot answer: a year is a from/to range, not a set.
+    expect(seen[1]).toEqual({ year: ["2026"] });
+  });
+
+  it("clears when the active option is clicked, so there is a way back", async () => {
+    const seen = [];
+    const { container } = render(FilterPanel, {
+      facets: years,
+      selected: { year: ["2026"] },
+      onchange: (next) => seen.push(next),
+    });
+    await fireEvent.click(container.querySelectorAll("input")[1]);
+    expect(seen[0]).toEqual({});
+  });
+
+  it("draws the count as a bar behind the label, scaled to the group", () => {
+    const { container } = render(FilterPanel, { facets: years, selected: {} });
+    const bars = [...container.querySelectorAll(".option-bar")];
+    expect(bars.map((bar) => bar.getAttribute("style"))).toEqual([
+      expect.stringContaining("--w: 25%"),
+      expect.stringContaining("--w: 100%"),
+    ]);
+  });
+
+  it("prints the group's note, and nothing when there is none", () => {
+    const { container } = render(FilterPanel, { facets: years, selected: {} });
+    expect(container.querySelector(".facet-note").textContent).toBe(
+      "one year, or none",
+    );
+    expect(container.querySelector(".filter-panel").textContent).not.toContain(
+      "undefined",
+    );
+  });
+
+  it("stays checkboxes, a plain list and note-free by default", () => {
+    const { container } = render(FilterPanel, {
+      facets: [
+        {
+          key: "kind",
+          label: "Kind",
+          options: [{ value: "update", label: "Update", count: 5 }],
+        },
+      ],
+      selected: {},
+    });
+    expect(container.querySelector("input").type).toBe("checkbox");
+    expect(container.querySelector(".option-bar")).toBeNull();
+    expect(container.querySelector(".facet-note")).toBeNull();
   });
 });
 

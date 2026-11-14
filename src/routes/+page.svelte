@@ -80,14 +80,20 @@
   // `adaptFacets` (new in 1.4.0) is what turns it into facets. The gallery shows
   // the adapter path because that is the one a real consumer needs.
   const rawFacets = {
+    run: [{ value: "2026", count: 12 }, { value: "2025", count: 31 }, { value: "2024", count: 9 }],
     state: [{ value: "done", count: 42 }, { value: "stuck", count: 3 }],
     kind: [{ value: "request", count: 28 }, { value: "plan", count: 17 }],
   };
-  const facetLabels = { state: "State", kind: "Kind" };
+  const facetLabels = { run: "Run", state: "State", kind: "Kind" };
+  // One facet is a *single* choice drawn as a histogram (`mode` and `layout`,
+  // new in 1.7.0); the rest are the checkbox lists the panel always had.
   function adaptFacets(raw) {
     return Object.entries(raw).map(([key, options]) => ({
       key,
       label: facetLabels[key] ?? key,
+      mode: key === "run" ? "single" : "multiple",
+      layout: key === "run" ? "bars" : "list",
+      note: key === "run" ? "one run, or all of them" : "",
       options: options.map((opt) => ({
         ...opt,
         label: opt.value.charAt(0).toUpperCase() + opt.value.slice(1),

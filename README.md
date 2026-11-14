@@ -267,7 +267,7 @@ form, so those are deliberately absent.
 | `app-shell`      | `nb/AppShell.svelte`      | sticky blurred top bar, `mark`/`actions`/`back` slots, `titleTag`, 68rem main, footer |
 | `stat-strip`     | `nb/StatStrip.svelte`     | label · big tabular value · sub-line, collapsing to one column                        |
 | `result-list`    | `nb/ResultList.svelte`    | ranked rows + `row` slot, `titleTag` heading, "n more" fold                           |
-| `filter-panel`   | `nb/FilterPanel.svelte`   | facet card on desktop, sheet under 600px, `adaptFacets`                               |
+| `filter-panel`   | `nb/FilterPanel.svelte`   | facets: checkbox list or one-from-N radios, optional bars and a note, `adaptFacets`   |
 | `empty-state`    | `nb/EmptyState.svelte`    | cause-aware zero results (filters vs query vs error)                                  |
 | `status-view`    | `nb/StatusView.svelte`    | four lanes, count in each head, pill per row                                          |
 | `detail-panel`   | `nb/DetailPanel.svelte`   | header, metadata grid, prose body, `history.back()`                                   |
@@ -276,7 +276,7 @@ form, so those are deliberately absent.
 
 ```bash
 npm run build:blocks            # blocks/*/*.svelte -> registry/<name>.json -> registry.json
-npm run publish:item app-shell 1.6.1
+npm run publish:item filter-panel 1.7.0
 ```
 
 Browse them at **`/`** — the landing page imports the same nine files the
@@ -289,6 +289,23 @@ and on an iPhone home screen the button sat under the status bar.)
 colour (a translucent tint is `color-mix(in srgb, var(--bg) 88%, transparent)`,
 derived from the token so a palette change moves the blocks with it), and the
 served item's `content` is byte-identical to the source file.
+
+### What 1.7.0 added, and why
+
+The last thing keeping a real app off the blocks. `filter-panel` could only offer
+"any number of these", which is the shape of a tag filter and the wrong shape of
+a **range** — a year picker is one choice from N, drawn as a histogram so you can
+see which years have anything in them:
+
+| added                     | why a facet needs it                                                                                                                                                                       |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `mode: "single"`          | one choice from N renders as radios sharing `nb-facet-<key>`, selecting replaces rather than appends, and clicking the active one clears the facet (how you get back to "any year")       |
+| `layout: "bars"`          | the count was a number at the end of a row; as a bar behind the row it becomes a histogram, scaled to the largest count in _that_ facet, so `26` next to `12` reads as twice as tall     |
+| `note`                    | one line under the group ("one run, or all of them"): the place for the caveat a facet owes its reader, where `label` is too short to carry it                                             |
+
+All three are per-facet fields with defaults (`"multiple"`, `"list"`, no note),
+so an install of the canonical tag filter is unchanged — see
+`tests/block-gaps.test.js`, which pins both the new path and the old default.
 
 ### What 1.6.1 fixed
 
