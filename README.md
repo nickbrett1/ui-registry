@@ -350,7 +350,7 @@ Who consumes what, as of 1.15.0:
 | `data-download` | 1.12.0 | `app-shell`, `stat-strip`, `bar-series`, `data-table` |
 | `stratechery-search` | 1.15.0 | `app-shell`, `result-list`, `filter-panel`, the rest — and its components now name roles instead of values |
 | `deepseek-balance` | 1.11.0 | `app-shell`, `stat-strip` |
-| `devdash` | 1.14.0 | `meter-strip`, `action-list`, `log-view` + the whole theme |
+| `devdash` | 1.15.0 | `meter-strip`, `action-list`, `log-view` + the whole theme (and raises `--tap` to 2.75rem) |
 | `data-scout` | 1.14.0 | the **theme only** — it is Python-rendered static HTML, so it has no Svelte to install a block into |
 
 `data-scout` is the case that says what a design system is: it cannot use a
