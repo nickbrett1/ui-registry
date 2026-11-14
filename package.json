@@ -16,7 +16,10 @@
     "publish:release": "node scripts/publish-release.js",
     "preview": "vite preview --host 127.0.0.1",
     "check": "svelte-kit sync && svelte-check",
-    "check:watch": "svelte-kit sync && svelte-check --watch"
+    "check:tokens": "node scripts/check-tokens.mjs",
+    "check:watch": "svelte-kit sync && svelte-check --watch",
+    "shots": "playwright test",
+    "shots:baseline": "UPDATE_VISUAL=1 playwright test"
   },
   "keywords": [],
   "author": "",
@@ -26,6 +29,7 @@
     "npm": ">=11 <12"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.1",
     "@sveltejs/adapter-node": "^5.4.2",
     "@sveltejs/kit": "^2.70.3",
     "@sveltejs/vite-plugin-svelte": "^7.3.0",

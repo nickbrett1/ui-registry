@@ -7,6 +7,10 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     globals: true,
+    // `tests/visual/*.spec.js` is Playwright, and Vitest's default include claim
+    // on `*.spec.js` would try to run it under jsdom, where there is no browser
+    // and no server. One runner per file kind.
+    exclude: ["**/node_modules/**", "**/dist/**", "tests/visual/**"],
     setupFiles: ["src/test-setup.js"],
     reporter: ["default", "junit"],
     outputFile: {

@@ -37,6 +37,12 @@ steps:
       - npx --yes playwright install --with-deps chromium
       - npm run build --if-present
       - npm run lint --if-present
+      # A block names a role (`var(--warn)`), never a value (`#fdba74`). The one
+      # file allowed to hold values is the theme, because a token table is made
+      # of them. This is the cheapest gate in the repo and the one that keeps a
+      # re-skin possible: a literal in a block looks installed and correct while
+      # quietly opting that block out of every future theme change.
+      - npm run check:tokens --if-present
       - |
         if node -e "const s = require('./package.json').scripts || {}; process.exit(s.test && !s.test.includes('no test specified') ? 0 : 1)"; then
           CI=true npm test
@@ -67,6 +73,34 @@ steps:
       # Every claim in this repo about what that CLI does was once wrong; this
       # step is where being wrong costs a build instead of a consumer.
       - npm run test:cli
+
+  - label: ":frame_with_picture: Visual gate (computed styles, and screenshots as evidence)"
+    key: visual
+    depends_on:
+      - build
+    agents:
+      queue: mac-studio-linux
+    artifact_paths: "reports/screens/*.png"
+    plugins:
+      - docker#v5.13.0:
+          image: "node:22-bookworm"
+          platform: linux/arm64
+          workdir: /workdir
+    commands:
+      - |
+        PINNED="$$(node -p "require('./package.json').packageManager || ''" | sed -e 's/^npm@//')"
+        if [ -n "$$PINNED" ]; then npm install -g "npm@$$PINNED"; fi
+      - npm ci --no-audit --no-fund --prefer-offline
+      - npx --yes playwright install --with-deps chromium
+      # The gate is `baseline.json`: computed colour, type, spacing and radii per
+      # block per viewport. Computed values are the same numbers on every machine
+      # because they come from the theme's tokens, so this half can fail a build.
+      # The PNGs beside it are evidence, uploaded as artifacts: a pixel baseline
+      # would compare font hinting and gamma as much as design, and be tolerated
+      # so loosely it stopped noticing. See playwright.config.js.
+      # An intentional redesign updates the baseline in the same commit:
+      #   npm run shots:baseline && git add tests/visual/baseline.json
+      - npm run shots
 
   - label: ":male-doctor: Smoke test image (starts and serves HTTP)"
     key: docker_smoke

@@ -327,6 +327,60 @@ The first run found two real forks: `stratechery-search`'s `app-shell` was two
 minor versions behind (no `nav` slot) and `data-download` had hand-edited the
 strip out of its shell, which is why app-shell 1.12.0 grew `footer={false}`.
 
+### A block names a role, never a value — and that is a check
+
+`var(--warn)` is a claim about what a colour is *for*; `#fdba74` is a claim about
+what it *is*. The registry only works because blocks make the first kind of
+claim: a consumer re-skins seven roles in one `:root` block and every installed
+block follows. A literal in a block ends that — it looks installed and correct
+while quietly opting itself out of every future theme change, which is the same
+defect as hand-editing a block after install, one notch quieter.
+
+So exactly one file may hold a value: the theme (`src/app.css` here; wherever the
+CLI merged `cssVars` in a consumer). `scripts/check-tokens.mjs` enforces it:
+
+```bash
+npm run check:tokens                                  # this repo
+node scripts/check-tokens.mjs web/src \
+  --theme web/src/app.css                             # a consumer
+```
+
+Comments are stripped before scanning (a comment explaining `#0f172a, not #000`
+is documentation of the rule), as is the `theme-color` meta in `app.html` —
+browser chrome has no cascade to read a variable from, so that one value has to
+be written down. Named colours are not caught on purpose: word-boundary matching
+on prose fails no allowlist survives.
+
+Run against the three consumers, it passed `deepseek-balance` and
+`data-download` and failed `stratechery-search` on 15 literals across six of its
+own hand-written components — true, and older than the registry. That is the
+gate working: it found a UI that had never been on the theme, and the fix is a
+token sweep rather than an exemption.
+
+### What a block looks like is measured, in two halves
+
+A registry whose blocks can silently change appearance is a registry nobody
+re-vendors. The gate is deliberately split, because the two halves fail
+differently:
+
+| Half | What it is | Can it gate? |
+|---|---|---|
+| `tests/visual/baseline.json` | every block's **computed** colour, type, spacing, radii and layout, per viewport | yes — computed values come from the theme's tokens, so they are the same numbers on every machine |
+| `reports/screens/<block>-<viewport>.png` | one PNG per block per viewport, uploaded as a CI artifact | no — a pixel diff compares font hinting and gamma as much as design, and has to be tolerated so loosely it stops noticing |
+
+```bash
+npm run shots              # gate: computed styles must match the baseline
+npm run shots:baseline     # intentional redesign: rewrite the baseline, same commit
+```
+
+Computed rather than declared, because the failure a consumer sees is usually
+inheritance: a block that starts picking up `--ink-faint` from a wrapper, or
+loses its radius to a utility class, has no changed line in its own file.
+
+The `webServer` builds and runs `build/index.js`, the artifact that ships to the
+container, and refuses to reuse a server already on the port — a server there is
+*some other build*, and trusting it silently measures the wrong checkout.
+
 ### The eleven blocks
 
 `blocks/` holds the house **layouts** — the second half of the problem this
