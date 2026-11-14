@@ -5,27 +5,34 @@ import path from "node:path";
 /**
  * The registry endpoint.
  *
- * `GET /r/registry.json` -> the index, `GET /r/<name>.json?version=x.y.z` -> one
- * item. This is a ROUTE and not a static directory on purpose: it has to resolve
- * a version against a manifest and verify digests, which a static file cannot do
- * (design note §3.6.6). Do not "simplify" it back.
+ * Three shapes, because three different clients ask three different questions:
+ *
+ *   GET /r/registry.json                              the live catalogue
+ *   GET /r/<name>.json?version=x.y.z                  one item, pinned by query
+ *   GET /r/v<x.y.z>/styles/<style>/index.json         the catalogue at a version
+ *   GET /r/v<x.y.z>/styles/<style>/<name>.json        one item, pinned by path
+ *
+ * The last two exist because `shadcn-svelte@1.8.1` builds its URLs by appending
+ * `/styles/<style>/…` to whatever base it was given, and appends nothing else —
+ * so a query parameter cannot travel through it. The pin therefore lives in the
+ * base URL (`COMPONENTS_REGISTRY_URL=https://<host>/r/v1.0.0`), which is a
+ * better home for it anyway: explicit, greppable, and an operator knob rather
+ * than something baked into a project.
  *
  * **The endpoint is PUBLIC — decided deliberately 2026-11-14.** There is no
- * bearer token, and that is not an oversight: `shadcn-svelte@1.8.1` sends no
- * auth headers at all (no `Authorization`, no `registries` map, no namespaces —
+ * bearer token, and that is not an oversight: that same CLI sends no auth
+ * headers at all (no `Authorization`, no `registries` map, no namespaces —
  * verified against the published bundle), so a gated registry is *unconsumable*
- * by the only CLI that would use it. The token was designed on an assumption
- * that turned out to be false, and a gate that no client can pass protects
- * nothing but the illusion of one.
+ * by the only CLI that would use it. A gate no client can pass protects nothing
+ * but the illusion of one.
  *
- * What actually protects this endpoint, in order of what a reader should trust:
+ * What actually protects this endpoint:
  *   1. **The source is public anyway.** The repo is public and the served items
- *      are committed to it, so nothing here is a secret. Gating the endpoint was
- *      never what kept the theme private.
- *   2. **Immutability.** Items are version-addressed and checked against a
- *      digest in `registry/versions/manifest.json` on every read, so the risk
- *      that matters — a design system changing under a live project — is caught
- *      whether or not the caller is authenticated.
+ *      are committed to it, so nothing here is a secret.
+ *   2. **Immutability.** Every read is checked against a digest in
+ *      `registry/versions/manifest.json`, so the risk that matters — a design
+ *      system changing under a live project — is caught whether or not the
+ *      caller is authenticated.
  *   3. **Containment.** `[...path]` is attacker-controlled; see
  *      `resolveInsideRoot` below.
  *
@@ -45,13 +52,22 @@ const MANIFEST_FILE = path.join(VERSIONS_DIR, "manifest.json");
 /**
  * Defence in depth. Containment below is the real guard; the extension allowlist
  * means a mistake in it cannot turn into "serve the container's whole filesystem".
- * `.css` is kept for the `/r/styles/nb.css` shape the design note sketches.
  */
 const ALLOWED_EXTENSIONS = new Set([".json", ".css"]);
 
 /** Published items are flat: `<name>.json` at a version. Never nested. */
 const ITEM_NAME = /^[a-z0-9][a-z0-9-]*\.json$/;
 const SEMVER = /^\d+\.\d+\.\d+$/;
+
+/**
+ * The CLI-compatible shape. The `<style>` segment is accepted and **ignored**:
+ * this registry publishes one theme, not a style matrix, and `index.json` /
+ * `<name>.json` are the only things a style directory can meaningfully contain
+ * here. Rejecting unknown style names would break the CLI for no gain; the
+ * segment is validated as a segment, not as a name we recognise.
+ */
+const VERSIONED_PREFIX =
+  /^v(\d+\.\d+\.\d+)\/styles\/[a-z0-9][a-z0-9-]*\/(index\.json|[a-z0-9][a-z0-9-]*\.json)$/;
 
 function jsonError(status, error, extra = {}) {
   return new Response(JSON.stringify({ error, ...extra }), {
@@ -136,6 +152,76 @@ function publishedVersions(manifest) {
   return [...new Set((manifest?.items ?? []).map((entry) => entry.version))].sort();
 }
 
+/**
+ * Read a frozen document, check it against the digest the manifest recorded, and
+ * answer. Every served artifact goes through here, so "immutable" is one code
+ * path rather than three copies of an intention.
+ */
+async function serveFrozen({ storedPath, expectedSha256, version, label }) {
+  const file = await resolveInsideRoot(VERSIONS_DIR, storedPath);
+  if (!file) return jsonError(404, "not found");
+
+  let body;
+  try {
+    body = await readFile(file);
+  } catch {
+    return jsonError(404, "not found");
+  }
+
+  const digest = createHash("sha256").update(body).digest("hex");
+  if (digest !== expectedSha256) {
+    console.error(
+      `[/r] integrity check failed for ${label} at v${version}: ` +
+        `expected ${expectedSha256}, read ${digest}. A published version has been edited in place.`,
+    );
+    return jsonError(500, "integrity check failed");
+  }
+
+  return new Response(body, {
+    status: 200,
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "x-content-type-options": "nosniff",
+      "x-registry-version": version,
+      // The document is immutable, so the digest is a valid strong validator.
+      etag: `"${digest}"`,
+    },
+  });
+}
+
+/** @returns {Promise<Response>} */
+async function serveVersioned(version, file, manifest) {
+  const available = publishedVersions(manifest);
+
+  if (file === "index.json") {
+    const entry = (manifest?.indexes ?? []).find((candidate) => candidate.version === version);
+    // An index at a version is a published artifact like any other. No entry
+    // means the version has no index, which is a 404 and not a synthesised one:
+    // a fallback here would silently answer with another version's catalogue.
+    if (!entry) return jsonError(404, "not found", { available });
+    return serveFrozen({
+      storedPath: path.join(`v${version}`, "index.json"),
+      expectedSha256: entry.sha256,
+      version,
+      label: "index.json",
+    });
+  }
+
+  const itemName = file.replace(/\.json$/, "");
+  const entry = (manifest?.items ?? []).find(
+    (candidate) => candidate.name === itemName && candidate.version === version,
+  );
+  if (!entry) return jsonError(404, "not found", { available });
+
+  return serveFrozen({
+    storedPath: path.join(`v${version}`, file),
+    expectedSha256: entry.sha256,
+    version,
+    label: file,
+  });
+}
+
 /** @type {import('@sveltejs/kit').RequestHandler} */
 export async function GET({ params, request }) {
   const requested = params.path ?? "";
@@ -143,8 +229,8 @@ export async function GET({ params, request }) {
 
   // `/r` and `/r/` both mean the index, and it is the one document that lives
   // outside REGISTRY_DIR (at the repo root, where `shadcn-svelte` expects it).
-  // The index is a live catalogue, not an artifact, so it is always current and
-  // it is the one place that says which versions exist.
+  // The live catalogue is not an artifact: it is always current, and it is the
+  // one place that says which versions exist.
   const isIndex = requested === "" || requested === "/" || requested === "registry.json";
 
   if (isIndex) {
@@ -167,13 +253,26 @@ export async function GET({ params, request }) {
     });
   }
 
+  // The CLI shape: the version and the style both live in the path.
+  const versioned = VERSIONED_PREFIX.exec(requested);
+  if (versioned) {
+    const manifest = await readManifest();
+    return serveVersioned(versioned[1], versioned[2], manifest);
+  }
+
+  // The HTTP shape: `?version=` explicitly. Same documents, same checks.
   const version = url.searchParams.get("version");
   const manifest = await readManifest();
   const available = publishedVersions(manifest);
 
+  // A path that is not a published item name is "not found" whether or not a
+  // version was supplied: asking for `/r/../../etc/passwd` should not be told
+  // which versions exist, and a traversal attempt is not a client that forgot
+  // to pin. Only a well-formed item name earns the "version required" answer.
+  if (!ITEM_NAME.test(requested)) return jsonError(404, "not found");
+
   if (!version) return jsonError(400, "version required", { available });
   if (!SEMVER.test(version)) return jsonError(400, "invalid version", { available });
-  if (!ITEM_NAME.test(requested)) return jsonError(404, "not found");
 
   const entry = (manifest?.items ?? []).find(
     (candidate) =>
@@ -183,34 +282,10 @@ export async function GET({ params, request }) {
   // v1.0.0 must either get v1.0.0 or fail loudly.
   if (!entry) return jsonError(404, "not found", { available });
 
-  const file = await resolveInsideRoot(VERSIONS_DIR, path.join(`v${version}`, requested));
-  if (!file) return jsonError(404, "not found");
-
-  let body;
-  try {
-    body = await readFile(file);
-  } catch {
-    return jsonError(404, "not found");
-  }
-
-  const digest = createHash("sha256").update(body).digest("hex");
-  if (digest !== entry.sha256) {
-    console.error(
-      `[/r] integrity check failed for ${requested} at v${version}: ` +
-        `expected ${entry.sha256}, read ${digest}. A published version has been edited in place.`,
-    );
-    return jsonError(500, "integrity check failed");
-  }
-
-  return new Response(body, {
-    status: 200,
-    headers: {
-      "content-type": "application/json; charset=utf-8",
-      "cache-control": "no-store",
-      "x-content-type-options": "nosniff",
-      "x-registry-version": version,
-      // The document is immutable, so the digest is a valid strong validator.
-      etag: `"${digest}"`,
-    },
+  return serveFrozen({
+    storedPath: path.join(`v${version}`, requested),
+    expectedSha256: entry.sha256,
+    version,
+    label: requested,
   });
 }

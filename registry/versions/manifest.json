@@ -7,6 +7,21 @@
       "sha256": "945de4e9f1b050cb089a78fd5e30b248124050bb8a9f7613f9b9133f97df3abc",
       "bytes": 8682,
       "publishedAt": "2026-11-14T01:22:15.942Z"
+    },
+    {
+      "name": "theme",
+      "version": "1.1.0",
+      "sha256": "04a8a48bd67ac084682115f87f862414579aec3315f516548dfe09ddc82a8005",
+      "bytes": 8786,
+      "publishedAt": "2026-11-14T02:04:48.466Z"
+    }
+  ],
+  "indexes": [
+    {
+      "version": "1.1.0",
+      "sha256": "a370b4660344238c9a3c0f21bcbb2cd28d7c8676f2642ce2eca7470b6a029572",
+      "bytes": 1018,
+      "publishedAt": "2026-11-14T02:06:39.918Z"
     }
   ]
 }

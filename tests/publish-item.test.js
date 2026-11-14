@@ -16,6 +16,30 @@ import path from "node:path";
 const ROOT = path.resolve(process.cwd());
 const SCRIPT = path.join(ROOT, "scripts", "publish-item.js");
 const WORKING_ITEM = path.join(ROOT, "registry", "theme.json");
+const MANIFEST = path.join(ROOT, "registry", "versions", "manifest.json");
+
+/**
+ * The newest published version of `theme`. Derived rather than hard-coded: these
+ * assertions are about the rule, not about which version happens to be current,
+ * and a literal here would silently become a test of an old frozen file.
+ */
+async function latestThemeVersion() {
+  const manifest = JSON.parse(await readFile(MANIFEST, "utf8"));
+  const versions = manifest.items
+    .filter((entry) => entry.name === "theme")
+    .map((entry) => entry.version)
+    .sort((a, b) => {
+      const [x, y, z] = a.split(".").map(Number);
+      const [p, q, r] = b.split(".").map(Number);
+      return x - p || y - q || z - r;
+    });
+  return versions.at(-1);
+}
+
+function nextPatch(version) {
+  const [major, minor, patch] = version.split(".").map(Number);
+  return `${major}.${minor}.${patch + 1}`;
+}
 
 function run(args) {
   try {
@@ -31,8 +55,9 @@ function run(args) {
 }
 
 describe("publish-item", () => {
-  it("is a no-op when the same version is published with identical content", () => {
-    const result = run(["theme", "1.0.0"]);
+  it("is a no-op when the same version is published with identical content", async () => {
+    const version = await latestThemeVersion();
+    const result = run(["theme", version]);
     expect(result.code).toBe(0);
     expect(result.stdout).toContain("already published, identical");
   });
@@ -44,10 +69,11 @@ describe("publish-item", () => {
       // the point: the rule is about bytes, not intent.
       await writeFile(WORKING_ITEM, `${original.trimEnd()}\n\n`, "utf8");
 
-      const result = run(["theme", "1.0.0"]);
+      const version = await latestThemeVersion();
+      const result = run(["theme", version]);
       expect(result.code).toBe(1);
       expect(result.stderr).toContain("immutable");
-      expect(result.stderr).toContain("1.0.1");
+      expect(result.stderr).toContain(nextPatch(version));
     } finally {
       await writeFile(WORKING_ITEM, original, "utf8");
     }

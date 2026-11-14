@@ -63,7 +63,7 @@ describe("GET /r - public, deliberately", () => {
   it("serves an item with no Authorization header", async () => {
     // The gate was removed because `shadcn-svelte@1.8.1` cannot send one; every
     // test below therefore goes through the same public path a real client uses.
-    expect((await call("theme.json", "?version=1.0.0")).status).toBe(200);
+    expect((await call("theme.json", "?version=1.1.0")).status).toBe(200);
   });
 
   it("does not accept or require a token: an Authorization header is ignored", async () => {
@@ -79,14 +79,14 @@ describe("GET /r - public, deliberately", () => {
 
 describe("GET /r - documents", () => {
   it("serves the theme item with its CSS inlined", async () => {
-    const response = await call("theme.json", "?version=1.0.0");
+    const response = await call("theme.json", "?version=1.1.0");
     expect(response.status).toBe(200);
-    expect(response.headers.get("x-registry-version")).toBe("1.0.0");
+    expect(response.headers.get("x-registry-version")).toBe("1.1.0");
 
     const body = await response.json();
     expect(body.type).toBe("registry:theme");
     expect(body.files).toHaveLength(1);
-    expect(body.files[0].target).toBe("src/app.css");
+    expect(body.files[0].target).toBe("src/nb-theme.css");
     expect(body.files[0].content).toContain("--bg: #0f172a");
   });
 
@@ -262,6 +262,87 @@ describe("GET /r - path traversal", () => {
   });
 });
 
+describe("GET /r - the CLI shape (version and style in the path)", () => {
+  // `shadcn-svelte@1.8.1` appends `/styles/<style>/` to whatever base it is
+  // given and cannot carry a query parameter, so the pin has to be in the path.
+
+  it("serves the versioned index", async () => {
+    const response = await call("v1.1.0/styles/vega/index.json");
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-registry-version")).toBe("1.1.0");
+
+    const body = await response.json();
+    expect(body.name).toBe("nb");
+    expect(body.items.map((item) => item.name)).toEqual(["theme"]);
+    // The index the CLI reads must describe the version it is asking about.
+    expect(body.items[0].files[0].target).toBe("src/nb-theme.css");
+  });
+
+  it("serves an item at a version by path", async () => {
+    const response = await call("v1.1.0/styles/vega/theme.json");
+    expect(response.status).toBe(200);
+
+    const body = await response.json();
+    expect(body.files[0].target).toBe("src/nb-theme.css");
+    expect(body.files[0].content).toContain("--bg: #0f172a");
+  });
+
+  it("accepts any well-formed style segment, because the registry has one style", async () => {
+    // Rejecting unknown style names would break the CLI for no gain. The
+    // segment is validated as a segment, not as a name we recognise.
+    expect((await call("v1.1.0/styles/new-york/theme.json")).status).toBe(200);
+    expect((await call("v1.1.0/styles/nb/theme.json")).status).toBe(200);
+  });
+
+  it("404s an index at a version that was published before indexes existed", async () => {
+    // v1.0.0 predates the CLI shape. Its index would have to be written from a
+    // newer catalogue, which would describe it with a `target` it never had.
+    const response = await call("v1.0.0/styles/vega/index.json");
+    expect(response.status).toBe(404);
+    expect((await response.json()).available).toContain("1.1.0");
+  });
+
+  it("still serves v1.0.0's frozen item, unchanged, with its original target", async () => {
+    const response = await call("v1.0.0/styles/vega/theme.json");
+    expect(response.status).toBe(200);
+    // The immutability rule doing its job: 1.0.0 keeps the target it shipped
+    // with, and 1.1.0 exists because the target had to change.
+    expect((await response.json()).files[0].target).toBe("src/app.css");
+  });
+
+  it("404s an unpublished version in the path shape", async () => {
+    expect((await call("v9.9.9/styles/vega/theme.json")).status).toBe(404);
+    expect((await call("v9.9.9/styles/vega/index.json")).status).toBe(404);
+  });
+
+  it("refuses traversal through the style or name segment", async () => {
+    const attacks = [
+      "v1.1.0/styles/../../etc/passwd",
+      "v1.1.0/styles/../../registry.json",
+      "v1.1.0/styles/vega/../../../etc/passwd",
+      "v1.1.0/styles/vega/..%2f..%2f..%2fetc%2fpasswd",
+      "v1.1.0/styles/vega/theme.json%00.png",
+    ];
+    for (const attack of attacks) {
+      const response = await call(attack);
+      expect(response.status).toBe(404);
+      expect(await response.text()).not.toContain("root:x:");
+    }
+  });
+
+  it("500s when a versioned index is edited in place", async () => {
+    const published = path.join(ROOT, "registry", "versions", "v1.1.0", "index.json");
+    const original = await readFile(published, "utf8");
+    try {
+      await writeFile(published, `${original.trimEnd()}\n\n`, "utf8");
+      const response = await call("v1.1.0/styles/vega/index.json");
+      expect(response.status).toBe(500);
+    } finally {
+      await writeFile(published, original, "utf8");
+    }
+  });
+});
+
 describe("the theme has one source of truth", () => {
   it("registry/theme.json is a faithful inline of src/app.css", async () => {
     // The drift guard. `npm run build:theme` regenerates the served item; without
@@ -274,13 +355,16 @@ describe("the theme has one source of truth", () => {
     expect(item.meta.bytes).toBe(Buffer.byteLength(css, "utf8"));
   });
 
-  it("registers src/app.css as the theme file in the index", async () => {
+  it("registers src/app.css as the theme source, installed as src/nb-theme.css", async () => {
+    // `path` is the file in this repo; `target` is where the CLI writes it in the
+    // consumer. They differ so a Tailwind v4 consumer keeps its own
+    // `@import "tailwindcss"` instead of having it replaced.
     const index = JSON.parse(await readFile(path.join(ROOT, "registry.json"), "utf8"));
     const theme = index.items.find((item) => item.name === "theme");
 
     expect(theme.type).toBe("registry:theme");
     expect(theme.files).toEqual([
-      { path: "src/app.css", type: "registry:theme", target: "src/app.css" },
+      { path: "src/app.css", type: "registry:theme", target: "src/nb-theme.css" },
     ]);
   });
 });
