@@ -153,9 +153,17 @@ projecting it from the digest-checked items cannot drift.
 Publishing is a separate, deliberate act, and it is the whole of the version story:
 
 ```bash
-npm run build:theme               # regenerate registry/theme.json from src/app.css
-npm run publish:item theme 1.0.0  # freeze it as v1.0.0 and record its digest
+npm run build:theme                  # regenerate registry/theme.json from src/app.css
+npm run publish:item theme 1.0.0     # freeze it as v1.0.0 and record its digest
+npm run publish:release 1.10.0       # ...or freeze the whole catalogue as one version
 ```
+
+Prefer `publish:release`. Because the index is projected from the frozen items,
+a version that carries only the item that changed serves an index of one, and
+`add theme` against it answers "Registry item 'theme' does not exist" — which
+names the wrong problem and sends you looking in the theme. A release publishes
+all twelve; the unchanged ones are byte-identical re-publishes that
+`publish:item` reports as no-ops.
 
 That writes `registry/versions/v1.0.0/theme.json` and appends `{name, version,
 sha256, bytes, publishedAt}` to `registry/versions/manifest.json`. Re-publishing
