@@ -87,6 +87,22 @@ unset DOPPLER_PROJECT DOPPLER_CONFIG DOPPLER_ENVIRONMENT
 doppler setup --no-interactive --project common --config dev
 ```
 
+### Where the registry URL lives
+
+`COMPONENTS_REGISTRY_URL` is **not** committed to any project. It is a Doppler
+secret in `common`, identical in `dev`, `stg` and `prd`:
+
+```bash
+doppler secrets get COMPONENTS_REGISTRY_URL --project common --config dev --plain
+# http://ryzen:3012/r/v1.2.0
+```
+
+Consumers and generators read it at run time (`doppler run -- npx shadcn-svelte
+add theme ...`), so re-pointing every consumer at a new published version is one
+Doppler edit and not a sweep of repositories. The value names the version on
+purpose — see "Registry" below: a floating "latest" URL would make an install
+depend on the day it ran.
+
 ## Registry
 
 This repo is the source of the `@nb` theme, the primitives and (later) the blocks,
@@ -124,7 +140,15 @@ A design system that mutates under a live project is worse than a stale one, so
 | `/r/theme.json` (no version) | `400`, body names the available versions |
 | `/r/theme.json?version=9.9.9` | `404` — never a fall-back to whatever is on disk |
 | `/r/theme.json?version=1.0.0` | `200`, `x-registry-version` and a strong `etag` (the sha256) |
+| `/r/v1.2.0/index.json` | `200`, the index **projected from** the frozen items of that version — an array of `{name, type, relativeUrl}` |
+| `/r/v1.2.0/theme.json` | `200`, the frozen item itself — what `shadcn-svelte` fetches from `relativeUrl` |
 | a published file edited in place | `500` — the route verifies every read against the manifest digest |
+
+The `v<version>/` prefix is what a client actually reads; `?version=` is for
+humans and `curl`. Both resolve the same frozen bytes. The per-version index is
+**derived at request time** rather than stored: an index written from today's
+catalogue would describe an old version with a target it never shipped, whereas
+projecting it from the digest-checked items cannot drift.
 
 Publishing is a separate, deliberate act, and it is the whole of the version story:
 
@@ -140,22 +164,37 @@ you publish the next version. `tests/registry.test.js` and
 `tests/publish-item.test.js` pin both halves of that rule (the serve-time digest
 check and the publish-time refusal), so neither can quietly become a convention.
 
-A consumer pins it in `components.json`, and the CLI sends the parameter for you:
+**How a Svelte consumer installs it** — exactly two things, no `components.json`
+registry block:
 
-```json
-{ "registries": { "@nb": {
-    "url": "https://<host>/r/{name}.json",
-    "params": { "version": "1.0.0" } } } }
+```bash
+COMPONENTS_REGISTRY_URL=https://<host>/r/v1.2.0 \
+  npx shadcn-svelte@1.8.1 add theme --yes --overwrite
 ```
 
-> **Caveat, 2026-11-14:** that block is the *shadcn/ui* (React) namespacing
-> syntax. `shadcn-svelte@1.8.1` does not implement it — no `registries` map, no
-> `headers`, no `{name}` template, and no query-parameter pinning. Its registry
-> base comes from the `COMPONENTS_REGISTRY_URL` / `REGISTRY_URL` environment
-> variables (falling back to a `registry` string in `components.json`) and it
-> appends `/styles/<style>/index.json` and `/styles/<style>/<name>.json`. So a
-> Svelte consumer needs a URL-prefixed version (`.../r/v1.0.0`) and this route
-> does not yet serve that shape. See the `ui-shadcn` capability note.
+- **`v1.2.0` is in the URL, not a query parameter.** `shadcn-svelte@1.8.1` uses
+  `COMPONENTS_REGISTRY_URL` **verbatim** — it does not append
+  `/styles/<style>/` to it (only the `REGISTRY_URL` / `components.json`
+  fallback path does) — then fetches `<base>/index.json` and every
+  `relativeUrl` it names. So the base must already be a version.
+- **`--overwrite` is required, and `--yes` is not enough.** `add` asks a second
+  question — *"Updates to your src/app.css are required. Existing CSS variables
+  may be overwritten. Continue?"* — that `--yes` does not answer. Non-interactive
+  (closed stdin) it prints that prompt and **exits 0 having written nothing**,
+  which reads as success; with an open stdin it waits forever. Only
+  `--overwrite` answers it. `scripts/cli-contract.js` pins both halves so this
+  cannot silently change.
+- **Pin ≥ 1.2.0.** `1.0.0` (`files[].target: src/app.css`) and `1.1.0`
+  (`files[].target: src/nb-theme.css`) are the two rejected shapes: for a
+  `registry:theme` item the CLI resolves `files[].target` against
+  `basename(tailwind.css)` **used as a directory**, so `1.1.0` wrote
+  `<project>/app.css/src/nb-theme.css` — a directory named `app.css` — while
+  printing "theme installed at src/app.css". They are frozen and still served
+  because published versions are immutable; do not install them.
+
+The `registries`/`params` block above is shadcn/ui (React) syntax:
+`shadcn-svelte@1.8.1` has no `registries` map, no `headers`, and no
+query-parameter pinning. That is why the version lives in the URL.
 
 ### The theme
 
@@ -166,14 +205,52 @@ sha256 `bb012ad9…0862`) — not retyped and not retuned, because the problem t
 registry exists to solve is a token sheet hand-copied between repos with no
 version and no authority.
 
-`registry/theme.json` is the *working* item — the shape that is served, with that
-CSS inline — so it is generated rather than hand-edited:
+`registry/theme.json` is the *working* item — the shape that is served — so it is
+generated rather than hand-edited:
 
 ```bash
 npm run build:theme
 ```
 
+It is a `registry:theme` item with **no `files`**: the theme installs as
+`cssVars.theme` (28 custom properties) plus a `css` object (39 rule blocks, one
+level of at-rule nesting), and the CLI merges both into the consumer's own
+stylesheet with PostCSS, leaving its `@import "tailwindcss";` in place. The
+rejected alternative was `registry:file` with `target: src/nb-theme.css` — a
+second stylesheet that the CLI's path resolution could not place correctly and
+that the consumer would then have to import by hand. `css` must be an **object**
+(`{selector: {property: value}}`), not a CSS string: a string fails the schema
+with `Invalid input at ["css"]`.
+
 `tests/registry.test.js` fails if the generated item and `src/app.css` disagree.
+
+### These claims are executable, not remembered
+
+Every fact in the two sections above was wrong at least once, and every wrong
+version came from *reading* the CLI's bundle or docs rather than *running* it —
+six wrong claims, six passing unit tests, one broken consumer. So the beliefs are
+now executable:
+
+```bash
+npm run test:cli    # rebuilds build/, starts it in the production layout, runs the pinned CLI
+```
+
+`scripts/cli-contract.js` copies `build/`, `registry/` and `registry.json` into an
+empty directory, starts the adapter-node server there (the layout the container
+runs), creates a throwaway SvelteKit-shaped consumer (`components.json`,
+`src/app.css` = one `@import "tailwindcss";`), and runs `shadcn-svelte@1.8.1 add
+theme` against it. It asserts the index is a JSON **array**, that `--yes` alone
+installs nothing while `--overwrite` does, that every `cssVars` entry and every
+`css` selector from the *served, frozen item* lands in the consumer's stylesheet
+with its value, that the consumer keeps its own import, and that no
+`nb-theme.css` and no directory named `*.css` appears. Expectations are derived
+from the item, not hardcoded, so a new published version cannot slip past it.
+It runs as its own Buildkite step (`cli_contract`) because it needs the network
+once to fetch the pinned CLI.
+
+There is one consumer-side consequence worth knowing: the merge also injects
+`@import "shadcn-svelte/tailwind.css";`, so `shadcn-svelte` has to be a
+dependency of the project at build time.
 
 ### Schemas
 

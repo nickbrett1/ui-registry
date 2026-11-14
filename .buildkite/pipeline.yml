@@ -44,6 +44,30 @@ steps:
           echo "No test script (or the npm placeholder) - skipping tests."
         fi
 
+  - label: ":jigsaw: CLI contract (pinned shadcn-svelte installs the theme)"
+    key: cli_contract
+    depends_on:
+      - build
+    agents:
+      queue: mac-studio-linux
+    plugins:
+      - docker#v5.13.0:
+          image: "node:22-bookworm"
+          platform: linux/arm64
+          workdir: /workdir
+    commands:
+      - |
+        PINNED="$$(node -p "require('./package.json').packageManager || ''" | sed -e 's/^npm@//')"
+        if [ -n "$$PINNED" ]; then npm install -g "npm@$$PINNED"; fi
+      - if [ -f package-lock.json ]; then npm ci --no-audit --no-fund --prefer-offline; else npm install --no-audit --no-fund; fi
+      # The one test that runs the real client against the real server. It
+      # rebuilds build/ itself and starts the adapter-node output in a directory
+      # holding only build/ + registry/ -- the production layout -- then runs
+      # the pinned CLI in a throwaway project and inspects the merged stylesheet.
+      # Every claim in this repo about what that CLI does was once wrong; this
+      # step is where being wrong costs a build instead of a consumer.
+      - npm run test:cli
+
   - label: ":male-doctor: Smoke test image (starts and serves HTTP)"
     key: docker_smoke
     depends_on:

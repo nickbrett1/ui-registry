@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "test": "vitest --coverage",
+    "test:cli": "node scripts/cli-contract.js",
     "test:once": "npx vitest run --changed",
     "dev": "vite dev",
     "build": "vite build",
