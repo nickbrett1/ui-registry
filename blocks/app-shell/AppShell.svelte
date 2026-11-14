@@ -14,6 +14,11 @@
    *   `actions` -- everything on the right of the bar: primary navigation, a
    *                search box, an account button. `status` alone forced a second
    *                bar to sit under this one.
+   *   `back`    -- replaces the back pill with your own control (1.5.0). The
+   *                pill is a *link*, which is wrong for an app whose back is an
+   *                action: `history.back()` returns to the results page you
+   *                left, querystring and all, while a link pushes a new entry.
+   *                An in-app router therefore has to hand its own button in.
    *
    * The bar and the main column also honour the safe-area insets on a phone, so
    * an app added to a home screen does not put its nav under the clock.
@@ -28,6 +33,7 @@
     children,
     mark,
     actions,
+    back,
     footer,
   } = $props();
 </script>
@@ -39,7 +45,9 @@
         {#if mark}
           <span class="mark">{@render mark()}</span>
         {/if}
-        {#if backHref}
+        {#if back}
+          {@render back()}
+        {:else if backHref}
           <a href={backHref} class="pill back">{backLabel}</a>
         {/if}
         <div class="titles">

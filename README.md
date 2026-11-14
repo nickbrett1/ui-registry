@@ -264,19 +264,19 @@ form, so those are deliberately absent.
 
 | block            | installed as              | what it is                                                      |
 | ---------------- | ------------------------- | --------------------------------------------------------------- |
-| `app-shell`      | `nb/AppShell.svelte`      | sticky blurred top bar, `mark` + `actions` slots, 68rem main, footer |
+| `app-shell`      | `nb/AppShell.svelte`      | sticky blurred top bar, `mark`/`actions`/`back` slots, 68rem main, footer |
 | `stat-strip`     | `nb/StatStrip.svelte`     | label · big tabular value · sub-line, collapsing to one column  |
 | `result-list`    | `nb/ResultList.svelte`    | ranked rows + `row` slot, `titleTag` heading, "n more" fold     |
 | `filter-panel`   | `nb/FilterPanel.svelte`   | facet card on desktop, sheet under 600px, `adaptFacets`         |
 | `empty-state`    | `nb/EmptyState.svelte`    | cause-aware zero results (filters vs query vs error)            |
 | `status-view`    | `nb/StatusView.svelte`    | four lanes, count in each head, pill per row                    |
 | `detail-panel`   | `nb/DetailPanel.svelte`   | header, metadata grid, prose body, `history.back()`             |
-| `burst-timeline` | `nb/BurstTimeline.svelte` | horizontal or vertical bars, `chartLabel`, audit grid           |
+| `burst-timeline` | `nb/BurstTimeline.svelte` | horizontal/vertical bars, `showValues`, `caption`, audit grid    |
 | `request-form`   | `nb/RequestForm.svelte`   | schema-driven form, one message per failed constraint           |
 
 ```bash
 npm run build:blocks            # blocks/*/*.svelte -> registry/<name>.json -> registry.json
-npm run publish:item app-shell 1.4.0
+npm run publish:item app-shell 1.5.0
 ```
 
 Browse them at **`/`** — the landing page imports the same nine files the
@@ -289,6 +289,20 @@ and on an iPhone home screen the button sat under the status bar.)
 colour (a translucent tint is `color-mix(in srgb, var(--bg) 88%, transparent)`,
 derived from the token so a palette change moves the blocks with it), and the
 served item's `content` is byte-identical to the source file.
+
+### What 1.5.0 added, and why
+
+Two interaction-model gaps — the kind `adaptFacets` and `row` cannot close,
+because they are about *behaviour* rather than about the shape of a payload:
+
+| block | prop | the gap it closes |
+| --- | --- | --- |
+| `app-shell` | `back` snippet | the back pill is a **link**. An app whose back is `history.back()` — so it returns to the results page you left, querystring and all — had to keep its own header, because a link pushes a new entry instead of popping |
+| `burst-timeline` | `showValues` | the per-bucket count lived only in a `title` tooltip, so a bar **table** ("articles per year", with the numbers visible) could not use the block |
+| `burst-timeline` | `caption` snippet | the caveat a chart owes its reader ("daily updates reach this archive from March 2018, so the early bars are the weekly and free articles") is a sentence, and `chartLabel` is a 10px uppercase micro label |
+
+`showValues` also made the horizontal layout a grid rather than a reversed flex
+row, so label, bar and number line up in columns down the list.
 
 ### What 1.4.0 added, and why
 

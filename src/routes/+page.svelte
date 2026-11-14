@@ -49,14 +49,14 @@
   ];
 
   const blocks = [
-    { name: "app-shell", note: "sticky bar with a mark and a nav slot, 68rem main, footer" },
+    { name: "app-shell", note: "sticky bar with a mark, a nav slot and your own back control" },
     { name: "stat-strip", note: "label · big tabular value · sub-line" },
     { name: "result-list", note: "ranked rows, an h3 title, a fold, a row slot" },
     { name: "filter-panel", note: "facets on desktop; a facet adapter for the API's own shape" },
     { name: "empty-state", note: "cause-aware zero results" },
     { name: "status-view", note: "four lanes, counts in the head" },
     { name: "detail-panel", note: "header, metadata grid, prose" },
-    { name: "burst-timeline", note: "horizontal or vertical bars, a caption you set" },
+    { name: "burst-timeline", note: "horizontal or vertical bars, values, a caption you set" },
     { name: "request-form", note: "schema-driven, one message per failed rule" },
   ];
 
@@ -209,6 +209,9 @@
                 <a href="#app-shell">plans</a>
               </nav>
             {/snippet}
+            {#snippet back()}
+              <button class="btn fake-back" type="button">← back</button>
+            {/snippet}
             <p class="hint">Application content sits here, inside the 68rem main.</p>
           </AppShell>
         </div>
@@ -257,7 +260,18 @@
           <p>Prose lives here. It inherits the body size and line height from the theme, not from the block.</p>
         </DetailPanel>
       {:else if block.name === "burst-timeline"}
-        <BurstTimeline {intervals} {history} title="Balance history" orientation="horizontal" chartLabel="intervals today" />
+        <BurstTimeline
+          {intervals}
+          {history}
+          title="Balance history"
+          orientation="horizontal"
+          chartLabel="intervals today"
+          showValues
+        >
+          {#snippet caption()}
+            Requests per four-hour interval. A quiet interval is quiet, not missing.
+          {/snippet}
+        </BurstTimeline>
       {:else if block.name === "request-form"}
         <RequestForm {fields} bind:values={formValues} errors={formErrors} submitLabel="Create request" onsubmit={() => {}} />
       {/if}
@@ -409,6 +423,11 @@
   .fake-nav {
     display: flex;
     gap: 10px;
+    font-size: 11px;
+  }
+
+  .fake-back {
+    padding: 2px 9px;
     font-size: 11px;
   }
 

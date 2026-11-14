@@ -44,6 +44,21 @@ describe("AppShell: the slots a real app needs", () => {
     expect(container.querySelector(".topbar #primary-nav")).not.toBeNull();
   });
 
+  it("takes a back control instead of a back link (1.5.0)", () => {
+    const back = createRawSnippet(() => ({
+      render: () => `<button id="app-back" type="button">back</button>`,
+    }));
+    const { container } = render(AppShell, {
+      title: "drill",
+      back,
+      backHref: "/ignored",
+    });
+    // The snippet wins over backHref: an in-app router's back is an action
+    // (history.back), and a link would push a new entry instead of popping.
+    expect(container.querySelector("#app-back")).not.toBeNull();
+    expect(container.querySelector("a.pill.back")).toBeNull();
+  });
+
   it("still renders without either slot", () => {
     const { container } = render(AppShell, { title: "plain" });
     expect(container.querySelector(".wordmark").textContent).toBe("plain");
@@ -173,6 +188,32 @@ describe("BurstTimeline: orientation and caption", () => {
     expect(container.querySelector(".chart-title").textContent).toBe(
       "recent bursts",
     );
+  });
+
+  it("prints a count per bar and a prose caption when asked (1.5.0)", () => {
+    const caption = createRawSnippet(() => ({
+      render: () =>
+        `<span id="chart-note">daily updates from March 2018</span>`,
+    }));
+    const { container } = render(BurstTimeline, {
+      intervals,
+      orientation: "horizontal",
+      showValues: true,
+      caption,
+    });
+    const values = [...container.querySelectorAll(".bar-value")].map(
+      (el) => el.textContent,
+    );
+    expect(values).toEqual(["2", "8"]);
+    expect(container.querySelector("#chart-note").textContent).toContain(
+      "March 2018",
+    );
+  });
+
+  it("shows no value column or caption by default, as at 1.3.0 and 1.4.0", () => {
+    const { container } = render(BurstTimeline, { intervals });
+    expect(container.querySelectorAll(".bar-value").length).toBe(0);
+    expect(container.querySelector(".chart-note")).toBeNull();
   });
 
   it("hides the caption when chartLabel is empty", () => {
