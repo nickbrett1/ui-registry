@@ -31,7 +31,7 @@
  * The route now projects the index from the frozen items at request time, so it
  * cannot drift and there is nothing to publish or repair.
  */
-import { readFile, writeFile, mkdir, stat } from "node:fs/promises";
+import { readFile, writeFile, mkdir, rename, stat } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import path from "node:path";
 import process from "node:process";
@@ -216,7 +216,12 @@ async function publishItem(itemName, itemVersion, { dryRun = false } = {}) {
   }
 
   await mkdir(targetDir, { recursive: true });
-  await writeFile(target, raw, "utf8");
+  // Atomic for the same reason as the manifest: the route verifies this file's
+  // digest, and a reader that catches a half-written item turns into a 500 and
+  // an integrity alarm about a file that is fine.
+  const temporary = `${target}.${process.pid}.tmp`;
+  await writeFile(temporary, raw, "utf8");
+  await rename(temporary, target);
 
   manifest.items = [
     ...manifest.items,
@@ -243,12 +248,19 @@ async function publishItem(itemName, itemVersion, { dryRun = false } = {}) {
   );
 }
 
-function writeManifest() {
-  return writeFile(
-    MANIFEST_FILE,
-    `${JSON.stringify(manifest, null, 2)}\n`,
-    "utf8",
-  );
+/**
+ * Written to a sibling and renamed into place, because the manifest is *read*
+ * while it is written: the test suite runs files in parallel workers, and one
+ * worker publishing an item rewrote this file while another was parsing it --
+ * `SyntaxError: Expected property name or '}' ... at position 2`, on a manifest
+ * that is valid before and after. A rename is atomic within a directory, so a
+ * reader sees either the old document or the new one and never half of either.
+ * (`writeFile` truncates first, which is the half-state.)
+ */
+async function writeManifest() {
+  const temporary = `${MANIFEST_FILE}.${process.pid}.tmp`;
+  await writeFile(temporary, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
+  await rename(temporary, MANIFEST_FILE);
 }
 
 function compareVersions(a, b) {
