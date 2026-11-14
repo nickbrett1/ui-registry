@@ -199,7 +199,12 @@
 
       {#if block.name === "app-shell"}
         <div class="shell-frame">
-          <AppShell title="data-download" subtitle="house design system" status="live">
+          <AppShell
+            title="data-download"
+            subtitle="house design system"
+            status="live"
+            titleTag="h3"
+          >
             {#snippet mark()}
               <span class="fake-mark" aria-hidden="true"></span>
             {/snippet}

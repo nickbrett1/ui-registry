@@ -32,6 +32,23 @@ describe("AppShell: the slots a real app needs", () => {
     render: () => `<nav id="primary-nav"><a href="/runs">runs</a></nav>`,
   }));
 
+  it("keeps the wordmark an h1 by default, so a dashboard outline is unchanged", () => {
+    const { container } = render(AppShell, { title: "data-download" });
+    const wordmark = container.querySelector(".topbar .wordmark");
+    expect(wordmark.tagName).toBe("H1");
+  });
+
+  it("lets a page keep its own h1 by demoting the wordmark", () => {
+    const { container } = render(AppShell, {
+      title: "Stratechery Search",
+      titleTag: "div",
+    });
+    expect(container.querySelector("h1")).toBeNull();
+    expect(container.querySelector(".wordmark").textContent).toBe(
+      "Stratechery Search",
+    );
+  });
+
   it("renders a mark before the titles and actions on the right of the bar", () => {
     const { container } = render(AppShell, {
       title: "data-download",

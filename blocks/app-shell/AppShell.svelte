@@ -19,6 +19,11 @@
    *                action: `history.back()` returns to the results page you
    *                left, querystring and all, while a link pushes a new entry.
    *                An in-app router therefore has to hand its own button in.
+   *   `titleTag` -- the wordmark's element, defaulting to an `h1` (1.6.0). The
+   *                bar is the *page* title on a dashboard, but a reading app or
+   *                a gallery already has an h1 in the content, and the wordmark
+   *                is then the name of the product, not the page. Without this
+   *                the shell could only be used by renaming that heading.
    *
    * The bar and the main column also honour the safe-area insets on a phone, so
    * an app added to a home screen does not put its nav under the clock.
@@ -26,6 +31,7 @@
   let {
     title = "Application",
     subtitle = "",
+    titleTag = "h1",
     backHref = "",
     backLabel = "← back",
     status = "",
@@ -54,7 +60,7 @@
           {#if subtitle}
             <span class="micro">{subtitle}</span>
           {/if}
-          <h1 class="wordmark">{title}</h1>
+          <svelte:element this={titleTag} class="wordmark">{title}</svelte:element>
         </div>
       </div>
       {#if actions || status}
