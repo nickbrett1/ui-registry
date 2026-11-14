@@ -1,0 +1,23 @@
+{
+  "$schema": "https://shadcn-svelte.com/schema/registry-item.json",
+  "name": "stat-strip",
+  "title": "Stat Strip",
+  "type": "registry:block",
+  "author": "nickbrett1 <https://github.com/nickbrett1>",
+  "description": "KPI summary cards (label, big tabular-figure value, sub-line) in a responsive grid. Lifted from deepseek-balance and stratechery-search.",
+  "dependencies": [],
+  "devDependencies": [],
+  "registryDependencies": [],
+  "files": [
+    {
+      "type": "registry:file",
+      "target": "nb/StatStrip.svelte",
+      "content": "<script>\n  /**\n   * StatStrip — topcards stat summary row.\n   *\n   * Displays KPI cards (label, big tabular-figure value, sub-line) in a\n   * responsive grid. Lifted from deepseek-balance and stratechery-search.\n   */\n  let { stats = [] } = $props();\n</script>\n\n<div class=\"stat-strip\" style=\"--stat-cols: {stats.length};\">\n  {#each stats as stat}\n    <div class=\"card stat-card\">\n      <div class=\"stat-label micro\">{stat.label}</div>\n      <div class=\"stat-value num {stat.tone ?? ''}\">{stat.value}</div>\n      {#if stat.sub}\n        <div class=\"stat-sub hint\">{stat.sub}</div>\n      {/if}\n    </div>\n  {/each}\n</div>\n\n<style>\n  .stat-strip {\n    display: grid;\n    grid-template-columns: repeat(var(--stat-cols, 3), 1fr);\n    gap: 12px;\n    margin-bottom: 20px;\n  }\n\n  .stat-card {\n    padding: 12px 14px;\n    display: flex;\n    flex-direction: column;\n    gap: 4px;\n  }\n\n  .stat-label {\n    margin: 0;\n  }\n\n  .stat-value {\n    font-size: 20px;\n    font-weight: 700;\n    line-height: 1.2;\n    color: var(--ink);\n  }\n\n  .stat-value.ok {\n    color: var(--ok);\n  }\n  .stat-value.warn {\n    color: var(--warn);\n  }\n  .stat-value.bad {\n    color: var(--bad);\n  }\n  .stat-value.info {\n    color: var(--accent);\n  }\n\n  .stat-sub {\n    margin: 0;\n  }\n\n  @media (max-width: 600px) {\n    .stat-strip {\n      grid-template-columns: 1fr;\n      gap: 8px;\n    }\n  }\n</style>\n"
+    }
+  ],
+  "meta": {
+    "source": "blocks/stat-strip/StatStrip.svelte",
+    "sha256": "c617c0da81ba9d936533fa5653b88acf87b43d1fe84c24fe368bc6c6965921d2",
+    "bytes": 1366
+  }
+}
