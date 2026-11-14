@@ -1,0 +1,12 @@
+{
+  "$comment": "Published registry versions. Every entry is immutable: `npm run publish:item` refuses to overwrite an existing (name, version) with different bytes. The route verifies each read against these digests.",
+  "items": [
+    {
+      "name": "theme",
+      "version": "1.0.0",
+      "sha256": "945de4e9f1b050cb089a78fd5e30b248124050bb8a9f7613f9b9133f97df3abc",
+      "bytes": 8682,
+      "publishedAt": "2026-11-14T01:22:15.942Z"
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
 import { readFile, mkdir, writeFile, symlink, rm } from "node:fs/promises";
+import { createHash } from "node:crypto";
 import path from "node:path";
 import { GET } from "../src/routes/r/[...path]/+server.js";
 
@@ -34,10 +35,17 @@ beforeEach(() => {
   process.env.NB_REGISTRY_TOKEN = TOKEN;
 });
 
-function call(segments, authorization) {
+function call(segments, authorization, query = "") {
   const headers = authorization === undefined ? {} : { authorization };
-  const request = new Request(`http://localhost/r/${segments ?? ""}`, { headers });
+  const request = new Request(`http://localhost/r/${segments ?? ""}${query}`, { headers });
   return GET({ params: { path: segments ?? "" }, request });
+}
+
+/** The digest of a published file, as the manifest records it. */
+async function readManifest() {
+  return JSON.parse(
+    await readFile(path.join(ROOT, "registry", "versions", "manifest.json"), "utf8"),
+  );
 }
 
 const withBearer = () => `Bearer ${TOKEN}`;
@@ -101,8 +109,9 @@ describe("GET /r - authorisation", () => {
 
 describe("GET /r - documents", () => {
   it("serves the theme item with its CSS inlined", async () => {
-    const response = await call("theme.json", withBearer());
+    const response = await call("theme.json", withBearer(), "?version=1.0.0");
     expect(response.status).toBe(200);
+    expect(response.headers.get("x-registry-version")).toBe("1.0.0");
 
     const body = await response.json();
     expect(body.type).toBe("registry:theme");
@@ -112,22 +121,135 @@ describe("GET /r - documents", () => {
   });
 
   it("returns 404 for an item that does not exist", async () => {
-    const response = await call("nope.json", withBearer());
+    const response = await call("nope.json", withBearer(), "?version=1.0.0");
     expect(response.status).toBe(404);
     expect((await response.json()).error).toBe("not found");
   });
 
   it("serves nothing with an extension outside the allowlist", async () => {
-    const response = await call("__test__.txt", withBearer());
+    const response = await call("__test__.txt", withBearer(), "?version=1.0.0");
     expect(response.status).toBe(404);
   });
 
   it("refuses a directory", async () => {
-    expect((await call("__testdir__", withBearer())).status).toBe(404);
+    expect((await call("__testdir__", withBearer(), "?version=1.0.0")).status).toBe(404);
   });
 
-  it("serves a nested .json inside the registry tree", async () => {
-    expect((await call("__testdir__/inside.json", withBearer())).status).toBe(200);
+  it("refuses a nested item path, because published items are flat", async () => {
+    // `registry/versions/v<x>/<name>.json` is the only shape; a nested segment
+    // is not a published item and must not be reachable by path alone.
+    expect((await call("__testdir__/inside.json", withBearer(), "?version=1.0.0")).status).toBe(
+      404,
+    );
+  });
+});
+
+describe("GET /r - versioned items are immutable", () => {
+  it("refuses an item with no version rather than serving whatever is on disk", async () => {
+    const response = await call("theme.json", withBearer());
+    expect(response.status).toBe(400);
+    expect((await response.json()).error).toBe("version required");
+  });
+
+  it("names the available versions on an unversioned request", async () => {
+    const body = await (await call("theme.json", withBearer())).json();
+    expect(body.available).toContain("1.0.0");
+  });
+
+  it("404s an unpublished version instead of falling back to the current one", async () => {
+    const response = await call("theme.json", withBearer(), "?version=9.9.9");
+    expect(response.status).toBe(404);
+    expect((await response.json()).error).toBe("not found");
+  });
+
+  it("rejects a version that is not semver, including traversal", async () => {
+    for (const version of ["../v1.0.0", "1.0", "1.0.0/../..", "%2e%2e", ""]) {
+      const response = await call("theme.json", withBearer(), `?version=${encodeURIComponent(version)}`);
+      expect(response.status).toBe(400);
+      expect(await response.text()).not.toContain("root:x:");
+    }
+  });
+
+  it("serves a published version byte-for-byte from its frozen copy", async () => {
+    const frozen = await readFile(
+      path.join(ROOT, "registry", "versions", "v1.0.0", "theme.json"),
+      "utf8",
+    );
+    const response = await call("theme.json", withBearer(), "?version=1.0.0");
+    expect(await response.text()).toBe(frozen);
+  });
+
+  it("carries a strong etag so an immutable document can be cached", async () => {
+    const response = await call("theme.json", withBearer(), "?version=1.0.0");
+    const entry = (await readManifest()).items.find(
+      (candidate) => candidate.name === "theme" && candidate.version === "1.0.0",
+    );
+    expect(response.headers.get("etag")).toBe(`"${entry.sha256}"`);
+  });
+
+  it("every published file matches the digest in the manifest", async () => {
+    // The immutability guard, seen from the tree rather than the route: an edit
+    // to a published item must be detectable without trusting any one request.
+    const manifest = await readManifest();
+    expect(manifest.items.length).toBeGreaterThan(0);
+
+    for (const entry of manifest.items) {
+      const file = path.join(ROOT, "registry", "versions", `v${entry.version}`, `${entry.name}.json`);
+      const bytes = await readFile(file);
+      expect(createHash("sha256").update(bytes).digest("hex")).toBe(entry.sha256);
+      expect(Buffer.byteLength(bytes)).toBe(entry.bytes);
+    }
+  });
+
+  it("500s when a published file has been edited in place", async () => {
+    // The rule is only real if breaking it is detected. The route compares each
+    // read against the manifest digest, so an in-place edit is a 500 -- loud, and
+    // never a silently mutated design system.
+    const published = path.join(ROOT, "registry", "versions", "v1.0.0", "theme.json");
+    const original = await readFile(published, "utf8");
+    try {
+      await writeFile(published, `${original.trimEnd()}\n\n`, "utf8");
+      const response = await call("theme.json", withBearer(), "?version=1.0.0");
+      expect(response.status).toBe(500);
+      expect((await response.json()).error).toBe("integrity check failed");
+    } finally {
+      await writeFile(published, original, "utf8");
+    }
+  });
+
+  it("404s a manifest entry whose frozen file is missing", async () => {
+    const published = path.join(ROOT, "registry", "versions", "v1.0.0", "theme.json");
+    const original = await readFile(published, "utf8");
+    try {
+      await rm(published);
+      expect((await call("theme.json", withBearer(), "?version=1.0.0")).status).toBe(404);
+    } finally {
+      await writeFile(published, original, "utf8");
+    }
+  });
+
+  it("still serves the index when the manifest is unreadable", async () => {
+    // A corrupt manifest must degrade to "no versions advertised", not to a 500
+    // on the one document that tells a client what exists.
+    const manifestFile = path.join(ROOT, "registry", "versions", "manifest.json");
+    const original = await readFile(manifestFile, "utf8");
+    try {
+      await writeFile(manifestFile, "{ not json", "utf8");
+      const response = await call("registry.json", withBearer());
+      expect(response.status).toBe(200);
+      expect(response.headers.get("x-registry-versions")).toBe("");
+      expect((await call("theme.json", withBearer(), "?version=1.0.0")).status).toBe(404);
+    } finally {
+      await writeFile(manifestFile, original, "utf8");
+    }
+  });
+
+  it("the version listing on the index matches the manifest", async () => {
+    const response = await call("registry.json", withBearer());
+    const versions = response.headers.get("x-registry-versions");
+    for (const entry of (await readManifest()).items) {
+      expect(versions).toContain(entry.version);
+    }
   });
 });
 
@@ -143,24 +265,29 @@ describe("GET /r - path traversal", () => {
     "registry.json/../../../etc/passwd",
   ];
 
+  // Two gates now stand between a request and a file: the item-name allowlist
+  // (`<name>.json`, no separators) and, behind it, manifest membership plus
+  // realpath containment. These cases are 404s; the allowlist is what stops most
+  // of them now, and the containment check is still there for the ones that look
+  // like a plausible name.
   it.each(attacks)("refuses %s", async (attack) => {
-    const response = await call(attack, withBearer());
+    const response = await call(attack, withBearer(), "?version=1.0.0");
     expect(response.status).toBe(404);
     expect(await response.text()).not.toContain("root:x:");
   });
 
   it("refuses a symlink that points out of the registry tree", async () => {
-    const response = await call("__testlink__.json", withBearer());
+    const response = await call("__testlink__.json", withBearer(), "?version=1.0.0");
     expect(response.status).toBe(404);
   });
 
   it("refuses malformed percent-encoding instead of throwing", async () => {
-    const response = await call("%zz.json", withBearer());
+    const response = await call("%zz.json", withBearer(), "?version=1.0.0");
     expect(response.status).toBe(404);
   });
 
   it("refuses a NUL byte", async () => {
-    const response = await call("theme.json%00.png", withBearer());
+    const response = await call("theme.json%00.png", withBearer(), "?version=1.0.0");
     expect(response.status).toBe(404);
   });
 });

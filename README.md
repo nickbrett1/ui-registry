@@ -95,13 +95,49 @@ directory exposed to the network: `src/routes/r/[...path]/+server.js` reads the
 JSON from disk, so the bearer-token check is possible at all.
 
 ```bash
-GET /r/registry.json   # the index (and GET /r, which is the same document)
-GET /r/theme.json      # one item, CSS inlined
+GET /r/registry.json                        # the index (GET /r is the same document)
+GET /r/theme.json?version=1.0.0             # one item, CSS inlined
 ```
 
 Everything under `/r/` requires `Authorization: Bearer $NB_REGISTRY_TOKEN`. With
 no token, a wrong token, or no `NB_REGISTRY_TOKEN` configured on the server, you
 get `401` (or `503` when the server itself is unconfigured) and no detail.
+
+### Versions are immutable, and items are only served at one
+
+A design system that mutates under a live project is worse than a stale one, so
+`?version=` is **required** for an item and there is no "latest":
+
+| Request | Result |
+|---|---|
+| `/r/registry.json` | `200`, always current — the index is a catalogue, not an artifact. Its `x-registry-versions` header lists what is published. |
+| `/r/theme.json` (no version) | `400`, body names the available versions |
+| `/r/theme.json?version=9.9.9` | `404` — never a fall-back to whatever is on disk |
+| `/r/theme.json?version=1.0.0` | `200`, `x-registry-version` and a strong `etag` (the sha256) |
+| a published file edited in place | `500` — the route verifies every read against the manifest digest |
+
+Publishing is a separate, deliberate act, and it is the whole of the version story:
+
+```bash
+npm run build:theme               # regenerate registry/theme.json from src/app.css
+npm run publish:item theme 1.0.0  # freeze it as v1.0.0 and record its digest
+```
+
+That writes `registry/versions/v1.0.0/theme.json` and appends `{name, version,
+sha256, bytes, publishedAt}` to `registry/versions/manifest.json`. Re-publishing
+the same version with different bytes is **refused** — to change a published item
+you publish the next version. `tests/registry.test.js` and
+`tests/publish-item.test.js` pin both halves of that rule (the serve-time digest
+check and the publish-time refusal), so neither can quietly become a convention.
+
+A consumer pins it in `components.json`, and the CLI sends the parameter for you:
+
+```json
+{ "registries": { "@nb": {
+    "url": "https://<host>/r/{name}.json",
+    "headers": { "Authorization": "Bearer ${NB_REGISTRY_TOKEN}" },
+    "params": { "version": "1.0.0" } } } }
+```
 
 ### The theme
 
@@ -112,8 +148,8 @@ sha256 `bb012ad9…0862`) — not retyped and not retuned, because the problem t
 registry exists to solve is a token sheet hand-copied between repos with no
 version and no authority.
 
-`registry/theme.json` is the *served* item and carries that CSS inline, so it is
-generated rather than hand-edited:
+`registry/theme.json` is the *working* item — the shape that is served, with that
+CSS inline — so it is generated rather than hand-edited:
 
 ```bash
 npm run build:theme
