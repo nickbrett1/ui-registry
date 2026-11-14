@@ -80,6 +80,13 @@ const BLOCKS = [
       "Interval burst sparkline chart + historical audit grid with labelled comparison columns ('Explains').",
   },
   {
+    name: "bar-series",
+    title: "Bar Series",
+    component: "BarSeries.svelte",
+    description:
+      "A labelled bar chart with a computed value axis, per-bar display strings, and a dashed projection bar. The measured-value counterpart to burst-timeline's sparkline. Lifted from deepseek-balance's daily spend, usage and cost charts.",
+  },
+  {
     name: "data-table",
     title: "Data Table",
     component: "DataTable.svelte",

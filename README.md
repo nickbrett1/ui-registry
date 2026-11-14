@@ -252,7 +252,7 @@ There is one consumer-side consequence worth knowing: the merge also injects
 `@import "shadcn-svelte/tailwind.css";`, so `shadcn-svelte` has to be a
 dependency of the project at build time.
 
-### The ten blocks
+### The eleven blocks
 
 `blocks/` holds the house **layouts** — the second half of the problem this
 registry exists for. The theme makes a new project _look_ right; the blocks make
@@ -272,6 +272,7 @@ form, so those are deliberately absent.
 | `status-view`    | `nb/StatusView.svelte`    | four lanes, count in each head, pill per row                                          |
 | `detail-panel`   | `nb/DetailPanel.svelte`   | header, metadata grid, prose body, `history.back()`                                   |
 | `burst-timeline` | `nb/BurstTimeline.svelte` | horizontal/vertical bars, `showValues`, `caption`, audit grid                         |
+| `bar-series`     | `nb/BarSeries.svelte`     | value axis in the caller's unit, per-bar display strings, a dashed projection bar     |
 | `data-table`     | `nb/DataTable.svelte`     | column labels, tabular numerics, hairline rows, a `row` slot of cells                 |
 | `request-form`   | `nb/RequestForm.svelte`   | schema-driven form, one message per failed constraint                                 |
 
@@ -280,8 +281,8 @@ npm run build:blocks            # blocks/*/*.svelte -> registry/<name>.json -> r
 npm run publish:item data-table 1.8.0
 ```
 
-Browse them at **`/`** — the landing page imports the same ten files the
-registry publishes and renders all ten, so a block that does not render breaks
+Browse them at **`/`** — the landing page imports the same eleven files the
+registry publishes and renders all eleven, so a block that does not render breaks
 the build. (`/blocks` was a second page for this; it now 308s to `/`, because
 asking someone to press a button to reach the only content was a wasted tap —
 and on an iPhone home screen the button sat under the status bar.)
@@ -290,6 +291,29 @@ and on an iPhone home screen the button sat under the status bar.)
 colour (a translucent tint is `color-mix(in srgb, var(--bg) 88%, transparent)`,
 derived from the token so a palette change moves the blocks with it), and the
 served item's `content` is byte-identical to the source file.
+
+### What 1.9.0 added, and why
+
+`bar-series` is the first block that is a *chart*, and it exists because
+`burst-timeline` is a sparkline: percentage heights, no axis, a `count`. That is
+right for "recent bursts" and wrong for three daily charts that each have to say
+how much — spend in CNY, usage time in minutes, cost per hour in fen. Converting
+`deepseek-balance` needed the second animal, and the difference is all in the
+claims a chart makes:
+
+| added                 | why the sparkline could not carry it                                                                                                                                     |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| a computed y-axis     | ticks land on multiples of a nice step, so a maximum of 135 minutes labels 0/50/100/150 rather than 37.5 / 75 / 112.5                                                   |
+| `axisFormat`          | the API emits numbers and the reader wants `2h 15m`; a block that insists on plain numbers pushes that conversion into every consumer, which is how three copies start   |
+| `bar.display`         | geometry is the block's business (`bar.value` sets the height); the string is the consumer's, because only it knows the currency                                       |
+| `bar.projected`       | today's spend so far, extended to a full day, is a different claim from a measured bar — it is drawn hollow and dashed, never solid                                      |
+| a `null` value keeps its slot | "we held no snapshots" is a fact about the day; dropping the bar would silently close the gap in the axis                                                       |
+
+The general rule this one taught: **a block earns its place when a second
+consumer needs the same geometry but its own words.** `burst-timeline` and
+`bar-series` draw the same rectangles; one labels a count of intervals, the
+other labels a currency, a duration and a rate — and neither is a copy of the
+other's markup.
 
 ### What 1.8.0 added, and why
 
@@ -313,7 +337,7 @@ write down what its screens need — and that list is block requirements.
 
 Then `data-download` went the whole way, and is now the first consumer of this
 registry that is **not** Svelte-native: `web/` is Vite + Svelte 5 building static
-files, FastAPI serves them, and the ten blocks are installed at `1.8.0` exactly
+files, FastAPI serves them, and every block it needs is installed by version
 as a SvelteKit app would install them. What that proved is the boundary is
 per-consumer, not per-framework: the app kept its store, its four `v_*` views,
 its token scopes and its `/v1/*` API, and gave up only the markup. A registry

@@ -7,9 +7,9 @@
    * (the header sat under the status bar) and had to press to reach the only
    * content that mattered.
    *
-   * The ten blocks are imported from `blocks/` -- the same bytes
+   * The eleven blocks are imported from `blocks/` -- the same bytes
    * `registry.json` publishes, not a copy. If a block stops rendering, this page
-   * stops building, which is the cheapest possible check that ten published
+   * stops building, which is the cheapest possible check that eleven published
    * items are ten working components.
    */
   import published from "../../registry/versions/manifest.json";
@@ -22,6 +22,7 @@
   import StatusView from "../../blocks/status-view/StatusView.svelte";
   import DetailPanel from "../../blocks/detail-panel/DetailPanel.svelte";
   import BurstTimeline from "../../blocks/burst-timeline/BurstTimeline.svelte";
+  import BarSeries from "../../blocks/bar-series/BarSeries.svelte";
   import DataTable from "../../blocks/data-table/DataTable.svelte";
   import RequestForm from "../../blocks/request-form/RequestForm.svelte";
 
@@ -58,6 +59,7 @@
     { name: "status-view", note: "four lanes, counts in the head" },
     { name: "detail-panel", note: "header, metadata grid, prose" },
     { name: "burst-timeline", note: "horizontal or vertical bars, values, a caption you set" },
+    { name: "bar-series", note: "a computed value axis, caller-formatted labels, a dashed projection" },
     { name: "data-table", note: "column-aligned records, tabular numerics, a cell slot" },
     { name: "request-form", note: "schema-driven, one message per failed rule" },
   ];
@@ -145,6 +147,26 @@
     { name: "from", label: "From", type: "text", placeholder: "2026-01-01", required: true },
     { name: "limit", label: "Limit", type: "number", hint: "Maximum rows, 1–10000." },
   ];
+  // The daily series this block was lifted from: fourteen measured days plus
+  // today, which is a *projection* and is drawn hollow. One day is null on
+  // purpose — no snapshots is a fact about the day, not a reason to close the gap.
+  const spendBars = [
+    { label: "11-01", value: 18.4, display: "¥18.40" },
+    { label: "11-02", value: 24.1, display: "¥24.10" },
+    { label: "11-03", value: 9.7, display: "¥9.70" },
+    { label: "11-04", value: null },
+    { label: "11-05", value: 31.2, display: "¥31.20" },
+    { label: "11-06", value: 17.9, display: "¥17.90" },
+    { label: "11-07", value: 22.6, display: "¥22.60" },
+    { label: "11-08", value: 12.3, display: "¥12.30" },
+    { label: "11-09", value: 28.8, display: "¥28.80" },
+    { label: "11-10", value: 20.5, display: "¥20.50" },
+    { label: "11-11", value: 26.7, display: "¥26.70" },
+    { label: "11-12", value: 15.1, display: "¥15.10" },
+    { label: "11-13", value: 19.8, display: "¥19.80" },
+    { label: "11-14", value: 27.4, display: "¥27.40", projected: true },
+  ];
+
   let formValues = $state({ planType: "delta", from: "", limit: 500 });
   const formErrors = { from: ["is required", "must be a date (YYYY-MM-DD)"] };
 </script>
@@ -155,7 +177,7 @@
       <span class="micro">house design system</span>
       <h1 class="title">@nb UI Registry</h1>
       <p class="hint lede">
-        One theme and ten blocks. Everything below is the published source, rendered —
+        One theme and eleven blocks. Everything below is the published source, rendered —
         there is no screenshot and no separate gallery.
       </p>
     </div>
@@ -173,7 +195,7 @@
         </dd>
       </div>
       <div class="fact">
-        <dt class="micro">ten blocks</dt>
+        <dt class="micro">eleven blocks</dt>
         <dd>
           The screens the house apps actually have — a shell, a KPI row, results,
           facets, lanes, a detail page, a chart, a form, an empty state.
@@ -321,6 +343,14 @@
             Requests per four-hour interval. A quiet interval is quiet, not missing.
           {/snippet}
         </BurstTimeline>
+      {:else if block.name === "bar-series"}
+        <BarSeries
+          title="Spend per day"
+          unit="CNY"
+          note="Today's bar is dashed = projected full-day spend."
+          {spendBars}
+          axisFormat={(v) => (v >= 100 ? String(Math.round(v)) : String(Math.round(v * 10) / 10))}
+        />
       {:else if block.name === "request-form"}
         <RequestForm {fields} bind:values={formValues} errors={formErrors} submitLabel="Create request" onsubmit={() => {}} />
       {/if}
@@ -328,7 +358,7 @@
   {/each}
 
   <footer class="foot hint">
-    <span>@nb/theme v{manifest.version} · ten blocks · published by <code class="num">npm run publish:item</code></span>
+    <span>@nb/theme v{manifest.version} · eleven blocks · published by <code class="num">npm run publish:item</code></span>
   </footer>
 </div>
 

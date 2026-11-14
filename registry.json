@@ -150,6 +150,23 @@
       ]
     },
     {
+      "name": "bar-series",
+      "title": "Bar Series",
+      "type": "registry:block",
+      "author": "nickbrett1 <https://github.com/nickbrett1>",
+      "description": "A labelled bar chart with a computed value axis, per-bar display strings, and a dashed projection bar. The measured-value counterpart to burst-timeline's sparkline. Lifted from deepseek-balance's daily spend, usage and cost charts.",
+      "dependencies": [],
+      "devDependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "type": "registry:file",
+          "path": "blocks/bar-series/BarSeries.svelte",
+          "target": "nb/BarSeries.svelte"
+        }
+      ]
+    },
+    {
       "name": "data-table",
       "title": "Data Table",
       "type": "registry:block",

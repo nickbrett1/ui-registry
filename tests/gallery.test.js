@@ -3,17 +3,17 @@ import { render } from "@testing-library/svelte";
 import Page from "../src/routes/+page.svelte";
 
 /**
- * The landing page *is* the gallery: the ten blocks are imported from
+ * The landing page *is* the gallery: the eleven blocks are imported from
  * `blocks/` — the same bytes `registry.json` publishes — and rendered inline.
  *
  * `tests/blocks.test.js` proves they compile; this proves they *render*, which
  * is where an undefined prop or a missing `$derived` shows up.
  */
 describe("the blocks on the landing page", () => {
-  it("renders all ten blocks", () => {
+  it("renders all eleven blocks", () => {
     const { container } = render(Page);
     const sections = container.querySelectorAll("section.block");
-    expect(sections.length).toBe(10);
+    expect(sections.length).toBe(11);
   });
 
   it("names every block the registry publishes", () => {
@@ -28,6 +28,7 @@ describe("the blocks on the landing page", () => {
       "status-view",
       "detail-panel",
       "burst-timeline",
+      "bar-series",
       "data-table",
       "request-form",
     ]) {
@@ -46,6 +47,7 @@ describe("the blocks on the landing page", () => {
       "status-view",
       "detail-panel",
       "burst-timeline",
+      "bar-series",
       "data-table",
       "request-form",
     ]) {

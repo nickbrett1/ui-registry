@@ -67,7 +67,7 @@ describe("GET /r - public, deliberately", () => {
 
     const body = await response.json();
     expect(body.name).toBe("nb");
-    // The live catalogue: one theme and the ten blocks it styles.
+    // The live catalogue: one theme and the eleven blocks it styles.
     expect(body.items.map((item) => item.name)).toEqual([
       "theme",
       "app-shell",
@@ -78,6 +78,7 @@ describe("GET /r - public, deliberately", () => {
       "status-view",
       "detail-panel",
       "burst-timeline",
+      "bar-series",
       "data-table",
       "request-form",
     ]);

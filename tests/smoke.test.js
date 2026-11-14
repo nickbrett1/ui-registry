@@ -23,7 +23,7 @@ describe("generated app smoke test", () => {
 
   it("says what the registry is, in three plain facts", () => {
     render(Page);
-    for (const term of ["one theme", "ten blocks", "pinned by version"]) {
+    for (const term of ["one theme", "eleven blocks", "pinned by version"]) {
       expect(screen.getByText(term)).toBeInTheDocument();
     }
   });

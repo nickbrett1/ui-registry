@@ -51,6 +51,13 @@
       "publishedAt": "2026-11-14T15:42:10.560Z"
     },
     {
+      "name": "bar-series",
+      "version": "1.9.0",
+      "sha256": "afa2b1a3a9eebec36c95f94732a1797aad48357ce842c73c5e9826b85efa0529",
+      "bytes": 8709,
+      "publishedAt": "2026-11-14T16:52:15.731Z"
+    },
+    {
       "name": "burst-timeline",
       "version": "1.3.0",
       "sha256": "45c5a07b4ae42ba7517b0da7c3ba09ebcd4c24fd892f996387c588085dafa7ba",
