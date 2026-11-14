@@ -36,6 +36,30 @@ async function latestThemeVersion() {
   return versions.at(-1);
 }
 
+/**
+ * Run `fn` with the working copy byte-identical to `version`'s published file.
+ *
+ * The no-op path is "publishing the same bytes again changes nothing", and it
+ * can only be exercised when the two agree. A checkout mid-change has an
+ * unpublished edit in `registry/theme.json` -- the normal state while a block
+ * or the theme is being worked on -- so pinning these tests to "the working
+ * copy happens to equal the newest release" would make them a test of the
+ * release calendar rather than of the rule.
+ */
+async function withPublishedBytes(version, fn) {
+  const original = await readFile(WORKING_ITEM, "utf8");
+  const published = await readFile(
+    path.join(ROOT, "registry", "versions", `v${version}`, "theme.json"),
+    "utf8",
+  );
+  try {
+    await writeFile(WORKING_ITEM, published, "utf8");
+    return await fn();
+  } finally {
+    await writeFile(WORKING_ITEM, original, "utf8");
+  }
+}
+
 function nextPatch(version) {
   const [major, minor, patch] = version.split(".").map(Number);
   return `${major}.${minor}.${patch + 1}`;
@@ -61,7 +85,9 @@ function run(args) {
 describe("publish-item", () => {
   it("is a no-op when the same version is published with identical content", async () => {
     const version = await latestThemeVersion();
-    const result = run(["theme", version]);
+    const result = await withPublishedBytes(version, () =>
+      run(["theme", version]),
+    );
     expect(result.code).toBe(0);
     expect(result.stdout).toContain("already published, identical");
   });
@@ -114,7 +140,9 @@ describe("publish-item --dry-run and --list", () => {
 
   it("is a no-op dry run for a version already published with identical content", async () => {
     const version = await latestThemeVersion();
-    const result = run(["theme", version, "--dry-run"]);
+    const result = await withPublishedBytes(version, () =>
+      run(["theme", version, "--dry-run"]),
+    );
     expect(result.code).toBe(0);
     expect(result.stdout).toContain("already published, identical");
   });

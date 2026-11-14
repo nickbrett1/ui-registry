@@ -61,6 +61,14 @@
   --safe-left: env(safe-area-inset-left, 0px);
 
   /* geometry + type */
+  /* A control's height, as a role rather than a number in each block. Desktop
+     screens want a compact 32px button; a phone wants 44px, which is not a
+     preference -- it is the smallest thing a thumb reliably hits (Apple HIG,
+     WCAG 2.5.5). data-scout already had this role in its own stylesheet
+     (--tap: 2.75rem); promoting it means a block names it and the consumer
+     decides, instead of every block hardcoding a pixel height that is wrong at
+     one end of the range. */
+  --tap: 2rem;
   --radius: 8px;
   --radius-sm: 6px;
   --radius-pill: 999px;

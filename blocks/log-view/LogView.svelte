@@ -120,7 +120,7 @@
 
   .actions :global(button),
   .actions :global(a) {
-    min-height: 34px;
+    min-height: var(--tap);
     padding: 0 12px;
     display: inline-flex;
     align-items: center;

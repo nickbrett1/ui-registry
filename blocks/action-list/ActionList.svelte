@@ -158,7 +158,7 @@
 
   .actions :global(button),
   .actions :global(a.btn) {
-    min-height: 34px;
+    min-height: var(--tap);
     padding: 0 12px;
     font: inherit;
     font-size: 13px;

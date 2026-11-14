@@ -37,6 +37,7 @@
       "--safe-right": "env(safe-area-inset-right, 0px)",
       "--safe-bottom": "env(safe-area-inset-bottom, 0px)",
       "--safe-left": "env(safe-area-inset-left, 0px)",
+      "--tap": "2rem",
       "--radius": "8px",
       "--radius-sm": "6px",
       "--radius-pill": "999px",
@@ -274,8 +275,8 @@
   },
   "meta": {
     "source": "src/app.css",
-    "sha256": "174eb4a64bbfd07fdb50c9e1c9241ff8ac72753fd3665d101b81f1efd0c21b31",
-    "bytes": 9059,
-    "variables": 32
+    "sha256": "dd81751b6dfb8a6d05c0a4b21fab9074a8f1ea6e276d5449abd494b22dbbdc90",
+    "bytes": 9566,
+    "variables": 33
   }
 }
