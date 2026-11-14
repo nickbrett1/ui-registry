@@ -29,6 +29,7 @@
     "npm": ">=11 <12"
   },
   "devDependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
     "@playwright/test": "^1.65.1",
     "@sveltejs/adapter-node": "^5.4.2",
     "@sveltejs/kit": "^2.70.3",

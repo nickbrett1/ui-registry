@@ -644,6 +644,42 @@ the published content, and that it compiles in the consumer.
 between the index's file shape (`path`) and a served item's (`content`+`target`).
 `tests/registry-schema.test.js` validates both documents against them.
 
+## Ask the registry (MCP)
+
+`POST /mcp` is the registry as a Model Context Protocol server, so an agent can
+ask what exists instead of being told in prose. Until it existed, "browse the
+registry" was a `curl` recipe inside the styling rules a generated project
+carries — a sentence an agent had to read, understand and then get right by
+hand, for the one step in adopting the design system that had no interface
+(`shadcn-svelte@1.8.1` ships no MCP server and no `registry list`).
+
+| Tool | Answers |
+|---|---|
+| `browse_registry` | what is published at a version: name, title, type, description, files |
+| `search_registry` | which of them is my problem — matched against name, title and description |
+| `get_item` | the item's JSON *including file contents*, so a block is read rather than installed blind |
+| `install_command` | the one line that installs it, spelled correctly |
+
+`install_command` is a tool rather than documentation because it is the thing
+that gets got wrong: the pin belongs in the base — `/r/v1.12.0` — never in a
+query, because the CLI appends only `index.json` and `<name>.json` and a query
+cannot travel through that. An agent that assembles the URL itself is an agent
+that will assemble it differently next time.
+
+It is JSON-RPC over `POST`, request/response only: no SSE, no session. Every
+call is a read of files that never change, so there is nothing to resume, and a
+`GET` says what the endpoint is instead of opening a stream that never speaks.
+The server is hand-rolled (four read-only tools did not justify the SDK in the
+container) and `tests/mcp.test.js` connects to it with the **official** client —
+protocol compliance is measured, not asserted. That lesson is already in this
+repo: the `/r` route's `index.json` array was discovered by running the real CLI
+after an assumed shape cost a round trip.
+
+```bash
+curl -s localhost:3000/mcp -H 'content-type: application/json' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+```
+
 ## Installable on a phone
 
 The app carries a real home-screen icon, not a bare `favicon.png`:
