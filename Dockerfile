@@ -28,6 +28,11 @@ LABEL org.opencontainers.image.source=https://github.com/nickbrett1/ui-registry
 
 ENV NODE_ENV=production
 COPY --from=build /app/build ./build
+# The registry documents are read from disk at request time by src/routes/r/[...path],
+# so they are runtime content, not build inputs. The generated Dockerfile copies only
+# `build/`, which would leave the route serving 404s in the image while working locally.
+COPY --from=build /app/registry ./registry
+COPY --from=build /app/registry.json ./registry.json
 EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s CMD node -e "fetch('http://127.0.0.1:3000/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"

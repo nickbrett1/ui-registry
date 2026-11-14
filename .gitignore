@@ -27,3 +27,8 @@ Thumbs.db
 
 
 
+
+# Test fixtures created by tests/registry.test.js inside the served tree
+registry/__test*
+coverage
+reports
