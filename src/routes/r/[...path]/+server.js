@@ -9,15 +9,28 @@ import path from "node:path";
  *
  *   GET /r/registry.json                              the live catalogue
  *   GET /r/<name>.json?version=x.y.z                  one item, pinned by query
- *   GET /r/v<x.y.z>/styles/<style>/index.json         the catalogue at a version
- *   GET /r/v<x.y.z>/styles/<style>/<name>.json        one item, pinned by path
+ *   GET /r/v<x.y.z>/index.json                        the index at a version
+ *   GET /r/v<x.y.z>/<name>.json                       one item, pinned by path
+ *   GET /r/v<x.y.z>/styles/<style>/index.json         the same two, style-prefixed
+ *   GET /r/v<x.y.z>/styles/<style>/<name>.json
  *
- * The last two exist because `shadcn-svelte@1.8.1` builds its URLs by appending
- * `/styles/<style>/…` to whatever base it was given, and appends nothing else —
- * so a query parameter cannot travel through it. The pin therefore lives in the
- * base URL (`COMPONENTS_REGISTRY_URL=https://<host>/r/v1.0.0`), which is a
- * better home for it anyway: explicit, greppable, and an operator knob rather
- * than something baked into a project.
+ * **The versioned shapes are dictated by `shadcn-svelte@1.8.1`, measured rather
+ * than assumed** (`2026-11-14`, by running it against this endpoint). It builds
+ * its URLs from a base and appends nothing but `index.json` / `<name>.json`
+ * when the base comes from `COMPONENTS_REGISTRY_URL`; only the fallback path
+ * (no env var) inserts `/styles/<style>/`. So both spellings are served. A
+ * query parameter cannot travel through either, which is why the pin lives in
+ * the base URL — `COMPONENTS_REGISTRY_URL=https://<host>/r/v1.1.0` — a better
+ * home for it anyway: explicit, greppable, an operator knob rather than
+ * something baked into a project.
+ *
+ * **The four-hundredth attempt at guessing the index shape cost a round trip;
+ * do not guess again.** The CLI parses `<base>/index.json` as a plain JSON
+ * **array** whose entries carry `relativeUrl`, then fetches each `relativeUrl`
+ * for the item body. A `{name, items: [...]}` document — which is what the
+ * `registry.json` *file* looks like — is rejected with `ZodError: expected
+ * array`. Hence `projectIndex` below, which builds that array from the frozen
+ * items at a version.
  *
  * **The endpoint is PUBLIC — decided deliberately 2026-11-14.** There is no
  * bearer token, and that is not an oversight: that same CLI sends no auth
@@ -67,7 +80,7 @@ const SEMVER = /^\d+\.\d+\.\d+$/;
  * segment is validated as a segment, not as a name we recognise.
  */
 const VERSIONED_PREFIX =
-  /^v(\d+\.\d+\.\d+)\/styles\/[a-z0-9][a-z0-9-]*\/(index\.json|[a-z0-9][a-z0-9-]*\.json)$/;
+  /^v(\d+\.\d+\.\d+)\/(?:styles\/[a-z0-9][a-z0-9-]*\/)?(index\.json|[a-z0-9][a-z0-9-]*\.json)$/;
 
 function jsonError(status, error, extra = {}) {
   return new Response(JSON.stringify({ error, ...extra }), {
@@ -190,23 +203,80 @@ async function serveFrozen({ storedPath, expectedSha256, version, label }) {
   });
 }
 
+/**
+ * The index at a version, derived from that version's **frozen** items.
+ *
+ * This is deliberately not a stored artifact. A stored index would have to be
+ * written at publish time from the live catalogue, and the one thing that cannot
+ * be re-derived later without lying is exactly what it must not lie about: an
+ * index written today for an older version would describe it with a `target` it
+ * never shipped. Projecting from the frozen bytes cannot drift, because the
+ * bytes are the only input - and each one is digest-checked on the way in, so a
+ * tampered item fails the whole index with a 500 rather than being described
+ * confidently.
+ *
+ * The shape is the CLI's (`shadcn-svelte@1.8.1`): a **JSON array**, each entry
+ * carrying `relativeUrl`, which the CLI then fetches for the item body.
+ */
+async function projectIndex(version, manifest) {
+  const available = publishedVersions(manifest);
+  const entries = (manifest?.items ?? [])
+    .filter((candidate) => candidate.version === version)
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  if (entries.length === 0) return jsonError(404, "not found", { available });
+
+  const documents = [];
+  for (const entry of entries) {
+    const file = await resolveInsideRoot(VERSIONS_DIR, path.join(`v${version}`, `${entry.name}.json`));
+    if (!file) return jsonError(404, "not found", { available });
+
+    let body;
+    try {
+      body = await readFile(file);
+    } catch {
+      return jsonError(404, "not found", { available });
+    }
+
+    const digest = createHash("sha256").update(body).digest("hex");
+    if (digest !== entry.sha256) {
+      console.error(
+        `[/r] integrity check failed for ${entry.name}.json at v${version}: ` +
+          `expected ${entry.sha256}, read ${digest}. A published version has been edited in place.`,
+      );
+      return jsonError(500, "integrity check failed");
+    }
+
+    const item = JSON.parse(body.toString("utf8"));
+    // Only the fields an index entry is defined to carry. Not `files`: the CLI
+    // fetches the item itself, and a second copy of the theme inside the index
+    // would be one more thing to keep in step.
+    const projected = {
+      name: item.name ?? entry.name,
+      type: item.type,
+      relativeUrl: `${entry.name}.json`,
+    };
+    if (item.title) projected.title = item.title;
+    if (item.description) projected.description = item.description;
+    documents.push(projected);
+  }
+
+  return new Response(JSON.stringify(documents), {
+    status: 200,
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "x-content-type-options": "nosniff",
+      "x-registry-version": version,
+    },
+  });
+}
+
 /** @returns {Promise<Response>} */
 async function serveVersioned(version, file, manifest) {
   const available = publishedVersions(manifest);
 
-  if (file === "index.json") {
-    const entry = (manifest?.indexes ?? []).find((candidate) => candidate.version === version);
-    // An index at a version is a published artifact like any other. No entry
-    // means the version has no index, which is a 404 and not a synthesised one:
-    // a fallback here would silently answer with another version's catalogue.
-    if (!entry) return jsonError(404, "not found", { available });
-    return serveFrozen({
-      storedPath: path.join(`v${version}`, "index.json"),
-      expectedSha256: entry.sha256,
-      version,
-      label: "index.json",
-    });
-  }
+  if (file === "index.json") return projectIndex(version, manifest);
 
   const itemName = file.replace(/\.json$/, "");
   const entry = (manifest?.items ?? []).find(

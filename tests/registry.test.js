@@ -262,24 +262,32 @@ describe("GET /r - path traversal", () => {
   });
 });
 
-describe("GET /r - the CLI shape (version and style in the path)", () => {
-  // `shadcn-svelte@1.8.1` appends `/styles/<style>/` to whatever base it is
-  // given and cannot carry a query parameter, so the pin has to be in the path.
+describe("GET /r - the CLI shape (version in the path)", () => {
+  // Measured against `shadcn-svelte@1.8.1`, not guessed: it appends only
+  // `index.json` / `<name>.json` to a base set by `COMPONENTS_REGISTRY_URL`, and
+  // it parses the index as a JSON **array** whose entries carry `relativeUrl`.
+  // Only the fallback path (no env var) inserts `/styles/<style>/`, so both
+  // spellings are served.
 
-  it("serves the versioned index", async () => {
-    const response = await call("v1.1.0/styles/vega/index.json");
+  it("serves the versioned index as the array the CLI parses", async () => {
+    const response = await call("v1.1.0/index.json");
     expect(response.status).toBe(200);
     expect(response.headers.get("x-registry-version")).toBe("1.1.0");
 
     const body = await response.json();
-    expect(body.name).toBe("nb");
-    expect(body.items.map((item) => item.name)).toEqual(["theme"]);
-    // The index the CLI reads must describe the version it is asking about.
-    expect(body.items[0].files[0].target).toBe("src/nb-theme.css");
+    // An array, not `{name, items}`: the CLI rejects the object shape with
+    // "ZodError: expected array", which is how this was found.
+    expect(Array.isArray(body)).toBe(true);
+    expect(body).toHaveLength(1);
+    expect(body[0]).toMatchObject({
+      name: "theme",
+      type: "registry:theme",
+      relativeUrl: "theme.json",
+    });
   });
 
   it("serves an item at a version by path", async () => {
-    const response = await call("v1.1.0/styles/vega/theme.json");
+    const response = await call("v1.1.0/theme.json");
     expect(response.status).toBe(200);
 
     const body = await response.json();
@@ -287,32 +295,37 @@ describe("GET /r - the CLI shape (version and style in the path)", () => {
     expect(body.files[0].content).toContain("--bg: #0f172a");
   });
 
-  it("accepts any well-formed style segment, because the registry has one style", async () => {
-    // Rejecting unknown style names would break the CLI for no gain. The
-    // segment is validated as a segment, not as a name we recognise.
+  it("also serves the style-prefixed spelling, for the base-URL fallback path", async () => {
+    // A base in `REGISTRY_URL` / `components.json` gets `/styles/<style>/`
+    // appended by the CLI. Same documents, and any well-formed style segment is
+    // accepted: this registry has one style, and rejecting names would break the
+    // CLI for no gain.
+    const index = await call("v1.1.0/styles/vega/index.json");
+    expect(index.status).toBe(200);
+    expect(Array.isArray(await index.json())).toBe(true);
+
+    expect((await call("v1.1.0/styles/vega/theme.json")).status).toBe(200);
     expect((await call("v1.1.0/styles/new-york/theme.json")).status).toBe(200);
     expect((await call("v1.1.0/styles/nb/theme.json")).status).toBe(200);
   });
 
-  it("404s an index at a version that was published before indexes existed", async () => {
-    // v1.0.0 predates the CLI shape. Its index would have to be written from a
-    // newer catalogue, which would describe it with a `target` it never had.
-    const response = await call("v1.0.0/styles/vega/index.json");
-    expect(response.status).toBe(404);
-    expect((await response.json()).available).toContain("1.1.0");
-  });
-
-  it("still serves v1.0.0's frozen item, unchanged, with its original target", async () => {
-    const response = await call("v1.0.0/styles/vega/theme.json");
+  it("projects the index from the frozen items, so an old version is described honestly", async () => {
+    // v1.0.0 keeps `src/app.css`. Its index is derived from its own frozen bytes,
+    // so it cannot be given the newer target -- which is what a stored index
+    // written from the live catalogue would have done.
+    const response = await call("v1.0.0/index.json");
     expect(response.status).toBe(200);
-    // The immutability rule doing its job: 1.0.0 keeps the target it shipped
-    // with, and 1.1.0 exists because the target had to change.
-    expect((await response.json()).files[0].target).toBe("src/app.css");
+    const body = await response.json();
+    expect(body[0].relativeUrl).toBe("theme.json");
+
+    const item = await (await call("v1.0.0/theme.json")).json();
+    expect(item.files[0].target).toBe("src/app.css");
   });
 
   it("404s an unpublished version in the path shape", async () => {
+    expect((await call("v9.9.9/theme.json")).status).toBe(404);
+    expect((await call("v9.9.9/index.json")).status).toBe(404);
     expect((await call("v9.9.9/styles/vega/theme.json")).status).toBe(404);
-    expect((await call("v9.9.9/styles/vega/index.json")).status).toBe(404);
   });
 
   it("refuses traversal through the style or name segment", async () => {
@@ -322,6 +335,8 @@ describe("GET /r - the CLI shape (version and style in the path)", () => {
       "v1.1.0/styles/vega/../../../etc/passwd",
       "v1.1.0/styles/vega/..%2f..%2f..%2fetc%2fpasswd",
       "v1.1.0/styles/vega/theme.json%00.png",
+      "v1.1.0/../../etc/passwd",
+      "v1.1.0/theme.json%00.png",
     ];
     for (const attack of attacks) {
       const response = await call(attack);
@@ -330,13 +345,15 @@ describe("GET /r - the CLI shape (version and style in the path)", () => {
     }
   });
 
-  it("500s when a versioned index is edited in place", async () => {
-    const published = path.join(ROOT, "registry", "versions", "v1.1.0", "index.json");
+  it("500s when a versioned item is edited in place, rather than projecting a lie", async () => {
+    const published = path.join(ROOT, "registry", "versions", "v1.1.0", "theme.json");
     const original = await readFile(published, "utf8");
     try {
       await writeFile(published, `${original.trimEnd()}\n\n`, "utf8");
-      const response = await call("v1.1.0/styles/vega/index.json");
-      expect(response.status).toBe(500);
+      expect((await call("v1.1.0/theme.json")).status).toBe(500);
+      // The index is built from the same bytes, so it must fail too rather than
+      // describe a document it could not verify.
+      expect((await call("v1.1.0/index.json")).status).toBe(500);
     } finally {
       await writeFile(published, original, "utf8");
     }
