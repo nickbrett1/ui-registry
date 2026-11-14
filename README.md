@@ -306,19 +306,26 @@ between the index's file shape (`path`) and a served item's (`content`+`target`)
 
 The app carries a real home-screen icon, not a bare `favicon.png`:
 
-| file                                  | why                                                                                    |
-| ------------------------------------- | -------------------------------------------------------------------------------------- |
-| `static/icon.svg`                     | the source; slate ground, accent monogram, one cream rule                              |
-| `static/apple-touch-icon.png` (180)   | **iOS ignores `manifest.webmanifest` icons** — this link is the whole home-screen icon |
-| `static/icon-192.png`, `icon-512.png` | Android / PWA install prompt                                                           |
-| `static/favicon.png` (32)             | the tab                                                                                |
-| `static/manifest.webmanifest`         | `display: standalone`, `theme_color` `#0f172a`                                         |
+| file                                  | why                                                                                     |
+| ------------------------------------- | --------------------------------------------------------------------------------------- |
+| `static/icon.svg`                     | the source; four house-coloured pieces on the slate ground, one of them only an outline |
+| `static/apple-touch-icon.png` (180)   | **iOS ignores `manifest.webmanifest` icons** — this link is the whole home-screen icon  |
+| `static/icon-192.png`, `icon-512.png` | Android / PWA install prompt                                                            |
+| `static/favicon.png` (32)             | the tab                                                                                 |
+| `static/manifest.webmanifest`         | `display: standalone`, `theme_color` `#0f172a`                                          |
 
 `src/app.html` links all of them, plus `apple-mobile-web-app-*` so the launch
 screen and status bar stay dark instead of flashing white. The icon is full
 bleed with no rounded corners of its own: iOS rounds it, and an inset icon shows
 up as a ring against a dark wallpaper. `tests/icon.test.js` asserts every size
-exists and that the SVG still carries the three canonical token values.
+exists and that the SVG still carries the canonical token values.
+
+The mark is four pieces — sky, cream, green, and one that is only an outline —
+because a registry is a set of parts, some taken and some not. The first attempt
+was the word `nb` in accent on slate with one cream rule under it; at home-screen
+size that reads as a dark blue tile with a line, which is a colour, not a mark.
+The composition is inside the maskable safe zone (76px of 512 = 15%), so a
+launcher that crops to a circle keeps all four pieces.
 
 **To add it:** open `http://<host>:3012/` in Safari on the phone → Share → Add to
 Home Screen. It launches standalone, titled "nb UI".
