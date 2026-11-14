@@ -343,6 +343,22 @@ The first run found two real forks: `stratechery-search`'s `app-shell` was two
 minor versions behind (no `nav` slot) and `data-download` had hand-edited the
 strip out of its shell, which is why app-shell 1.12.0 grew `footer={false}`.
 
+Who consumes what, as of 1.14.0:
+
+| repo | pin | takes |
+|---|---|---|
+| `data-download` | 1.12.0 | `app-shell`, `stat-strip`, `bar-series`, `data-table` |
+| `stratechery-search` | 1.11.0 | `app-shell`, `result-list`, `filter-panel` (and 15 literals still to move onto roles) |
+| `deepseek-balance` | 1.11.0 | `app-shell`, `stat-strip` |
+| `devdash` | 1.14.0 | `meter-strip`, `action-list`, `log-view` + the whole theme |
+| `data-scout` | 1.14.0 | the **theme only** — it is Python-rendered static HTML, so it has no Svelte to install a block into |
+
+`data-scout` is the case that says what a design system is: it cannot use a
+component, but its stylesheet now names the same roles (`--ink`, `--line`,
+`--accent`), so a palette change reaches it too. Its theme copy is manual —
+`check-nb-blocks` compares vendored *components* — and its `.nb-registry.json`
+records the release the copy came from.
+
 ### A block names a role, never a value — and that is a check
 
 `var(--warn)` is a claim about what a colour is *for*; `#fdba74` is a claim about
@@ -397,14 +413,14 @@ The `webServer` builds and runs `build/index.js`, the artifact that ships to the
 container, and refuses to reuse a server already on the port — a server there is
 *some other build*, and trusting it silently measures the wrong checkout.
 
-### The eleven blocks
+### The blocks
 
 `blocks/` holds the house **layouts** — the second half of the problem this
 registry exists for. The theme makes a new project _look_ right; the blocks make
 a page _structurally_ right without anyone re-deriving a top bar or a status
-lane. The list is derived from the three UIs that already ship
-(`stratechery-search`, `deepseek-balance`, `data-download`), not ported from
-shadcn's React blocks: no project here has a sidebar, a login page or a settings
+lane. The list is derived from the four UIs that already ship
+(`stratechery-search`, `deepseek-balance`, `data-download`, `devdash`), not
+ported from shadcn's React blocks: no project here has a sidebar, a login page or a settings
 form, so those are deliberately absent.
 
 | block            | installed as              | what it is                                                                            |
@@ -420,15 +436,19 @@ form, so those are deliberately absent.
 | `bar-series`     | `nb/BarSeries.svelte`     | value axis in the caller's unit, per-bar display strings, a dashed projection bar     |
 | `data-table`     | `nb/DataTable.svelte`     | column labels, tabular numerics, hairline rows, a `row` slot of cells                 |
 | `request-form`   | `nb/RequestForm.svelte`   | schema-driven form, one message per failed constraint                                 |
+| `meter-strip`    | `nb/MeterStrip.svelte`    | used-against-a-ceiling bar (`role="progressbar"`) with the reading beside it, then figures |
+| `action-list`    | `nb/ActionList.svelte`    | one row per thing you *operate*: state pill, badges, and `actions`/`note`/`aside` per row |
+| `log-view`       | `nb/LogView.svelte`       | a job's output in a panel: state pill, notice, self-scrolling `pre` (bindable), actions |
 
 ```bash
 npm run build:blocks            # blocks/*/*.svelte -> registry/<name>.json -> registry.json
 npm run publish:item data-table 1.8.0
 ```
 
-Browse them at **`/`** — the landing page imports the same eleven files the
-registry publishes and renders all eleven, so a block that does not render breaks
-the build. (`/blocks` was a second page for this; it now 308s to `/`, because
+Browse them at **`/`** — the landing page imports the same files the registry
+publishes and renders every one of them, so a block that does not render breaks
+the build. Neither the page nor its tests count them: they read `registry.json`,
+because a literal "eleven" is how this list went stale twice. (`/blocks` was a second page for this; it now 308s to `/`, because
 asking someone to press a button to reach the only content was a wasted tap —
 and on an iPhone home screen the button sat under the status bar.)
 
@@ -436,6 +456,20 @@ and on an iPhone home screen the button sat under the status bar.)
 colour (a translucent tint is `color-mix(in srgb, var(--bg) 88%, transparent)`,
 derived from the token so a palette change moves the blocks with it), and the
 served item's `content` is byte-identical to the source file.
+
+### What 1.14.0 added: `--tap`, because 34px is the wrong height on a phone
+
+`action-list` and `log-view` hardcoded `min-height: 34px` on their controls.
+That is a reasonable desktop size and the wrong one on a thumb: 44px is the
+smallest target a finger reliably hits (Apple HIG, WCAG 2.5.5), and `devdash`
+— the app these blocks were lifted from — was careful about exactly that
+before it adopted them.
+
+The fix is a role, not a second block: the theme now carries `--tap: 2rem`, the
+blocks size their controls with `var(--tap)`, and a phone-first consumer raises
+it in its own theme (`devdash` sets `2.75rem`). `data-scout` had already
+invented this name in its own stylesheet, which is how a third occurrence
+becomes a role.
 
 ### What 1.13.0 added: three blocks devdash had been writing inline
 
