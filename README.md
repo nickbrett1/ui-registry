@@ -90,18 +90,28 @@ doppler setup --no-interactive --project common --config dev
 ## Registry
 
 This repo is the source of the `@nb` theme, the primitives and (later) the blocks,
-and it serves them over a gated HTTP endpoint. There is no static `registry/`
-directory exposed to the network: `src/routes/r/[...path]/+server.js` reads the
-JSON from disk, so the bearer-token check is possible at all.
+and it serves them over HTTP. There is no static `registry/` directory exposed to
+the network: `src/routes/r/[...path]/+server.js` reads the JSON from disk because
+it has to resolve a version against a manifest and verify a digest, which a
+static file cannot do.
 
 ```bash
 GET /r/registry.json                        # the index (GET /r is the same document)
 GET /r/theme.json?version=1.0.0             # one item, CSS inlined
 ```
 
-Everything under `/r/` requires `Authorization: Bearer $NB_REGISTRY_TOKEN`. With
-no token, a wrong token, or no `NB_REGISTRY_TOKEN` configured on the server, you
-get `401` (or `503` when the server itself is unconfigured) and no detail.
+**The endpoint is public, deliberately (2026-11-14).** There is no bearer token
+and no `401`. `shadcn-svelte@1.8.1` sends no auth headers at all — verified by
+reading its published bundle: no `Authorization`, no `registries` map, no
+namespaces — so a gated registry cannot be consumed by the only CLI that would
+consume it. The token was designed on an assumption that did not hold, and a gate
+no client can pass protects nothing but the illusion of one.
+
+That costs nothing here, because the gate was never what kept anything private:
+the repo is public and the served items are committed to it. What protects this
+endpoint is **immutability** — items are version-addressed and checked against a
+digest on every read — and that works identically for an authenticated caller and
+an anonymous one.
 
 ### Versions are immutable, and items are only served at one
 
@@ -135,9 +145,17 @@ A consumer pins it in `components.json`, and the CLI sends the parameter for you
 ```json
 { "registries": { "@nb": {
     "url": "https://<host>/r/{name}.json",
-    "headers": { "Authorization": "Bearer ${NB_REGISTRY_TOKEN}" },
     "params": { "version": "1.0.0" } } } }
 ```
+
+> **Caveat, 2026-11-14:** that block is the *shadcn/ui* (React) namespacing
+> syntax. `shadcn-svelte@1.8.1` does not implement it — no `registries` map, no
+> `headers`, no `{name}` template, and no query-parameter pinning. Its registry
+> base comes from the `COMPONENTS_REGISTRY_URL` / `REGISTRY_URL` environment
+> variables (falling back to a `registry` string in `components.json`) and it
+> appends `/styles/<style>/index.json` and `/styles/<style>/<name>.json`. So a
+> Svelte consumer needs a URL-prefixed version (`.../r/v1.0.0`) and this route
+> does not yet serve that shape. See the `ui-shadcn` capability note.
 
 ### The theme
 

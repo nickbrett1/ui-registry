@@ -1,28 +1,37 @@
 import { readFile, realpath, stat } from "node:fs/promises";
-import { createHash, timingSafeEqual } from "node:crypto";
+import { createHash } from "node:crypto";
 import path from "node:path";
 
 /**
  * The registry endpoint.
  *
  * `GET /r/registry.json` -> the index, `GET /r/<name>.json?version=x.y.z` -> one
- * item. This is a ROUTE and not a static directory on purpose: a static file
- * cannot check a bearer token, and moving the check to a reverse proxy is the
- * hand-made path the design note rejected (design note §3.6.6). Do not
- * "simplify" it back.
+ * item. This is a ROUTE and not a static directory on purpose: it has to resolve
+ * a version against a manifest and verify digests, which a static file cannot do
+ * (design note §3.6.6). Do not "simplify" it back.
  *
- * Everything here is gated, index included. The repo being public and the served
- * registry being gated are independent decisions and both are deliberate.
+ * **The endpoint is PUBLIC — decided deliberately 2026-11-14.** There is no
+ * bearer token, and that is not an oversight: `shadcn-svelte@1.8.1` sends no
+ * auth headers at all (no `Authorization`, no `registries` map, no namespaces —
+ * verified against the published bundle), so a gated registry is *unconsumable*
+ * by the only CLI that would use it. The token was designed on an assumption
+ * that turned out to be false, and a gate that no client can pass protects
+ * nothing but the illusion of one.
  *
- * Items are **version-addressed and immutable** (design note §3.5, §3.6.7 item
- * 3). There is deliberately no unversioned item route: a design system that
- * mutates under a live project is worse than a stale one, so `?version=` is
- * required and an unknown version is a 404 rather than a quiet fall-back to
- * whatever happens to be on disk. Publishing is a separate, explicit act --
- * `npm run publish:item <name> <version>` -- that writes a frozen copy plus a
- * digest into `registry/versions/manifest.json`; the digest is checked on every
- * read, so a published version that is edited in place serves a 500, not a
- * silent change.
+ * What actually protects this endpoint, in order of what a reader should trust:
+ *   1. **The source is public anyway.** The repo is public and the served items
+ *      are committed to it, so nothing here is a secret. Gating the endpoint was
+ *      never what kept the theme private.
+ *   2. **Immutability.** Items are version-addressed and checked against a
+ *      digest in `registry/versions/manifest.json` on every read, so the risk
+ *      that matters — a design system changing under a live project — is caught
+ *      whether or not the caller is authenticated.
+ *   3. **Containment.** `[...path]` is attacker-controlled; see
+ *      `resolveInsideRoot` below.
+ *
+ * If a gate is ever wanted again, it must arrive with a client that can send a
+ * header. Putting it back "because the design note said so" would re-break
+ * consumption, which is what the gate did the first time.
  */
 
 export const prerender = false;
@@ -36,24 +45,13 @@ const MANIFEST_FILE = path.join(VERSIONS_DIR, "manifest.json");
 /**
  * Defence in depth. Containment below is the real guard; the extension allowlist
  * means a mistake in it cannot turn into "serve the container's whole filesystem".
- * `.css` is kept for the `/r/styles/nb.css` shape the design note sketches; no
- * such file is published today.
+ * `.css` is kept for the `/r/styles/nb.css` shape the design note sketches.
  */
 const ALLOWED_EXTENSIONS = new Set([".json", ".css"]);
 
 /** Published items are flat: `<name>.json` at a version. Never nested. */
 const ITEM_NAME = /^[a-z0-9][a-z0-9-]*\.json$/;
 const SEMVER = /^\d+\.\d+\.\d+$/;
-
-const UNAUTHORIZED_HEADERS = {
-  "www-authenticate": 'Bearer realm="nb-registry"',
-  "cache-control": "no-store",
-};
-
-/** 401 with no body: do not tell an unauthenticated caller what does or does not exist. */
-function unauthorized() {
-  return new Response(null, { status: 401, headers: UNAUTHORIZED_HEADERS });
-}
 
 function jsonError(status, error, extra = {}) {
   return new Response(JSON.stringify({ error, ...extra }), {
@@ -63,32 +61,6 @@ function jsonError(status, error, extra = {}) {
       "cache-control": "no-store",
     },
   });
-}
-
-/**
- * Constant-time comparison. Both sides are hashed first so that length is not a
- * leaking channel (`timingSafeEqual` throws on differing lengths).
- */
-function constantTimeEquals(a, b) {
-  const left = createHash("sha256").update(a, "utf8").digest();
-  const right = createHash("sha256").update(b, "utf8").digest();
-  return timingSafeEqual(left, right);
-}
-
-/** @returns {"ok" | "denied" | "unconfigured"} */
-function checkAuthorization(request) {
-  const expected = process.env.NB_REGISTRY_TOKEN;
-  // Fail closed *and* loudly. A missing secret must not read as "the route is
-  // broken", and it must not read as "authorised" either.
-  if (!expected) return "unconfigured";
-
-  const header = request.headers.get("authorization");
-  if (!header) return "denied";
-
-  const match = /^Bearer +(.+)$/i.exec(header.trim());
-  if (!match) return "denied";
-
-  return constantTimeEquals(match[1], expected) ? "ok" : "denied";
 }
 
 /**
@@ -166,20 +138,6 @@ function publishedVersions(manifest) {
 
 /** @type {import('@sveltejs/kit').RequestHandler} */
 export async function GET({ params, request }) {
-  const authorization = checkAuthorization(request);
-
-  if (authorization === "unconfigured") {
-    console.error(
-      "[/r] NB_REGISTRY_TOKEN is not set - refusing to serve the registry. " +
-        "It is expected from Doppler; see README.",
-    );
-    return new Response("registry not configured\n", {
-      status: 503,
-      headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" },
-    });
-  }
-  if (authorization !== "ok") return unauthorized();
-
   const requested = params.path ?? "";
   const url = new URL(request.url);
 
