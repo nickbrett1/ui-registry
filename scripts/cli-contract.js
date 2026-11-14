@@ -21,11 +21,20 @@
  * project installs tailwindcss/svelte). CI runs it as its own step.
  */
 import { spawn, execFile } from "node:child_process";
-import { cp, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import {
+  cp,
+  mkdir,
+  mkdtemp,
+  readFile,
+  readdir,
+  rm,
+  writeFile,
+} from "node:fs/promises";
 import { existsSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import net from "node:net";
+import { compile } from "svelte/compiler";
 
 /** The version under contract. Bump deliberately, never floating. */
 const CLI = "shadcn-svelte@1.8.1";
@@ -51,10 +60,15 @@ function run(cmd, argv, options = {}) {
       cmd,
       argv,
       { maxBuffer: 64 * 1024 * 1024, ...options },
-      (error, stdout, stderr) => resolve({ code: error?.code ?? 0, stdout, stderr }),
+      (error, stdout, stderr) =>
+        resolve({ code: error?.code ?? 0, stdout, stderr }),
     );
     child.on("error", (error) =>
-      resolve({ code: error.code ?? 1, stdout: "", stderr: String(error.message) }),
+      resolve({
+        code: error.code ?? 1,
+        stdout: "",
+        stderr: String(error.message),
+      }),
     );
   });
 }
@@ -113,7 +127,10 @@ async function freePort() {
 /** Every published theme version, newest first, straight from the manifest. */
 async function themeVersions() {
   const manifest = JSON.parse(
-    await readFile(path.join(ROOT, "registry", "versions", "manifest.json"), "utf8"),
+    await readFile(
+      path.join(ROOT, "registry", "versions", "manifest.json"),
+      "utf8",
+    ),
   );
   const semver = (v) => v.split(".").map(Number);
   return (manifest.items ?? [])
@@ -132,14 +149,26 @@ async function startServer(workdir) {
   // The rehearsal that production runs: the adapter-node output plus the data
   // it serves, in an otherwise empty directory. Nothing from the source tree
   // gets to rescue a missing file, which is exactly the failure we want seen.
-  await cp(path.join(ROOT, "build"), path.join(serveDir, "build"), { recursive: true });
-  await cp(path.join(ROOT, "registry"), path.join(serveDir, "registry"), { recursive: true });
-  await cp(path.join(ROOT, "registry.json"), path.join(serveDir, "registry.json"));
+  await cp(path.join(ROOT, "build"), path.join(serveDir, "build"), {
+    recursive: true,
+  });
+  await cp(path.join(ROOT, "registry"), path.join(serveDir, "registry"), {
+    recursive: true,
+  });
+  await cp(
+    path.join(ROOT, "registry.json"),
+    path.join(serveDir, "registry.json"),
+  );
 
   const port = await freePort();
   const child = spawn(process.execPath, [path.join("build", "index.js")], {
     cwd: serveDir,
-    env: { ...process.env, PORT: String(port), HOST: "127.0.0.1", NODE_ENV: "production" },
+    env: {
+      ...process.env,
+      PORT: String(port),
+      HOST: "127.0.0.1",
+      NODE_ENV: "production",
+    },
     stdio: ["ignore", "pipe", "pipe"],
   });
   let output = "";
@@ -208,7 +237,11 @@ async function createConsumer(workdir) {
     `${JSON.stringify(
       {
         style: "vega",
-        tailwind: { css: "src/app.css", baseColor: "slate", cssVariables: true },
+        tailwind: {
+          css: "src/app.css",
+          baseColor: "slate",
+          cssVariables: true,
+        },
         aliases: {
           components: "$lib/components",
           utils: "$lib/utils",
@@ -247,7 +280,9 @@ async function main() {
     if (build.code !== 0) {
       log(build.stdout);
       log(build.stderr);
-      throw new Error("build failed -- cannot test a contract against a server that will not build");
+      throw new Error(
+        "build failed -- cannot test a contract against a server that will not build",
+      );
     }
   }
   if (!existsSync(path.join(ROOT, "build", "index.js"))) {
@@ -258,7 +293,10 @@ async function main() {
   const version = versions[0];
   log(`latest published theme: ${version}\n`);
   const item = JSON.parse(
-    await readFile(path.join(ROOT, "registry", "versions", `v${version}`, "theme.json"), "utf8"),
+    await readFile(
+      path.join(ROOT, "registry", "versions", `v${version}`, "theme.json"),
+      "utf8",
+    ),
   );
 
   const workdir = await mkdtemp(path.join(os.tmpdir(), "cli-contract-"));
@@ -271,7 +309,11 @@ async function main() {
     // The endpoint the CLI is pointed at is exactly the one a consumer pins.
     const indexBase = `${server.base}/r/v${version}`;
     const probe = await fetch(`${indexBase}/index.json`);
-    check(probe.ok, `GET /r/v${version}/index.json -> 200`, `status ${probe.status}`);
+    check(
+      probe.ok,
+      `GET /r/v${version}/index.json -> 200`,
+      `status ${probe.status}`,
+    );
     const index = probe.ok ? await probe.json() : [];
     check(
       Array.isArray(index),
@@ -284,7 +326,9 @@ async function main() {
     );
 
     const { dir: consumer, importLine } = await createConsumer(workdir);
-    log("\ninstalling the consumer's toolchain (tailwindcss, svelte, kit, vite)...");
+    log(
+      "\ninstalling the consumer's toolchain (tailwindcss, svelte, kit, vite)...",
+    );
     const install = await run(
       "npm",
       [
@@ -299,7 +343,10 @@ async function main() {
         "@sveltejs/vite-plugin-svelte@6",
         "vite@7",
       ],
-      { cwd: consumer, env: { ...process.env, npm_config_update_notifier: "false" } },
+      {
+        cwd: consumer,
+        env: { ...process.env, npm_config_update_notifier: "false" },
+      },
     );
     if (install.code !== 0) log(install.stderr.slice(-2000));
 
@@ -309,13 +356,25 @@ async function main() {
     // written nothing. A consumer that trusts --yes gets a green exit and no
     // theme, so the flag is part of the integration and is asserted, not
     // assumed.
-    log(`\nrunning ${CLI} add theme (--yes, no --overwrite) against ${indexBase}...`);
-    const cliEnv = { ...process.env, COMPONENTS_REGISTRY_URL: indexBase, NO_COLOR: "1" };
-    const withoutOverwrite = await runCli(["add", "theme", "--yes", "--no-deps-install"], {
-      cwd: consumer,
-      env: cliEnv,
-    });
-    check(!withoutOverwrite.timedOut, `${CLI} does not hang on stdin when non-interactive`);
+    log(
+      `\nrunning ${CLI} add theme (--yes, no --overwrite) against ${indexBase}...`,
+    );
+    const cliEnv = {
+      ...process.env,
+      COMPONENTS_REGISTRY_URL: indexBase,
+      NO_COLOR: "1",
+    };
+    const withoutOverwrite = await runCli(
+      ["add", "theme", "--yes", "--no-deps-install"],
+      {
+        cwd: consumer,
+        env: cliEnv,
+      },
+    );
+    check(
+      !withoutOverwrite.timedOut,
+      `${CLI} does not hang on stdin when non-interactive`,
+    );
     const cssPath = path.join(consumer, "src", "app.css");
     const afterYesOnly = await readFile(cssPath, "utf8");
     check(
@@ -325,30 +384,51 @@ async function main() {
     );
 
     log(`\nrunning ${CLI} add theme --overwrite against ${indexBase}...`);
-    const cli = await runCli(["add", "theme", "--yes", "--overwrite", "--no-deps-install"], {
-      cwd: consumer,
-      env: cliEnv,
-    });
+    const cli = await runCli(
+      ["add", "theme", "--yes", "--overwrite", "--no-deps-install"],
+      {
+        cwd: consumer,
+        env: cliEnv,
+      },
+    );
     log(cli.stdout.trim() ? `\n${cli.stdout.trim()}` : "");
     if (cli.code !== 0) log(cli.stderr.slice(-4000));
 
-    check(cli.code === 0, `${CLI} add theme --overwrite exits 0`, `exit ${cli.code}`);
-    check(!cli.timedOut, "the CLI completes within the timeout (no stdin wait)");
+    check(
+      cli.code === 0,
+      `${CLI} add theme --overwrite exits 0`,
+      `exit ${cli.code}`,
+    );
+    check(
+      !cli.timedOut,
+      "the CLI completes within the timeout (no stdin wait)",
+    );
 
     const css = await readFile(cssPath, "utf8");
     const compact = css.replace(/\s+/g, " ");
 
-    check(css.includes(importLine.trim()), 'keeps the consumer\'s @import "tailwindcss";');
+    check(
+      css.includes(importLine.trim()),
+      'keeps the consumer\'s @import "tailwindcss";',
+    );
     // Not an assertion about our item, but a consumer-facing consequence worth
     // printing: the merge adds the CLI's own stylesheet import, so a project
     // that installs the theme needs `shadcn-svelte` present at build time.
     const foreignImports = [...css.matchAll(/@import\s+"([^"]+)"/g)]
       .map((m) => m[1])
-      .filter((specifier) => !specifier.startsWith(".") && specifier !== "tailwindcss");
+      .filter(
+        (specifier) =>
+          !specifier.startsWith(".") && specifier !== "tailwindcss",
+      );
     if (foreignImports.length > 0) {
-      log(`  note  the merge imports: ${foreignImports.join(", ")} (must be a dependency of the consumer)`);
+      log(
+        `  note  the merge imports: ${foreignImports.join(", ")} (must be a dependency of the consumer)`,
+      );
     }
-    check(/@theme\s+inline/.test(css), "merges cssVars into an @theme inline block");
+    check(
+      /@theme\s+inline/.test(css),
+      "merges cssVars into an @theme inline block",
+    );
 
     // Expectations come from the frozen item, not from this file: whatever the
     // registry serves is what must land in the consumer's stylesheet.
@@ -362,7 +442,9 @@ async function main() {
     );
 
     const selectors = Object.keys(item.css ?? {});
-    const missingRules = selectors.filter((selector) => !compact.includes(selector));
+    const missingRules = selectors.filter(
+      (selector) => !compact.includes(selector),
+    );
     check(
       missingRules.length === 0,
       `all ${selectors.length} css rules arrive (${selectors.slice(0, 3).join(", ")}...)`,
@@ -376,15 +458,24 @@ async function main() {
       !existsSync(path.join(consumer, "src", "nb-theme.css")),
       "creates no src/nb-theme.css (the theme is merged, not a second stylesheet)",
     );
-    const strayDir = await readdir(path.join(consumer, "src"), { withFileTypes: true });
+    const strayDir = await readdir(path.join(consumer, "src"), {
+      withFileTypes: true,
+    });
     check(
-      !strayDir.some((entry) => entry.isDirectory() && entry.name.endsWith(".css")),
+      !strayDir.some(
+        (entry) => entry.isDirectory() && entry.name.endsWith(".css"),
+      ),
       "creates no directory named *.css in src/",
-      strayDir.filter((e) => e.isDirectory()).map((e) => e.name).join(", "),
+      strayDir
+        .filter((e) => e.isDirectory())
+        .map((e) => e.name)
+        .join(", "),
     );
     const files = await walk(consumer);
     check(
-      !files.some((file) => /nb-theme/.test(file) && !file.includes("node_modules")),
+      !files.some(
+        (file) => /nb-theme/.test(file) && !file.includes("node_modules"),
+      ),
       "no file anywhere in the project references nb-theme",
     );
 
@@ -394,6 +485,92 @@ async function main() {
       css.split("\n").length > 40,
       `consumer stylesheet grew (${css.split("\n").length} lines)`,
     );
+
+    // --- blocks: does a block land where the item says it will? --------------
+    //
+    // `registry:theme` taught us that a type whose install path is resolved *for*
+    // you is a type whose path you cannot assert (it wrote app.css/src/nb-theme.css).
+    // A block is a real file in a real directory, so the whole claim is checkable
+    // here: the item says `src/lib/components/nb/<Name>.svelte`, and either that
+    // is where it lands or the block library is a lie.
+    const blockName = "app-shell";
+    const blockItemPath = path.join(
+      ROOT,
+      "registry",
+      "versions",
+      `v${version}`,
+      `${blockName}.json`,
+    );
+    if (!existsSync(blockItemPath)) {
+      check(
+        false,
+        `${blockName} is published at v${version} (the block library ships with the theme)`,
+      );
+    } else {
+      const blockItem = JSON.parse(await readFile(blockItemPath, "utf8"));
+      const [blockFile] = blockItem.files;
+
+      log(`\nrunning ${CLI} add ${blockName} against ${indexBase}...`);
+      const blockRun = await runCli(
+        ["add", blockName, "--yes", "--overwrite", "--no-deps-install"],
+        {
+          cwd: consumer,
+          env: cliEnv,
+        },
+      );
+      if (blockRun.code !== 0) log(blockRun.stderr.slice(-4000));
+      check(
+        blockRun.code === 0,
+        `${CLI} add ${blockName} exits 0`,
+        `exit ${blockRun.code}`,
+      );
+
+      // The CLI resolves a `registry:file` target as
+      // `<components alias> + "/" + target`, so the alias is part of the path.
+      // Read it back out of the consumer's own components.json rather than
+      // repeating what the contract already wrote there.
+      const alias = JSON.parse(
+        await readFile(path.join(consumer, "components.json"), "utf8"),
+      ).aliases.components;
+      const aliasDir = alias.replace(/^\$lib/, path.join("src", "lib"));
+      const installed = path.join(consumer, aliasDir, blockFile.target);
+      check(
+        existsSync(installed),
+        `${blockName} installs to its declared target (${blockFile.target})`,
+        `not found at ${installed}`,
+      );
+
+      if (existsSync(installed)) {
+        const written = await readFile(installed, "utf8");
+        // Byte-for-byte, because a transformed install would mean the CLI rewrites
+        // our imports -- worth knowing, and worth failing on if it happens silently.
+        check(
+          written === blockFile.content,
+          `${blockName} installs byte-for-byte as published`,
+          `installed ${written.length} bytes, published ${blockFile.content.length}`,
+        );
+        const compiled = compile(written, {
+          filename: `${blockName}.svelte`,
+          generate: "client",
+        });
+        check(
+          (compiled.warnings ?? []).length === 0,
+          `${blockName} compiles in the consumer (no warnings)`,
+          JSON.stringify(compiled.warnings ?? []),
+        );
+      }
+
+      const installedOutsideTarget = (await walk(consumer)).filter(
+        (file) => /(^|[\\/])AppShell\.svelte$/.test(file) && file !== installed,
+      );
+      check(
+        installedOutsideTarget.length === 0,
+        `no second copy of ${blockName} anywhere in the consumer`,
+        installedOutsideTarget
+          .map((f) => path.relative(consumer, f))
+          .join(", "),
+      );
+    }
   } finally {
     server?.child.kill("SIGKILL");
     if (failures.length === 0 && !KEEP) {
@@ -408,7 +585,9 @@ async function main() {
     for (const failure of failures) log(`  - ${failure}`);
     process.exit(1);
   }
-  log("\ncontract holds: the pinned CLI installs the theme this registry serves.");
+  log(
+    "\ncontract holds: the pinned CLI installs the theme this registry serves.",
+  );
 }
 
 main().catch((error) => {

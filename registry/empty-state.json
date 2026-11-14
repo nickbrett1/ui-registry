@@ -1,0 +1,23 @@
+{
+  "$schema": "https://shadcn-svelte.com/schema/registry-item.json",
+  "name": "empty-state",
+  "title": "Empty State",
+  "type": "registry:block",
+  "author": "nickbrett1 <https://github.com/nickbrett1>",
+  "description": "Cause-aware zero-result card: distinguishes narrow filters (with clear-filters action) from misspelled queries.",
+  "dependencies": [],
+  "devDependencies": [],
+  "registryDependencies": [],
+  "files": [
+    {
+      "type": "registry:file",
+      "target": "nb/EmptyState.svelte",
+      "content": "<script>\n  /**\n   * EmptyState — cause-aware zero-result presentation.\n   *\n   * Differentiates \"no results because filters are too narrow\" (shows a Clear\n   * Filters button) from \"no results for search phrase\" (suggests fewer words),\n   * and generic empty states. Lifted from stratechery-search.\n   */\n  let {\n    cause = \"empty\",\n    query = \"\",\n    onclear,\n    customMessage = \"\",\n  } = $props();\n</script>\n\n<div class=\"card empty-state\">\n  <div class=\"empty-icon micro\">zero results</div>\n\n  <h2 class=\"empty-title\">\n    {#if customMessage}\n      {customMessage}\n    {:else if cause === \"filters\"}\n      No matches for active filters\n    {:else if cause === \"query\"}\n      No results found for <mark>{query}</mark>\n    {:else if cause === \"error\"}\n      Unable to load data\n    {:else}\n      Nothing to display\n    {/if}\n  </h2>\n\n  <p class=\"empty-hint hint\">\n    {#if cause === \"filters\"}\n      Try clearing one or more filters to broaden your search.\n    {:else if cause === \"query\"}\n      Check for typos, or try using fewer or more general keywords.\n    {:else if cause === \"error\"}\n      An unexpected error occurred while fetching data. Try refreshing the page.\n    {:else}\n      No items have been added to this view yet.\n    {/if}\n  </p>\n\n  {#if cause === \"filters\" && onclear}\n    <div class=\"empty-action\">\n      <button type=\"button\" class=\"btn primary\" onclick={() => onclear()}>\n        Clear all filters\n      </button>\n    </div>\n  {/if}\n</div>\n\n<style>\n  .empty-state {\n    padding: 32px 20px;\n    text-align: center;\n    display: flex;\n    flex-direction: column;\n    align-items: center;\n    gap: 8px;\n    margin: 20px 0;\n  }\n\n  .empty-icon {\n    letter-spacing: 0.1em;\n  }\n\n  .empty-title {\n    margin: 4px 0 0;\n    font-size: 15px;\n    font-weight: 600;\n    color: var(--ink);\n  }\n\n  .empty-hint {\n    margin: 0;\n    max-width: 32rem;\n    line-height: 1.5;\n  }\n\n  .empty-action {\n    margin-top: 12px;\n  }\n</style>\n"
+    }
+  ],
+  "meta": {
+    "source": "blocks/empty-state/EmptyState.svelte",
+    "sha256": "b652940515c72ed1e8e3ec6a979c563375296d25b377516982f0f05f4bf28f7d",
+    "bytes": 1944
+  }
+}

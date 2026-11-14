@@ -14,6 +14,11 @@ export default defineConfig({
     },
     coverage: {
       reporter: ["lcov", "text"],
+      // The blocks are presentational components: `tests/blocks.test.js` proves
+      // each compiles and obeys the token rules, and `tests/gallery.test.js`
+      // renders all nine. Counting their function coverage would reward testing
+      // markup order, and their props are data-shaped rather than branchy.
+      exclude: ["blocks/**"],
       thresholds: {
         statements: 80,
         branches: 50,

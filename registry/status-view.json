@@ -1,0 +1,23 @@
+{
+  "$schema": "https://shadcn-svelte.com/schema/registry-item.json",
+  "name": "status-view",
+  "title": "Status View",
+  "type": "registry:block",
+  "author": "nickbrett1 <https://github.com/nickbrett1>",
+  "description": "Four-card status lanes (pending, done, stuck, blocked) with counts in the head and pill badges. Lifted from data-download §8.",
+  "dependencies": [],
+  "devDependencies": [],
+  "registryDependencies": [],
+  "files": [
+    {
+      "type": "registry:file",
+      "target": "nb/StatusView.svelte",
+      "content": "<script>\n  /**\n   * StatusView — four-card status lanes.\n   *\n   * Displays status buckets (pending, done, stuck, blocked) as individual cards\n   * with counts in the head and rows carrying pill badges. Lifted from\n   * data-download §8.\n   */\n  let { cards = [] } = $props();\n</script>\n\n<div class=\"status-grid\" style=\"--status-cols: {cards.length};\">\n  {#each cards as card}\n    <div class=\"card status-card\">\n      <div class=\"card-head\">\n        <span class=\"micro card-title\">{card.title}</span>\n        <span class=\"pill {card.tone ?? ''} num\">{card.count}</span>\n      </div>\n\n      <div class=\"card-rows\">\n        {#if card.rows.length === 0}\n          <div class=\"empty-lane hint\">No items</div>\n        {:else}\n          {#each card.rows as row, idx}\n            <div class=\"lane-row\" class:border-top={idx > 0}>\n              <div class=\"row-info\">\n                {#if row.href}\n                  <a href={row.href} class=\"row-title\">{row.title}</a>\n                {:else}\n                  <span class=\"row-title\">{row.title}</span>\n                {/if}\n                {#if row.meta}\n                  <span class=\"row-meta hint\">{row.meta}</span>\n                {/if}\n              </div>\n              {#if row.pill}\n                <span class=\"pill {row.pill.tone ?? ''}\">{row.pill.label}</span>\n              {/if}\n            </div>\n          {/each}\n        {/if}\n      </div>\n    </div>\n  {/each}\n</div>\n\n<style>\n  .status-grid {\n    display: grid;\n    grid-template-columns: repeat(var(--status-cols, 4), 1fr);\n    gap: 12px;\n    align-items: start;\n  }\n\n  .status-card {\n    display: flex;\n    flex-direction: column;\n    overflow: hidden;\n  }\n\n  .card-head {\n    display: flex;\n    justify-content: space-between;\n    align-items: center;\n    padding: 10px 12px;\n    border-bottom: 1px solid var(--line);\n  }\n\n  .card-title {\n    margin: 0;\n  }\n\n  .card-rows {\n    display: flex;\n    flex-direction: column;\n  }\n\n  .empty-lane {\n    padding: 16px 12px;\n    text-align: center;\n  }\n\n  .lane-row {\n    padding: 8px 12px;\n    display: flex;\n    justify-content: space-between;\n    align-items: center;\n    gap: 8px;\n  }\n\n  .lane-row.border-top {\n    border-top: 1px solid var(--line);\n  }\n\n  .row-info {\n    display: flex;\n    flex-direction: column;\n    gap: 2px;\n    min-width: 0;\n  }\n\n  .row-title {\n    font-size: 12.5px;\n    color: var(--ink);\n    white-space: nowrap;\n    overflow: hidden;\n    text-overflow: ellipsis;\n  }\n\n  .row-meta {\n    font-size: 11px;\n  }\n\n  @media (max-width: 900px) {\n    .status-grid {\n      grid-template-columns: repeat(2, 1fr);\n    }\n  }\n\n  @media (max-width: 600px) {\n    .status-grid {\n      grid-template-columns: 1fr;\n    }\n  }\n</style>\n"
+    }
+  ],
+  "meta": {
+    "source": "blocks/status-view/StatusView.svelte",
+    "sha256": "632aee29c92bd4c9293cc590f69a679a41300777bbb7e0751ca48fecc4e37acf",
+    "bytes": 2705
+  }
+}

@@ -4,16 +4,11 @@ import Page from "../src/routes/+page.svelte";
 import { GET } from "../src/routes/health/+server.js";
 
 describe("generated app smoke test", () => {
-  it("renders the home page with the initial counter", () => {
+  it("renders the registry landing page", () => {
     render(Page);
-    expect(screen.getByText("Welcome to SvelteKit")).toBeInTheDocument();
-    expect(screen.getByRole("button").textContent).toContain("0");
-  });
-  it("increments the counter on click", () => {
-    render(Page);
-    const btn = screen.getByRole("button");
-    fireEvent.click(btn);
-    expect(btn.textContent).toContain("1");
+    expect(screen.getByText("@nb UI Registry")).toBeInTheDocument();
+    expect(screen.getByText("house design system")).toBeInTheDocument();
+    expect(screen.getByText("consumer install")).toBeInTheDocument();
   });
   it("health endpoint returns ok", async () => {
     const res = GET();

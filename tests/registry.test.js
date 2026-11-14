@@ -18,14 +18,28 @@ beforeAll(async () => {
   // Fixtures live inside the served tree on purpose: that is the only way to
   // exercise the containment check against the same root the route uses.
   await mkdir(path.join(ROOT, "registry", "__testdir__"), { recursive: true });
-  await writeFile(path.join(ROOT, "registry", "__test__.txt"), "not servable", "utf8");
-  await writeFile(path.join(ROOT, "registry", "__testdir__", "inside.json"), "{}", "utf8");
+  await writeFile(
+    path.join(ROOT, "registry", "__test__.txt"),
+    "not servable",
+    "utf8",
+  );
+  await writeFile(
+    path.join(ROOT, "registry", "__testdir__", "inside.json"),
+    "{}",
+    "utf8",
+  );
   // A committed symlink is the one escape a lexical `..` check cannot see.
-  await symlink("/etc/hostname", path.join(ROOT, "registry", "__testlink__.json")).catch(() => {});
+  await symlink(
+    "/etc/hostname",
+    path.join(ROOT, "registry", "__testlink__.json"),
+  ).catch(() => {});
 });
 
 afterAll(async () => {
-  await rm(path.join(ROOT, "registry", "__testdir__"), { recursive: true, force: true });
+  await rm(path.join(ROOT, "registry", "__testdir__"), {
+    recursive: true,
+    force: true,
+  });
   await rm(path.join(ROOT, "registry", "__test__.txt"), { force: true });
   await rm(path.join(ROOT, "registry", "__testlink__.json"), { force: true });
 });
@@ -39,10 +53,12 @@ function call(segments, query = "") {
 /** The digest of a published file, as the manifest records it. */
 async function readManifest() {
   return JSON.parse(
-    await readFile(path.join(ROOT, "registry", "versions", "manifest.json"), "utf8"),
+    await readFile(
+      path.join(ROOT, "registry", "versions", "manifest.json"),
+      "utf8",
+    ),
   );
 }
-
 
 describe("GET /r - public, deliberately", () => {
   it("serves the index with no Authorization header", async () => {
@@ -51,7 +67,19 @@ describe("GET /r - public, deliberately", () => {
 
     const body = await response.json();
     expect(body.name).toBe("nb");
-    expect(body.items.map((item) => item.name)).toEqual(["theme"]);
+    // The live catalogue: one theme and the nine blocks it styles.
+    expect(body.items.map((item) => item.name)).toEqual([
+      "theme",
+      "app-shell",
+      "stat-strip",
+      "result-list",
+      "filter-panel",
+      "empty-state",
+      "status-view",
+      "detail-panel",
+      "burst-timeline",
+      "request-form",
+    ]);
   });
 
   it("treats a bare /r as the index", async () => {
@@ -111,9 +139,9 @@ describe("GET /r - documents", () => {
   it("refuses a nested item path, because published items are flat", async () => {
     // `registry/versions/v<x>/<name>.json` is the only shape; a nested segment
     // is not a published item and must not be reachable by path alone.
-    expect((await call("__testdir__/inside.json", "?version=1.0.0")).status).toBe(
-      404,
-    );
+    expect(
+      (await call("__testdir__/inside.json", "?version=1.0.0")).status,
+    ).toBe(404);
   });
 });
 
@@ -137,7 +165,10 @@ describe("GET /r - versioned items are immutable", () => {
 
   it("rejects a version that is not semver, including traversal", async () => {
     for (const version of ["../v1.0.0", "1.0", "1.0.0/../..", "%2e%2e", ""]) {
-      const response = await call("theme.json", `?version=${encodeURIComponent(version)}`);
+      const response = await call(
+        "theme.json",
+        `?version=${encodeURIComponent(version)}`,
+      );
       expect(response.status).toBe(400);
       expect(await response.text()).not.toContain("root:x:");
     }
@@ -155,7 +186,8 @@ describe("GET /r - versioned items are immutable", () => {
   it("carries a strong etag so an immutable document can be cached", async () => {
     const response = await call("theme.json", "?version=1.0.0");
     const entry = (await readManifest()).items.find(
-      (candidate) => candidate.name === "theme" && candidate.version === "1.0.0",
+      (candidate) =>
+        candidate.name === "theme" && candidate.version === "1.0.0",
     );
     expect(response.headers.get("etag")).toBe(`"${entry.sha256}"`);
   });
@@ -167,9 +199,17 @@ describe("GET /r - versioned items are immutable", () => {
     expect(manifest.items.length).toBeGreaterThan(0);
 
     for (const entry of manifest.items) {
-      const file = path.join(ROOT, "registry", "versions", `v${entry.version}`, `${entry.name}.json`);
+      const file = path.join(
+        ROOT,
+        "registry",
+        "versions",
+        `v${entry.version}`,
+        `${entry.name}.json`,
+      );
       const bytes = await readFile(file);
-      expect(createHash("sha256").update(bytes).digest("hex")).toBe(entry.sha256);
+      expect(createHash("sha256").update(bytes).digest("hex")).toBe(
+        entry.sha256,
+      );
       expect(Buffer.byteLength(bytes)).toBe(entry.bytes);
     }
   });
@@ -178,7 +218,13 @@ describe("GET /r - versioned items are immutable", () => {
     // The rule is only real if breaking it is detected. The route compares each
     // read against the manifest digest, so an in-place edit is a 500 -- loud, and
     // never a silently mutated design system.
-    const published = path.join(ROOT, "registry", "versions", "v1.0.0", "theme.json");
+    const published = path.join(
+      ROOT,
+      "registry",
+      "versions",
+      "v1.0.0",
+      "theme.json",
+    );
     const original = await readFile(published, "utf8");
     try {
       await writeFile(published, `${original.trimEnd()}\n\n`, "utf8");
@@ -191,7 +237,13 @@ describe("GET /r - versioned items are immutable", () => {
   });
 
   it("404s a manifest entry whose frozen file is missing", async () => {
-    const published = path.join(ROOT, "registry", "versions", "v1.0.0", "theme.json");
+    const published = path.join(
+      ROOT,
+      "registry",
+      "versions",
+      "v1.0.0",
+      "theme.json",
+    );
     const original = await readFile(published, "utf8");
     try {
       await rm(published);
@@ -204,7 +256,12 @@ describe("GET /r - versioned items are immutable", () => {
   it("still serves the index when the manifest is unreadable", async () => {
     // A corrupt manifest must degrade to "no versions advertised", not to a 500
     // on the one document that tells a client what exists.
-    const manifestFile = path.join(ROOT, "registry", "versions", "manifest.json");
+    const manifestFile = path.join(
+      ROOT,
+      "registry",
+      "versions",
+      "manifest.json",
+    );
     const original = await readFile(manifestFile, "utf8");
     try {
       await writeFile(manifestFile, "{ not json", "utf8");
@@ -344,7 +401,8 @@ describe("GET /r - the CLI shape (version in the path)", () => {
     expect(v120.cssVars.theme["--bg"]).toBe("#0f172a");
 
     // Every one of them still declares the type that says what it is.
-    for (const item of [v100, v110, v120]) expect(item.type).toBe("registry:theme");
+    for (const item of [v100, v110, v120])
+      expect(item.type).toBe("registry:theme");
   });
 
   it("404s an unpublished version in the path shape", async () => {
@@ -371,7 +429,13 @@ describe("GET /r - the CLI shape (version in the path)", () => {
   });
 
   it("500s when a versioned item is edited in place, rather than projecting a lie", async () => {
-    const published = path.join(ROOT, "registry", "versions", "v1.2.0", "theme.json");
+    const published = path.join(
+      ROOT,
+      "registry",
+      "versions",
+      "v1.2.0",
+      "theme.json",
+    );
     const original = await readFile(published, "utf8");
     try {
       await writeFile(published, `${original.trimEnd()}\n\n`, "utf8");
@@ -394,7 +458,9 @@ describe("the theme has one source of truth", () => {
     // as a design system that disagrees with the app it was derived from.
     const { splitThemeSheet } = await import("../scripts/build-theme-item.js");
     const css = await readFile(path.join(ROOT, "src", "app.css"), "utf8");
-    const item = JSON.parse(await readFile(path.join(ROOT, "registry", "theme.json"), "utf8"));
+    const item = JSON.parse(
+      await readFile(path.join(ROOT, "registry", "theme.json"), "utf8"),
+    );
     const expected = splitThemeSheet(css);
 
     expect(item.cssVars.theme).toEqual(expected.cssVars);
@@ -412,7 +478,9 @@ describe("the theme has one source of truth", () => {
     // `cssVars`. Dropping it during the split would give a fresh project light
     // scrollbars and light form controls on a dark ground -- visible, wrong, and
     // blamed on the theme rather than on the generator.
-    const item = JSON.parse(await readFile(path.join(ROOT, "registry", "theme.json"), "utf8"));
+    const item = JSON.parse(
+      await readFile(path.join(ROOT, "registry", "theme.json"), "utf8"),
+    );
     expect(item.css[":root"]).toEqual({ "color-scheme": "dark" });
     expect(item.cssVars.theme["--bg"]).toBe("#0f172a");
   });
@@ -421,7 +489,9 @@ describe("the theme has one source of truth", () => {
     // `target` is meaningless for `registry:theme`: the CLI resolves it against
     // the basename of the consumer's stylesheet *as a directory*, which is how
     // `target: src/nb-theme.css` came to write `app.css/src/nb-theme.css`.
-    const index = JSON.parse(await readFile(path.join(ROOT, "registry.json"), "utf8"));
+    const index = JSON.parse(
+      await readFile(path.join(ROOT, "registry.json"), "utf8"),
+    );
     const theme = index.items.find((item) => item.name === "theme");
 
     expect(theme.type).toBe("registry:theme");
@@ -430,5 +500,44 @@ describe("the theme has one source of truth", () => {
     // travels as cssVars + css and is merged, not copied.
     expect(theme.files).toEqual([]);
     expect(theme.description).toContain("cssVars");
+  });
+
+  it("serves the v1.3.0 index containing all nine blocks and the theme", async () => {
+    const response = await call("v1.3.0/index.json");
+    expect(response.status).toBe(200);
+    const index = await response.json();
+    expect(Array.isArray(index)).toBe(true);
+    expect(index.length).toBe(10);
+
+    const names = index.map((i) => i.name).sort();
+    expect(names).toEqual([
+      "app-shell",
+      "burst-timeline",
+      "detail-panel",
+      "empty-state",
+      "filter-panel",
+      "request-form",
+      "result-list",
+      "stat-strip",
+      "status-view",
+      "theme",
+    ]);
+
+    for (const item of index) {
+      expect(item.relativeUrl).toBe(`${item.name}.json`);
+    }
+  });
+
+  it("serves an individual block at v1.3.0 with integrity check", async () => {
+    const response = await call("v1.3.0/app-shell.json");
+    expect(response.status).toBe(200);
+    const item = await response.json();
+    expect(item.name).toBe("app-shell");
+    expect(item.type).toBe("registry:block");
+    expect(item.files.length).toBe(1);
+    expect(item.files[0].target).toBe("nb/AppShell.svelte");
+    expect(item.files[0].content).toContain(
+      "AppShell — the house application frame",
+    );
   });
 });

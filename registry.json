@@ -12,6 +12,159 @@
       "devDependencies": [],
       "registryDependencies": [],
       "files": []
+    },
+    {
+      "name": "app-shell",
+      "title": "App Shell",
+      "type": "registry:block",
+      "author": "nickbrett1 <https://github.com/nickbrett1>",
+      "description": "Sticky top bar with backdrop blur, wordmark, back pill on non-root views, 68rem main, and footer strip. The house application frame.",
+      "dependencies": [],
+      "devDependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "type": "registry:file",
+          "path": "blocks/app-shell/AppShell.svelte",
+          "target": "nb/AppShell.svelte"
+        }
+      ]
+    },
+    {
+      "name": "stat-strip",
+      "title": "Stat Strip",
+      "type": "registry:block",
+      "author": "nickbrett1 <https://github.com/nickbrett1>",
+      "description": "KPI summary cards (label, big tabular-figure value, sub-line) in a responsive grid. Lifted from deepseek-balance and stratechery-search.",
+      "dependencies": [],
+      "devDependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "type": "registry:file",
+          "path": "blocks/stat-strip/StatStrip.svelte",
+          "target": "nb/StatStrip.svelte"
+        }
+      ]
+    },
+    {
+      "name": "result-list",
+      "title": "Result List",
+      "type": "registry:block",
+      "author": "nickbrett1 <https://github.com/nickbrett1>",
+      "description": "Ranked entity list with title, meta, status pill, and a progressive fold disclosure. Generalised from stratechery-search.",
+      "dependencies": [],
+      "devDependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "type": "registry:file",
+          "path": "blocks/result-list/ResultList.svelte",
+          "target": "nb/ResultList.svelte"
+        }
+      ]
+    },
+    {
+      "name": "filter-panel",
+      "title": "Filter Panel",
+      "type": "registry:block",
+      "author": "nickbrett1 <https://github.com/nickbrett1>",
+      "description": "Facet filter card on desktop; chip row and bottom sheet under 600px. Replaces custom filter layouts.",
+      "dependencies": [],
+      "devDependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "type": "registry:file",
+          "path": "blocks/filter-panel/FilterPanel.svelte",
+          "target": "nb/FilterPanel.svelte"
+        }
+      ]
+    },
+    {
+      "name": "empty-state",
+      "title": "Empty State",
+      "type": "registry:block",
+      "author": "nickbrett1 <https://github.com/nickbrett1>",
+      "description": "Cause-aware zero-result card: distinguishes narrow filters (with clear-filters action) from misspelled queries.",
+      "dependencies": [],
+      "devDependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "type": "registry:file",
+          "path": "blocks/empty-state/EmptyState.svelte",
+          "target": "nb/EmptyState.svelte"
+        }
+      ]
+    },
+    {
+      "name": "status-view",
+      "title": "Status View",
+      "type": "registry:block",
+      "author": "nickbrett1 <https://github.com/nickbrett1>",
+      "description": "Four-card status lanes (pending, done, stuck, blocked) with counts in the head and pill badges. Lifted from data-download §8.",
+      "dependencies": [],
+      "devDependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "type": "registry:file",
+          "path": "blocks/status-view/StatusView.svelte",
+          "target": "nb/StatusView.svelte"
+        }
+      ]
+    },
+    {
+      "name": "detail-panel",
+      "title": "Detail Panel",
+      "type": "registry:block",
+      "author": "nickbrett1 <https://github.com/nickbrett1>",
+      "description": "Entity inspection card: title, status pill, two-column metadata grid, prose body, and history.back() navigation.",
+      "dependencies": [],
+      "devDependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "type": "registry:file",
+          "path": "blocks/detail-panel/DetailPanel.svelte",
+          "target": "nb/DetailPanel.svelte"
+        }
+      ]
+    },
+    {
+      "name": "burst-timeline",
+      "title": "Burst Timeline",
+      "type": "registry:block",
+      "author": "nickbrett1 <https://github.com/nickbrett1>",
+      "description": "Interval burst sparkline chart + historical audit grid with labelled comparison columns ('Explains').",
+      "dependencies": [],
+      "devDependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "type": "registry:file",
+          "path": "blocks/burst-timeline/BurstTimeline.svelte",
+          "target": "nb/BurstTimeline.svelte"
+        }
+      ]
+    },
+    {
+      "name": "request-form",
+      "title": "Request Form",
+      "type": "registry:block",
+      "author": "nickbrett1 <https://github.com/nickbrett1>",
+      "description": "Schema-driven input form with constraint error presentation (one message per failed rule). Lifted from data-download §7.8.",
+      "dependencies": [],
+      "devDependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "type": "registry:file",
+          "path": "blocks/request-form/RequestForm.svelte",
+          "target": "nb/RequestForm.svelte"
+        }
+      ]
     }
   ]
 }

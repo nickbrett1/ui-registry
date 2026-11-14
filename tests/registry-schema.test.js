@@ -28,7 +28,10 @@ describe("registry documents validate against the shadcn-svelte schemas", () => 
     const validate = ajv.compile(schema);
     const valid = validate(await load("registry.json"));
 
-    expect(validate.errors ?? [], JSON.stringify(validate.errors, null, 2)).toEqual([]);
+    expect(
+      validate.errors ?? [],
+      JSON.stringify(validate.errors, null, 2),
+    ).toEqual([]);
     expect(valid).toBe(true);
   });
 
@@ -37,15 +40,41 @@ describe("registry documents validate against the shadcn-svelte schemas", () => 
     const validate = ajv.compile(schema);
     const valid = validate(await load("registry/theme.json"));
 
-    expect(validate.errors ?? [], JSON.stringify(validate.errors, null, 2)).toEqual([]);
+    expect(
+      validate.errors ?? [],
+      JSON.stringify(validate.errors, null, 2),
+    ).toEqual([]);
     expect(valid).toBe(true);
+  });
+
+  it("all built block items validate against schema/registry-item.json", async () => {
+    const schema = await load("schema/registry-item.json");
+    const validate = ajv.compile(schema);
+    const index = await load("registry.json");
+    const blockItems = index.items.filter(
+      (item) => item.type === "registry:block",
+    );
+
+    expect(blockItems.length).toBe(9);
+
+    for (const block of blockItems) {
+      const item = await load(`registry/${block.name}.json`);
+      const valid = validate(item);
+      expect(
+        validate.errors ?? [],
+        `block ${block.name}: ${JSON.stringify(validate.errors, null, 2)}`,
+      ).toEqual([]);
+      expect(valid).toBe(true);
+    }
   });
 
   it("the index item points at a file that exists", async () => {
     const index = await load("registry.json");
     for (const item of index.items) {
       for (const file of item.files ?? []) {
-        await expect(readFile(path.join(ROOT, file.path), "utf8")).resolves.toBeTruthy();
+        await expect(
+          readFile(path.join(ROOT, file.path), "utf8"),
+        ).resolves.toBeTruthy();
       }
     }
   });

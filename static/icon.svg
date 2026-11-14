@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="nb ui registry">
+  <!--
+    The house icon: slate ground, the accent monogram, one warm note.
+
+    Every colour here is a theme token's literal value, because an icon cannot
+    read a CSS variable. They are duplicated on purpose and pinned by
+    tests/icon.test.js against src/app.css, so a palette change fails a test
+    instead of leaving the home-screen icon off-brand.
+  -->
+  <defs>
+    <radialGradient id="lamp" cx="0.18" cy="0.08" r="0.9">
+      <stop offset="0" stop-color="#7dd3fc" stop-opacity="0.16" />
+      <stop offset="0.55" stop-color="#7dd3fc" stop-opacity="0.03" />
+      <stop offset="1" stop-color="#7dd3fc" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <!-- Full bleed: iOS rounds the corners itself, so any inset or transparency
+       shows up as a dark ring or a white one depending on the wallpaper. -->
+  <rect width="512" height="512" fill="#0f172a" />
+  <rect width="512" height="512" fill="url(#lamp)" />
+
+  <!-- A hairline frame, the same 14% tint the card borders use. -->
+  <rect x="56" y="56" width="400" height="400" rx="84" fill="none" stroke="#94a3b8" stroke-opacity="0.18" stroke-width="3" />
+
+  <!-- The monogram. System mono, tabular: the estate's voice for an identifier. -->
+  <text x="256" y="300" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="196" font-weight="700" letter-spacing="-6" fill="#7dd3fc">nb</text>
+
+  <!-- The one warm note: fintechnick's cream, the same yellow used for a match. -->
+  <rect x="196" y="336" width="120" height="12" rx="6" fill="#fce4b8" />
+</svg>

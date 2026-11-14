@@ -105,8 +105,8 @@ depend on the day it ran.
 
 ## Registry
 
-This repo is the source of the `@nb` theme, the primitives and (later) the blocks,
-and it serves them over HTTP. There is no static `registry/` directory exposed to
+This repo is the source of the `@nb` theme and the nine house blocks, and it
+serves them over HTTP. There is no static `registry/` directory exposed to
 the network: `src/routes/r/[...path]/+server.js` reads the JSON from disk because
 it has to resolve a version against a manifest and verify a digest, which a
 static file cannot do.
@@ -134,15 +134,15 @@ an anonymous one.
 A design system that mutates under a live project is worse than a stale one, so
 `?version=` is **required** for an item and there is no "latest":
 
-| Request | Result |
-|---|---|
-| `/r/registry.json` | `200`, always current — the index is a catalogue, not an artifact. Its `x-registry-versions` header lists what is published. |
-| `/r/theme.json` (no version) | `400`, body names the available versions |
-| `/r/theme.json?version=9.9.9` | `404` — never a fall-back to whatever is on disk |
-| `/r/theme.json?version=1.0.0` | `200`, `x-registry-version` and a strong `etag` (the sha256) |
-| `/r/v1.2.0/index.json` | `200`, the index **projected from** the frozen items of that version — an array of `{name, type, relativeUrl}` |
-| `/r/v1.2.0/theme.json` | `200`, the frozen item itself — what `shadcn-svelte` fetches from `relativeUrl` |
-| a published file edited in place | `500` — the route verifies every read against the manifest digest |
+| Request                          | Result                                                                                                                       |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `/r/registry.json`               | `200`, always current — the index is a catalogue, not an artifact. Its `x-registry-versions` header lists what is published. |
+| `/r/theme.json` (no version)     | `400`, body names the available versions                                                                                     |
+| `/r/theme.json?version=9.9.9`    | `404` — never a fall-back to whatever is on disk                                                                             |
+| `/r/theme.json?version=1.0.0`    | `200`, `x-registry-version` and a strong `etag` (the sha256)                                                                 |
+| `/r/v1.2.0/index.json`           | `200`, the index **projected from** the frozen items of that version — an array of `{name, type, relativeUrl}`               |
+| `/r/v1.2.0/theme.json`           | `200`, the frozen item itself — what `shadcn-svelte` fetches from `relativeUrl`                                              |
+| a published file edited in place | `500` — the route verifies every read against the manifest digest                                                            |
 
 The `v<version>/` prefix is what a client actually reads; `?version=` is for
 humans and `curl`. Both resolve the same frozen bytes. The per-version index is
@@ -178,8 +178,8 @@ COMPONENTS_REGISTRY_URL=https://<host>/r/v1.2.0 \
   fallback path does) — then fetches `<base>/index.json` and every
   `relativeUrl` it names. So the base must already be a version.
 - **`--overwrite` is required, and `--yes` is not enough.** `add` asks a second
-  question — *"Updates to your src/app.css are required. Existing CSS variables
-  may be overwritten. Continue?"* — that `--yes` does not answer. Non-interactive
+  question — _"Updates to your src/app.css are required. Existing CSS variables
+  may be overwritten. Continue?"_ — that `--yes` does not answer. Non-interactive
   (closed stdin) it prints that prompt and **exits 0 having written nothing**,
   which reads as success; with an open stdin it waits forever. Only
   `--overwrite` answers it. `scripts/cli-contract.js` pins both halves so this
@@ -205,7 +205,7 @@ sha256 `bb012ad9…0862`) — not retyped and not retuned, because the problem t
 registry exists to solve is a token sheet hand-copied between repos with no
 version and no authority.
 
-`registry/theme.json` is the *working* item — the shape that is served — so it is
+`registry/theme.json` is the _working_ item — the shape that is served — so it is
 generated rather than hand-edited:
 
 ```bash
@@ -227,7 +227,7 @@ with `Invalid input at ["css"]`.
 ### These claims are executable, not remembered
 
 Every fact in the two sections above was wrong at least once, and every wrong
-version came from *reading* the CLI's bundle or docs rather than *running* it —
+version came from _reading_ the CLI's bundle or docs rather than _running_ it —
 six wrong claims, six passing unit tests, one broken consumer. So the beliefs are
 now executable:
 
@@ -241,7 +241,7 @@ runs), creates a throwaway SvelteKit-shaped consumer (`components.json`,
 `src/app.css` = one `@import "tailwindcss";`), and runs `shadcn-svelte@1.8.1 add
 theme` against it. It asserts the index is a JSON **array**, that `--yes` alone
 installs nothing while `--overwrite` does, that every `cssVars` entry and every
-`css` selector from the *served, frozen item* lands in the consumer's stylesheet
+`css` selector from the _served, frozen item_ lands in the consumer's stylesheet
 with its value, that the consumer keeps its own import, and that no
 `nb-theme.css` and no directory named `*.css` appears. Expectations are derived
 from the item, not hardcoded, so a new published version cannot slip past it.
@@ -252,12 +252,76 @@ There is one consumer-side consequence worth knowing: the merge also injects
 `@import "shadcn-svelte/tailwind.css";`, so `shadcn-svelte` has to be a
 dependency of the project at build time.
 
+### The nine blocks
+
+`blocks/` holds the house **layouts** — the second half of the problem this
+registry exists for. The theme makes a new project _look_ right; the blocks make
+a page _structurally_ right without anyone re-deriving a top bar or a status
+lane. The list is derived from the three UIs that already ship
+(`stratechery-search`, `deepseek-balance`, `data-download`), not ported from
+shadcn's React blocks: no project here has a sidebar, a login page or a settings
+form, so those are deliberately absent.
+
+| block            | installed as              | what it is                                                      |
+| ---------------- | ------------------------- | --------------------------------------------------------------- |
+| `app-shell`      | `nb/AppShell.svelte`      | sticky blurred top bar, wordmark, back pill, 68rem main, footer |
+| `stat-strip`     | `nb/StatStrip.svelte`     | label · big tabular value · sub-line, collapsing to one column  |
+| `result-list`    | `nb/ResultList.svelte`    | ranked rows with pill + snippet and a "n more" fold             |
+| `filter-panel`   | `nb/FilterPanel.svelte`   | facet card on desktop; chip row + bottom sheet under 600px      |
+| `empty-state`    | `nb/EmptyState.svelte`    | cause-aware zero results (filters vs query vs error)            |
+| `status-view`    | `nb/StatusView.svelte`    | four lanes, count in each head, pill per row                    |
+| `detail-panel`   | `nb/DetailPanel.svelte`   | header, metadata grid, prose body, `history.back()`             |
+| `burst-timeline` | `nb/BurstTimeline.svelte` | interval chart + audit grid with an "Explains" column           |
+| `request-form`   | `nb/RequestForm.svelte`   | schema-driven form, one message per failed constraint           |
+
+```bash
+npm run build:blocks            # blocks/*/*.svelte -> registry/<name>.json -> registry.json
+npm run publish:item app-shell 1.3.0
+```
+
+Browse them at **`/blocks`** — the gallery imports the same nine files the
+registry publishes, so a block that does not render breaks the build.
+
+**Two rules, both enforced by `tests/blocks.test.js`:** no block hardcodes a
+colour (a translucent tint is `color-mix(in srgb, var(--bg) 88%, transparent)`,
+derived from the token so a palette change moves the blocks with it), and the
+served item's `content` is byte-identical to the source file.
+
+**Install targets are relative to the components alias, not the project root.**
+That is measured, not assumed: a target of `src/lib/components/nb/AppShell.svelte`
+installed itself at `src/lib/components/src/lib/components/nb/AppShell.svelte`,
+because the CLI prepends `aliases.components`. The published target is
+`nb/AppShell.svelte`, and `scripts/cli-contract.js` runs `add app-shell` against
+the production build and asserts where the file lands, that it is byte-for-byte
+the published content, and that it compiles in the consumer.
+
 ### Schemas
 
 `schema/` holds the shadcn-svelte registry schemas as vendored copies; see
 `schema/README.md` for the source URLs, the fetch date, and the difference
 between the index's file shape (`path`) and a served item's (`content`+`target`).
 `tests/registry-schema.test.js` validates both documents against them.
+
+## Installable on a phone
+
+The app carries a real home-screen icon, not a bare `favicon.png`:
+
+| file                                  | why                                                                                    |
+| ------------------------------------- | -------------------------------------------------------------------------------------- |
+| `static/icon.svg`                     | the source; slate ground, accent monogram, one cream rule                              |
+| `static/apple-touch-icon.png` (180)   | **iOS ignores `manifest.webmanifest` icons** — this link is the whole home-screen icon |
+| `static/icon-192.png`, `icon-512.png` | Android / PWA install prompt                                                           |
+| `static/favicon.png` (32)             | the tab                                                                                |
+| `static/manifest.webmanifest`         | `display: standalone`, `theme_color` `#0f172a`                                         |
+
+`src/app.html` links all of them, plus `apple-mobile-web-app-*` so the launch
+screen and status bar stay dark instead of flashing white. The icon is full
+bleed with no rounded corners of its own: iOS rounds it, and an inset icon shows
+up as a ring against a dark wallpaper. `tests/icon.test.js` asserts every size
+exists and that the SVG still carries the three canonical token values.
+
+**To add it:** open `http://<host>:3012/` in Safari on the phone → Share → Add to
+Home Screen. It launches standalone, titled "nb UI".
 
 ## Deployment
 

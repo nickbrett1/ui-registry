@@ -11,6 +11,7 @@
     "dev": "vite dev",
     "build": "vite build",
     "build:theme": "node scripts/build-theme-item.js",
+    "build:blocks": "node scripts/build-blocks.js",
     "publish:item": "node scripts/publish-item.js",
     "preview": "vite preview --host 127.0.0.1",
     "check": "svelte-kit sync && svelte-check",

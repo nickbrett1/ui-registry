@@ -2,6 +2,69 @@
   "$comment": "Published registry versions. Every entry is immutable: `npm run publish:item` refuses to overwrite an existing (name, version) with different bytes. The route verifies each read against these digests.",
   "items": [
     {
+      "name": "app-shell",
+      "version": "1.3.0",
+      "sha256": "bf41c79f2514d9b51e034e5179b359201491cf63c306fd62e232187e97030f83",
+      "bytes": 3571,
+      "publishedAt": "2026-11-14T12:28:55.856Z"
+    },
+    {
+      "name": "burst-timeline",
+      "version": "1.3.0",
+      "sha256": "45c5a07b4ae42ba7517b0da7c3ba09ebcd4c24fd892f996387c588085dafa7ba",
+      "bytes": 4610,
+      "publishedAt": "2026-11-14T12:28:56.500Z"
+    },
+    {
+      "name": "detail-panel",
+      "version": "1.3.0",
+      "sha256": "9a1bea7e149ed9f679de0c042056890bad2a69554d262b4bb3b146f36f8fc023",
+      "bytes": 3696,
+      "publishedAt": "2026-11-14T12:28:56.409Z"
+    },
+    {
+      "name": "empty-state",
+      "version": "1.3.0",
+      "sha256": "a319d34b12bd64a81aa1c20ed8af0669404ba15b79ca1342c9191f7b2a327b63",
+      "bytes": 2777,
+      "publishedAt": "2026-11-14T12:28:56.233Z"
+    },
+    {
+      "name": "filter-panel",
+      "version": "1.3.0",
+      "sha256": "b42bf5cacc38dae8cad77cfacdbc7ece4ade5f5df6f8113ac15e810dec614a6a",
+      "bytes": 5861,
+      "publishedAt": "2026-11-14T12:28:56.141Z"
+    },
+    {
+      "name": "request-form",
+      "version": "1.3.0",
+      "sha256": "9cad6109c7c7e74966868c0d9f7ceeebf5f90026cc93476766d59eb75f54f74f",
+      "bytes": 4862,
+      "publishedAt": "2026-11-14T12:28:56.586Z"
+    },
+    {
+      "name": "result-list",
+      "version": "1.3.0",
+      "sha256": "f86d7e6e0ad07eb929c89d5d5b963846d109efcb4c2e4425fe10497f39ccb99e",
+      "bytes": 4108,
+      "publishedAt": "2026-11-14T12:28:56.050Z"
+    },
+    {
+      "name": "stat-strip",
+      "version": "1.3.0",
+      "sha256": "72ca1724bd5ba94ece15e4f2eec61f1624b398002186052ce7fdf96e0e522a64",
+      "bytes": 2179,
+      "publishedAt": "2026-11-14T12:28:55.957Z"
+    },
+    {
+      "name": "status-view",
+      "version": "1.3.0",
+      "sha256": "a0fcea3eeed9491fe313d84e173c96cf8ce8d5b2de103d6d6d65e576a1823e87",
+      "bytes": 3582,
+      "publishedAt": "2026-11-14T12:28:56.320Z"
+    },
+    {
       "name": "theme",
       "version": "1.0.0",
       "sha256": "945de4e9f1b050cb089a78fd5e30b248124050bb8a9f7613f9b9133f97df3abc",
@@ -21,6 +84,13 @@
       "sha256": "0cf864767b19348569554c8926f2f2c5b7fb5b9db04fe3798550dfd667d33922",
       "bytes": 7458,
       "publishedAt": "2026-11-14T02:38:27.994Z"
+    },
+    {
+      "name": "theme",
+      "version": "1.3.0",
+      "sha256": "0cf864767b19348569554c8926f2f2c5b7fb5b9db04fe3798550dfd667d33922",
+      "bytes": 7458,
+      "publishedAt": "2026-11-14T12:28:55.749Z"
     }
   ]
 }
