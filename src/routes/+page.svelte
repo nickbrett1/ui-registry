@@ -257,7 +257,17 @@
         there is no screenshot and no separate gallery.
       </p>
     </div>
-    <span class="pill ok num">v{manifest.version}</span>
+    <!-- Two different facts, and telling them apart matters: the pill is the
+         registry release being served, the stamp is the commit this bundle was
+         built from. A page can be on the current release and still be an old
+         document -- that is exactly how a shipped fix looked broken on a
+         phone. -->
+    <span class="pill ok num" title="the registry release the page is reading"
+      >v{manifest.version}</span
+    >
+    <span class="pill num" title="the commit this bundle was built from"
+      >build {__NB_BUILD__}</span
+    >
   </header>
 
   <section class="card palette-card" aria-labelledby="palette-title">

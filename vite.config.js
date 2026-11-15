@@ -1,8 +1,26 @@
+import { execSync } from "node:child_process";
 import { sveltekit } from "@sveltejs/kit/vite";
 import { svelteTesting } from "@testing-library/svelte/vite";
 import { defineConfig } from "vite";
 
+/**
+ * The commit this bundle was built from, so a page can name its own build.
+ *
+ * The version pill reads the *registry's* published version, which is not the
+ * same thing: the top-edge surface and the cache header shipped without moving
+ * a registry version, so "1.16.1" in the app could not tell anyone whether the
+ * page on the phone was the current one. A build stamp can.
+ */
+function buildStamp() {
+  try {
+    return execSync("git rev-parse --short HEAD", { encoding: "utf8" }).trim();
+  } catch {
+    return "unknown";
+  }
+}
+
 export default defineConfig({
+  define: { __NB_BUILD__: JSON.stringify(buildStamp()) },
   plugins: [sveltekit(), svelteTesting()],
   test: {
     environment: "jsdom",
