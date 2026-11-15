@@ -1,5 +1,6 @@
 /**
- * The one list of what this registry serves, in the order a screen is built.
+ * The one list of what this registry serves, in the order the column shows it:
+ * the five categories alphabetically, and the blocks inside each one.
  *
  * The sidebar, the overview page, the per-block pages and their previous/next
  * links all read this module. A second copy of the names is how a navigation
@@ -9,22 +10,29 @@
 import index from "../../registry.json";
 import published from "../../registry/versions/manifest.json";
 
-// Five groups, in the order a screen is built: the frame you put content in,
-// the numbers you lead with, the list you search, the record you act on, the
-// things you operate. The label is what the shapes *are*, in words someone
-// would use looking for one: "figures & bars", not "numbers" -- "numbers"
-// could mean a metric, a table of figures or a chart, which is the whole
-// problem with a one-word category.
+// Five groups, alphabetically, because the column is a lookup and not a
+// narrative any more. The previous order was the order a screen is built in --
+// frame, figures, search, records, status -- which was worth reading when the
+// demos were stacked on one page and the sequence was the argument. With each
+// block on its own page there is no story to follow down the column, and the
+// only order a reader can predict without learning our reasoning is A to Z.
+// The label is still what the shapes *are*, in words someone would use looking
+// for one: "figures & bars", not "numbers" -- "numbers" could mean a metric, a
+// table of figures or a chart, which is the whole problem with a one-word
+// category.
+//
+// `tests/smoke.test.js` pins both orders, so a new group dropped in the wrong
+// place fails the build rather than quietly landing at the bottom.
 export const groups = [
-  {
-    slug: "frame",
-    label: "page frame",
-    note: "the bar across the top of a screen, and the screen that opens on one item",
-  },
   {
     slug: "figures",
     label: "figures & bars",
     note: "one big number, a column of facts, a series over time, a ratio against a ceiling",
+  },
+  {
+    slug: "frame",
+    label: "page frame",
+    note: "the bar across the top of a screen, and the screen that opens on one item",
   },
   {
     slug: "search",
@@ -32,34 +40,40 @@ export const groups = [
     note: "narrow the set down, then read the hits, or say why there are none",
   },
   {
-    slug: "records",
-    label: "tables & forms",
-    note: "rows of records you can scan, and the form that writes one",
-  },
-  {
     slug: "status",
     label: "status & logs",
     note: "what is running, what you can do to it, and what it said while doing it",
+  },
+  {
+    slug: "records",
+    label: "tables & forms",
+    note: "rows of records you can scan, and the form that writes one",
   },
 ];
 
 // The note is what the shape is for, in the words of someone who wants one.
 // It is the only prose a block page carries besides the demo itself.
+//
+// The order here is the order of the column and the order of previous/next, so
+// it must follow the groups above. Within a group it is *not* alphabetical: it
+// is the order the shapes are reached for -- the headline numbers, then the
+// ratio, then the series, then the buckets -- and that order is a sentence
+// people read in the column, where names alone would be a wall.
 export const blocks = [
-  { name: "app-shell", group: "frame", note: "the bar pinned across the top of a screen: mark, title, section links, one action" },
-  { name: "detail-panel", group: "frame", note: "one item opened: title, key facts in a grid, then prose" },
   { name: "stat-strip", group: "figures", note: "the row of big numbers at the top of a dashboard" },
   { name: "meter-strip", group: "figures", note: "how full something is, as a bar plus used / total" },
   { name: "bar-series", group: "figures", note: "a value per day, with today drawn as a projection" },
   { name: "burst-timeline", group: "figures", note: "activity in fixed time buckets, read across the day" },
+  { name: "app-shell", group: "frame", note: "the bar pinned across the top of a screen: mark, title, section links, one action" },
+  { name: "detail-panel", group: "frame", note: "one item opened: title, key facts in a grid, then prose" },
   { name: "filter-panel", group: "search", note: "facet checkboxes down the side; behind a Filters button on a phone" },
   { name: "result-list", group: "search", note: "ranked hits: title, date, and the snippet the match came from" },
   { name: "empty-state", group: "search", note: "zero results, and which filter to drop to get some" },
-  { name: "data-table", group: "records", note: "many records in aligned columns, numbers right-aligned" },
-  { name: "request-form", group: "records", note: "the form that creates one of those records, with a message per failed field" },
   { name: "status-view", group: "status", note: "four columns: pending, done, stuck, blocked" },
   { name: "action-list", group: "status", note: "one row per thing you operate, showing only the actions valid right now" },
   { name: "log-view", group: "status", note: "a job's own output, scrolling as it arrives, with Follow" },
+  { name: "data-table", group: "records", note: "many records in aligned columns, numbers right-aligned" },
+  { name: "request-form", group: "records", note: "the form that creates one of those records, with a message per failed field" },
 ];
 
 export const inGroup = (slug) => blocks.filter((block) => block.group === slug);

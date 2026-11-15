@@ -87,6 +87,22 @@ describe("generated app smoke test", () => {
     }
   });
 
+  it("reads alphabetically down the column, with each block under its group", () => {
+    // The column is a lookup, so its headings have to be in an order a reader
+    // can predict without learning our reasoning. Pinned here because "sorted"
+    // is a property of the *file*, not a thing the code does: a group added at
+    // the bottom out of order would still render, and still be wrong.
+    const labels = groups.map((group) => group.label);
+    expect(labels).toEqual([...labels].sort((a, b) => a.localeCompare(b)));
+
+    // Previous/next walks `blocks`, so that array must follow the column's group
+    // order -- otherwise the footer sends a reader somewhere the column does not
+    // agree is next.
+    const rank = groups.map((group) => group.slug);
+    const seen = blocks.map((block) => rank.indexOf(block.group));
+    expect(seen).toEqual([...seen].sort((a, b) => a - b));
+  });
+
   it("routes /blocks/<name> for every block, and 404s the rest", () => {
     for (const name of publishedBlocks) {
       expect(load({ params: { name } })).toEqual({ name });
