@@ -79,25 +79,6 @@
     };
   });
 
-  // The one question the page cannot answer about itself, offered as an
-  // experiment instead: does the softness at the top follow the bar being
-  // *sticky*, or the band it sits in? Flattening takes the bar out of the
-  // sticky path -- it stops tracking the scroll edge and simply scrolls away.
-  // If the top goes crisp when flat, the compositing is about a sticky layer at
-  // the scroll edge, and the fix is a different kind of bar rather than another
-  // colour. It lives in the footer because it is a probe, not a feature.
-  let flat = $state(false);
-
-  onMount(() => {
-    flat = document.documentElement.dataset.topbar === "flat";
-  });
-
-  function toggleTopbar() {
-    flat = !flat;
-    if (flat) document.documentElement.dataset.topbar = "flat";
-    else delete document.documentElement.dataset.topbar;
-  }
-
   // What each token is *for*, in the words a consumer would use. A swatch with
   // no label is decoration; a swatch labelled "--warn -- waiting or pending" is
   // the reason a block can be re-skinned without being read.
@@ -555,11 +536,6 @@
 
   <footer class="foot hint">
     <p>
-      <button class="probe" type="button" onclick={toggleTopbar}>
-        top bar: {flat ? "flat — tap to pin" : "pinned — tap to flatten"}
-      </button>
-    </p>
-    <p>
       @nb/theme v{manifest.version} · {blockCount} blocks · published by
       <code class="num">npm run publish:item</code>
     </p>
@@ -724,21 +700,6 @@
     margin-left: 5px;
     opacity: 0.6;
     font-size: 10px;
-  }
-
-  /* The probe above, and the state it switches on. */
-  :global(html[data-topbar="flat"]) .jump {
-    position: static;
-  }
-
-  .probe {
-    border: 0;
-    padding: 0;
-    background: none;
-    font: inherit;
-    color: var(--accent);
-    cursor: pointer;
-    text-decoration: underline dotted;
   }
 
   .group-head {

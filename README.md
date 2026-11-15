@@ -538,8 +538,9 @@ style was also the one strip at the top of every screen.
 `black` does not ask for a translucent band: iOS paints a solid strip and the
 page starts below it, so the top of the UI is our CSS and nothing else. The cost
 is a black strip above a dark navy bar, which is a fine seam on a page this
-dark. `viewport-fit=cover` stays -- the landscape side insets are real and worth
-more than the top band, which `black` has already taken out of play.
+dark. This one did not fix it on its own either — the band is only ours to paint
+if the page is under it in the first place, which is the `viewport-fit` story
+further down.
 
 The surface's height grew for the same reason it exists:
 `calc(11px + env(safe-area-inset-top, 0px))`. The 11px is the sampler's
@@ -557,34 +558,6 @@ The page header now carries a measured line under the lede:
 standalone · top 59px · surface on
 ```
 
-### The viewport: stop occupying the band at all
-
-An opaque bar, a colour surface for WebKit's edge sampler and an opaque
-status-bar style each fixed a real layer, and the top of the page was still soft
-on the phone. What all three had in common is that the page was being asked to
-*occupy the status-bar band*: with `viewport-fit=cover`, `env(safe-area-inset-top)`
-is non-zero because the web view extends under the system chrome, and whatever
-the system draws there — opaque, translucent or glass — is drawn over our
-pixels. Every fix so far was an argument about the colour of that layer.
-
-This page now uses `viewport-fit=auto`. The viewport starts below the band, the
-top inset resolves to 0, and there are no pixels of ours for anything to
-composite over. The cost is the landscape side insets on a notched phone. On a
-reference page that is the right trade: it demonstrates the answer that is safe
-rather than the one that is pretty. A consumer app that wants content
-full-bleed can opt back in with `viewport-fit=cover` — the colour surface is
-still there for exactly that case, and costs nothing when the inset is zero.
-
-### The probe in the footer: sticky, or flat?
-
-One question remains that no server-side test can answer: is the softness about
-the *sticky* bar, or about the band it used to sit in? The footer carries a
-control that sets `html[data-topbar="flat"]`, which turns `.jump` into
-`position: static` so the bar scrolls away like ordinary content. If the top goes
-crisp when flat, the compositing is about a sticky layer at the scroll edge and
-the fix is a different shape of bar, not another colour. It is a probe, not a
-feature, and it is labelled as one.
-
 `standalone`/`tab` is `matchMedia("(display-mode: standalone)")` plus
 `navigator.standalone`; `top` is `env(safe-area-inset-top)` read off a probe
 element (an env() value cannot be read any other way); `surface` is whether the
@@ -593,6 +566,39 @@ running document. A phone reporting `tab` or `surface off` is telling you the
 workaround is not switched on there, which is a different problem from styling
 it wrongly. `tests/smoke.test.js` pins that the line exists; the values are read
 from the document, so they cannot be pinned.
+
+### What actually fixed it: the viewport, not the colour
+
+Four fixes, four layers, and the top of the page was still soft on the phone: an
+opaque bar (1.16.0), a colour surface for WebKit's edge sampler, an opaque
+status-bar style, and a surface grown to cover the safe area. Each fixed a real
+layer. What they had in common was the defect: with `viewport-fit=cover` the web
+view extends *under* the system chrome, `env(safe-area-inset-top)` is non-zero,
+and whatever the system draws there lands on our pixels. Every fix was an
+argument about the colour of a layer that was never ours.
+
+Removing `cover` is what made it crisp. The viewport starts below the band, the
+inset resolves to 0, and there are no pixels of ours to composite over. The cost
+is the landscape side insets on a notched phone — on a page whose whole job is to
+be read on a phone, that is the right trade.
+
+So the rule for a home-screen app is one line long, and it is not about colour:
+
+```html
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+```
+
+`viewport-fit=cover` is still a legitimate choice — a map, a photo viewer, a
+canvas wants the whole screen — but a page with a bar across the top does not,
+because that bar is the thing the band will composite over. A consumer that does
+want full-bleed keeps the colour surface described above, which is the best
+available answer when the overlap is deliberate.
+
+The diagnostic lesson is worth keeping too: the three CSS rounds were all
+unverifiable from here, and the two things that made progress were reading the
+*mechanism* (WebKit's sampler) and then measuring on the device (`standalone ·
+top 59px · surface on`, still in the header). A screenshot cannot tell a broken
+fix from an absent one.
 
 ### What 1.15.0 added: the ink, accent and ground roles the theme was already using
 
