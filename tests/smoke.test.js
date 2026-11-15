@@ -33,11 +33,26 @@ describe("generated app smoke test", () => {
     ).toBeInTheDocument();
   });
 
-  it("says what the registry is in the lede, and which version it serves", () => {
+  it("does not say its own name twice, or date itself", () => {
     const { container } = render(Page);
-    const lede = container.querySelector(".lede").textContent;
-    expect(lede.toLowerCase()).toContain("one theme");
-    expect(lede).toContain(`${publishedBlocks.length} blocks`);
+    // The bar prints "@nb UI Registry" on every route, so a heading repeating it
+    // a line lower is the page introducing itself to someone who just read the
+    // sign. The sentence under it ("one theme and 14 blocks...") was a claim
+    // about the site rather than a way into it, and it is the kind of line that
+    // is wrong the moment a block is added. Both are gone; the first thing on
+    // the page is a group.
+    expect(container.querySelector(".head")).toBeNull();
+    expect(container.querySelector(".lede")).toBeNull();
+    expect(container.textContent).not.toContain("no separate gallery");
+    expect(container.querySelector(".page").firstElementChild).toBe(
+      container.querySelector("h1"),
+    );
+    expect(container.querySelector("h1 + .groups")).not.toBeNull();
+    // The name is still the page's h1, for the outline -- the group cards are
+    // h2s -- but it is not drawn.
+    const h1 = container.querySelector("h1");
+    expect(h1.className).toContain("sr-only");
+    expect(h1.textContent.trim()).toBe("@nb UI Registry");
   });
 
   it("names the site in the bar, with the release and the build", () => {

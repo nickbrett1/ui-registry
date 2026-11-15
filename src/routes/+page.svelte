@@ -12,20 +12,13 @@
    * from it.
    */
   import { onMount } from "svelte";
-  import {
-    groups,
-    inGroup,
-    palette,
-    publishedBlockCount,
-  } from "$lib/catalogue.js";
+  import { groups, inGroup, palette } from "$lib/catalogue.js";
   import InstallCommand from "$lib/InstallCommand.svelte";
 
   // `installBase` is this deployment's registry, read off the request by
   // `+layout.js`; without it the page still renders, and the command prints a
   // host that is obviously not one.
   let { data = {} } = $props();
-
-  const blockCount = publishedBlockCount;
 
   // The top of the viewport is composited by the OS, not by us, so "the fix is
   // not working" and "the fix is not running" look exactly the same on a phone.
@@ -60,13 +53,14 @@
 </script>
 
 <div class="page">
-  <header class="head">
-    <h1 class="title">@nb UI Registry</h1>
-    <p class="lede">
-      One theme and {blockCount} blocks. Everything here is the published source,
-      rendered — there is no screenshot and no separate gallery.
-    </p>
-  </header>
+  <!-- The bar already says the name, on every route. A heading repeating it two
+       lines lower introduces the page to someone who just read the sign, and
+       the sentence that used to sit under it ("one theme and 14 blocks, no
+       screenshot, no separate gallery") is a claim about the site rather than
+       a way into it -- it also dates itself every time a block is added.
+       The outline still needs a root, though: the group cards are h2s, so the
+       name stays for a screen reader and leaves the eye alone. -->
+  <h1 class="sr-only">@nb UI Registry</h1>
 
   <div class="groups">
     {#each groups as group}
@@ -127,25 +121,18 @@
 </div>
 
 <style>
-  .head {
-    margin-bottom: 24px;
-    padding-bottom: 16px;
-    border-bottom: 1px solid var(--line);
-  }
-
-  .title {
-    margin: 0;
-    font-size: 24px;
-    font-weight: 600;
-    letter-spacing: -0.02em;
-  }
-
-  .lede {
-    margin: 6px 0 0;
-    max-width: 38rem;
-    color: var(--ink-muted);
-    font-size: 13.5px;
-    line-height: 1.5;
+  /* Present in the document, absent from the page: the only heading a sighted
+     reader needs here is the group they are looking for. */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
   }
 
   .groups {
