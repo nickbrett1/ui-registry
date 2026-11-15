@@ -845,6 +845,14 @@ Home Screen. It launches standalone, titled "nb UI".
 
 ## Deployment
 
+The document is served `cache-control: no-cache` (`src/hooks.server.js`), the
+hashed `_app/immutable/` files keep `max-age=31536000, immutable`, and the
+registry items under `/r/*` stay `no-store`. The reason is a bug that was fixed
+and deployed and still looked broken: with only an `ETag` on the page, an iPhone
+home-screen window can keep an old document indefinitely, so the opaque top bar
+never reached the phone that reported the blur. `no-cache` makes the client ask
+again, and the `ETag` makes the answer a 304.
+
 See `deploy/README.md` for the deployment runbook (Buildkite -> GHCR ->
 Watchtower -> Docker host). Deploy with:
 
