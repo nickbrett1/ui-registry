@@ -21,8 +21,8 @@ describe("generated app smoke test", () => {
     );
   });
 
-  it("says what the registry is, in three plain facts", async () => {
-    render(Page);
+  it("says what the registry is in the lede, and which version it serves", async () => {
+    const { container } = render(Page);
     // The block count is *counted* from the catalogue. It said "eleven" while
     // the registry served fourteen -- a literal the page had no way to notice,
     // pinned here by an assertion that also could not notice.
@@ -32,8 +32,50 @@ describe("generated app smoke test", () => {
     const blocks = catalogue.items.filter(
       (item) => item.type === "registry:block",
     ).length;
-    for (const term of ["one theme", `${blocks} blocks`, "pinned by version"]) {
-      expect(screen.getByText(term)).toBeInTheDocument();
+    // These two facts used to live in a "what this is" card above the blocks.
+    // The card is gone -- it was three paragraphs of prose to scroll past to
+    // reach the thing you came for, and on a phone it was most of the first
+    // screen -- so the assertions follow the facts to where they now are.
+    const lede = container.querySelector("header .lede").textContent;
+    expect(lede.toLowerCase()).toContain("one theme");
+    expect(lede).toContain(`${blocks} blocks`);
+
+    // The version is read from the published manifest, so the pill cannot
+    // advertise one the registry does not serve.
+    const published = JSON.parse(
+      await readFile(
+        path.join(ROOT, "registry", "versions", "manifest.json"),
+        "utf8",
+      ),
+    );
+    const versions = [
+      ...new Set(published.items.map((item) => item.version)),
+    ].sort((a, b) => {
+      const [x, y] = [a.split(".").map(Number), b.split(".").map(Number)];
+      for (let i = 0; i < 3; i += 1) if (x[i] !== y[i]) return x[i] - y[i];
+      return 0;
+    });
+    expect(container.querySelector("header .pill").textContent.trim()).toBe(
+      `v${versions[versions.length - 1]}`,
+    );
+  });
+
+  it("puts the index first, so it can be the bar that sticks", () => {
+    const { container } = render(Page);
+    // Not a style assertion: the index owns the status-bar band (padding, not a
+    // sticky offset), and it can only own it if nothing is above it. Move
+    // anything ahead of it and the pills end up under the clock on a phone.
+    const wrap = container.querySelector(".wrap");
+    const first = wrap.firstElementChild;
+    expect(first.tagName).toBe("NAV");
+    expect(first.getAttribute("aria-label")).toBe("Jump to a block");
+    // ...and every demo has the anchor that nav points at, or a pill goes nowhere.
+    const hrefs = [...first.querySelectorAll("a")].map((a) =>
+      a.getAttribute("href"),
+    );
+    expect(hrefs.length).toBeGreaterThan(0);
+    for (const href of hrefs) {
+      expect(wrap.querySelector(`section${href}`)).not.toBeNull();
     }
   });
 

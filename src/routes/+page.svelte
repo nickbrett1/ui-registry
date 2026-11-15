@@ -236,6 +236,18 @@
 </script>
 
 <div class="wrap">
+  <!-- First in the document, and it stays first: this is the page's top chrome.
+       A sticky element has to own the status-bar band (`padding-top`, not a
+       `top` offset -- see the --safe-* note in app.css), and it can only own it
+       if nothing sits above it. In exchange the index is always one press away,
+       which on a phone is the whole difference: fourteen demos is a long scroll
+       and the old index scrolled away after the second screen. -->
+  <nav class="jump" aria-label="Jump to a block">
+    {#each blocks as block}
+      <a class="pill info" href="#{block.name}">{block.name}</a>
+    {/each}
+  </nav>
+
   <header class="head">
     <div>
       <span class="micro">house design system</span>
@@ -248,42 +260,10 @@
     <span class="pill ok num">v{manifest.version}</span>
   </header>
 
-  <section class="card about" aria-labelledby="about-title">
-    <h2 class="micro" id="about-title">what this is</h2>
-    <dl class="facts">
-      <div class="fact">
-        <dt class="micro">one theme</dt>
-        <dd>
-          Colour, type, spacing and radii as CSS variables. Blocks read the variables
-          and never a hex value, so re-skinning is one file, not ten.
-        </dd>
-      </div>
-      <div class="fact">
-        <dt class="micro">{blockCount} blocks</dt>
-        <dd>
-          The screens the house apps actually have — a shell, a KPI row, results,
-          facets, lanes, a detail page, a chart, a form, an empty state.
-        </dd>
-      </div>
-      <div class="fact">
-        <dt class="micro">pinned by version</dt>
-        <dd>
-          The version is a path segment (<code class="num">/r/v{manifest.version}</code>).
-          A published version never changes bytes, so a project can pin one and mean it.
-        </dd>
-      </div>
-    </dl>
-    <p class="hint how">
-      A project takes these from the registry — <code class="num">npx shadcn-svelte add &lt;name&gt;</code>
-      against this registry's URL — and genproj does it for you: give its ui-shadcn
-      capability a <code class="num">blocks</code> list and it emits the pinned installs.
-    </p>
-  </section>
-
   <section class="card palette-card" aria-labelledby="palette-title">
     <h2 class="micro" id="palette-title">the palette, and what it means</h2>
     <p class="hint">
-      These seven variables are the whole vocabulary. A block that needed a colour
+      These {palette.length} variables are the whole vocabulary. A block that needed a colour
       outside it would be a bug in the theme, not in the block.
     </p>
     <ul class="swatches">
@@ -296,12 +276,6 @@
       {/each}
     </ul>
   </section>
-
-  <nav class="jump" aria-label="Jump to a block">
-    {#each blocks as block}
-      <a class="pill info" href="#{block.name}">{block.name}</a>
-    {/each}
-  </nav>
 
   {#each blocks as block}
     <section class="block" id={block.name}>
@@ -457,7 +431,19 @@
   {/each}
 
   <footer class="foot hint">
-    <span>@nb/theme v{manifest.version} · {blocks.length} blocks · published by <code class="num">npm run publish:item</code></span>
+    <p>
+      @nb/theme v{manifest.version} · {blockCount} blocks · published by
+      <code class="num">npm run publish:item</code>
+    </p>
+    <!-- The one thing the old "what this is" card said that a consumer needs
+         and nothing else on the page says: how a project takes these. It sits at
+         the end, where a reader who came for answers arrives, instead of in a
+         panel they scroll past to reach the blocks. -->
+    <p>
+      Take them with <code class="num">npx shadcn-svelte add &lt;name&gt;</code> against this
+      registry's URL — or give genproj's <code class="num">ui-shadcn</code> capability a
+      <code class="num">blocks</code> list and it emits the pinned installs.
+    </p>
   </footer>
 </div>
 
@@ -466,10 +452,11 @@
     max-width: 68rem;
     margin: 0 auto;
     /* The status bar draws over the page on an iPhone home screen (see the
-       --safe-* note in app.css). The page's own gutter is added to it rather
-       than replacing it, so the header clears the clock. */
-    padding: calc(16px + var(--safe-top, 0px)) calc(16px + var(--safe-right, 0px))
-      calc(48px + var(--safe-bottom, 0px)) calc(16px + var(--safe-left, 0px));
+       --safe-* note in app.css). The top inset is *not* spent here any more:
+       the index bar is the first element and owns it, so the pill row is what
+       clears the clock and the page never pays for the band twice. */
+    padding: 0 calc(16px + var(--safe-right, 0px)) calc(48px + var(--safe-bottom, 0px))
+      calc(16px + var(--safe-left, 0px));
   }
 
   .head {
@@ -504,33 +491,13 @@
     margin: 0;
   }
 
-  .about,
   .palette-card {
     padding: 14px 16px;
     margin-bottom: 16px;
   }
 
-  .about h2,
   .palette-card h2 {
     margin: 0;
-  }
-
-  .facts {
-    display: grid;
-    gap: 14px;
-    margin: 12px 0 0;
-  }
-
-  .fact dd {
-    margin: 3px 0 0;
-    color: var(--ink-dim);
-    max-width: 44rem;
-  }
-
-  .how {
-    margin: 14px 0 0;
-    padding-top: 10px;
-    border-top: 1px solid var(--line);
   }
 
   .swatches {
@@ -563,19 +530,51 @@
     color: var(--ink);
   }
 
+  /* The index, as the page's top chrome: one row that scrolls sideways, pinned
+     under the status bar. It used to be a wrapping block of fourteen pills
+     below the palette card, which on a phone was five lines of text standing
+     between the reader and the first block -- and then scrolled away, so by the
+     third demo there was no way to reach the tenth. */
   .jump {
+    position: sticky;
+    top: 0;
+    z-index: 10;
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 6px;
-    margin: 0 0 24px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    /* No visible bar: on a phone a scrollbar in a 40px strip is taller than the
+       pills, and the strip bleeds to both edges so it is obvious there is more. */
+    scrollbar-width: none;
+    /* The status-bar band is the bar's own padding, not a `top` offset -- a
+       sticky element offset by 47px paints there while its flow box stays put,
+       which hides the first line of whatever it is meant to reveal. */
+    padding: calc(10px + var(--safe-top, 0px)) calc(16px + var(--safe-right, 0px)) 10px
+      calc(16px + var(--safe-left, 0px));
+    margin: 0 calc(-16px - var(--safe-right, 0px)) 20px
+      calc(-16px - var(--safe-left, 0px));
+    background: var(--bg-overlay);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .jump::-webkit-scrollbar {
+    display: none;
   }
 
   .jump .pill {
+    flex: none;
     font-size: 10px;
+    white-space: nowrap;
   }
 
   .block {
     margin-bottom: 40px;
+    /* An anchor jump must not land the block's name under the sticky bar. The
+       bar is 10px + a pill + 10px + its border, and it grows by the top inset. */
+    scroll-margin-top: calc(52px + var(--safe-top, 0px));
   }
 
   .block-head {
@@ -652,5 +651,13 @@
   .foot {
     border-top: 1px solid var(--line);
     padding-top: 10px;
+  }
+
+  .foot p {
+    margin: 0;
+  }
+
+  .foot p + p {
+    margin-top: 6px;
   }
 </style>
