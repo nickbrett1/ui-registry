@@ -526,6 +526,46 @@ replaces that subtree on navigation. Every app that ships as a home-screen icon
 needs it in its own `index.html`/`app.html` -- `data-download`,
 `stratechery-search` and `deepseek-balance` among them.
 
+### The status-bar style: the layer above the surface
+
+Two CSS rounds (an opaque bar, then the colour surface) each fixed a real layer
+and the strip still looked murky on the phone. The setting underneath both was
+`apple-mobile-web-app-status-bar-style: black-translucent`, and that is the
+value that *invites the page to be drawn under the status bar*. Everything we
+paint there is a layer the system can composite over, so the one strip we cannot
+style was also the one strip at the top of every screen.
+
+`black` does not ask for a translucent band: iOS paints a solid strip and the
+page starts below it, so the top of the UI is our CSS and nothing else. The cost
+is a black strip above a dark navy bar, which is a fine seam on a page this
+dark. `viewport-fit=cover` stays -- the landscape side insets are real and worth
+more than the top band, which `black` has already taken out of play.
+
+The surface's height grew for the same reason it exists:
+`calc(11px + env(safe-area-inset-top, 0px))`. The 11px is the sampler's
+thin-border threshold; the inset is there because the band being composited is
+the safe area, not the first 11px of it. Clipped to empty text, the extra height
+paints nothing.
+
+### Diagnosing it on the device, because it cannot be seen in a screenshot
+
+The top of the viewport is composited by the OS, so "the fix is broken" and "the
+fix never ran" look identical on a phone -- which is how this took three rounds.
+The page header now carries a measured line under the lede:
+
+```
+standalone · top 59px · surface on
+```
+
+`standalone`/`tab` is `matchMedia("(display-mode: standalone)")` plus
+`navigator.standalone`; `top` is `env(safe-area-inset-top)` read off a probe
+element (an env() value cannot be read any other way); `surface` is whether the
+`.pwa-status-bar-surface` div computes to anything but `display: none` in the
+running document. A phone reporting `tab` or `surface off` is telling you the
+workaround is not switched on there, which is a different problem from styling
+it wrongly. `tests/smoke.test.js` pins that the line exists; the values are read
+from the document, so they cannot be pinned.
+
 ### What 1.15.0 added: the ink, accent and ground roles the theme was already using
 
 `stratechery-search` is where this theme came from, and it was one of the two
