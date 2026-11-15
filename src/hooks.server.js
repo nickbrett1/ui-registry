@@ -20,7 +20,10 @@ export async function handle({ event, resolve }) {
   const response = await resolve(event);
 
   const contentType = response.headers.get("content-type") ?? "";
-  if (contentType.includes("text/html") && !response.headers.has("cache-control")) {
+  if (
+    contentType.includes("text/html") &&
+    !response.headers.has("cache-control")
+  ) {
     response.headers.set("cache-control", "no-cache");
   }
 
