@@ -493,6 +493,39 @@ place — 1.16.1 is 1.16.0's bytes with that line fixed. Nothing else differs;
 `theme` is still byte-identical. Pin 1.16.1 and you get 1.16.0's behaviour plus
 documentation that agrees with it.
 
+### The iOS top-edge surface: what an opaque bar cannot fix
+
+1.16.0 made the bar opaque and the bar was still murky on the phone that
+reported it. The bar was not the whole story. In standalone mode WebKit applies
+its own scroll-edge treatment to the top of the viewport, and it does not ask
+the page whether the strip under it is opaque: it samples what is under the bar.
+The sampling rule wants a fixed or sticky box near the top edge, at least 90% of
+the viewport wide, with a background thicker than 10px; without one it blurs
+whatever is scrolling there. Our bar is in flow, and `padding-top` on a sticky
+box is not a sampled surface, so WebKit blurred the first rows of content and
+painted them over the top of the bar.
+
+The workaround is a colour surface: an empty, full-width, 11px, viewport-fixed
+div with `background-color: inherit` and `background-clip: text`, so WebKit has
+a solid colour to sample and the element itself paints nothing over the
+controls. It is in `src/app.html` before the bundle -- the sample happens on the
+first frame -- gated on `@media (display-mode: standalone)` and
+`@supports (-webkit-touch-callout: none) and (background-clip: text)`, so a
+browser tab and every non-WebKit engine never see it.
+
+This is a compatibility workaround, not an Apple status-bar API. The mechanism
+and the evidence for it are in HKUDS/nanobot#5772 and its fix #5942
+(`docs/guides/ios-pwa-status-bar.md` there), which cites WebKit's
+fixed-container sampling in `LocalFrameView.cpp`. The limits are honest: it is
+verified in this repo by `tests/pwa-status-bar.test.js` asserting the contract,
+not by a physical iPhone, and a desktop screenshot cannot see system
+compositing.
+
+It cannot live in a block: a block renders inside the app's root, and SvelteKit
+replaces that subtree on navigation. Every app that ships as a home-screen icon
+needs it in its own `index.html`/`app.html` -- `data-download`,
+`stratechery-search` and `deepseek-balance` among them.
+
 ### What 1.15.0 added: the ink, accent and ground roles the theme was already using
 
 `stratechery-search` is where this theme came from, and it was one of the two

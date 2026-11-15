@@ -21,9 +21,34 @@
       content="black-translucent"
     />
     <meta name="apple-mobile-web-app-title" content="nb UI" />
+    <style>
+      /* iOS standalone's scroll-edge blur, worked around with a colour surface.
+         See README, "The iOS top-edge surface". Inline and before the bundle:
+         WebKit samples the top edge on the first frame, and a class added by
+         JavaScript is a frame late. */
+      .pwa-status-bar-surface {
+        display: none;
+      }
+      @supports (-webkit-touch-callout: none) and (background-clip: text) {
+        @media (display-mode: standalone) {
+          .pwa-status-bar-surface {
+            display: block;
+            position: fixed;
+            inset: 0 0 auto;
+            height: 11px; /* Must exceed WebKit's 10px thin-border threshold. */
+            z-index: 100;
+            pointer-events: none;
+            background-color: inherit;
+            -webkit-background-clip: text;
+            background-clip: text; /* Empty text paints nothing over the controls. */
+          }
+        }
+      }
+    </style>
     %sveltekit.head%
   </head>
   <body data-sveltekit-preload-data="hover">
+    <div class="pwa-status-bar-surface" aria-hidden="true"></div>
     <div style="display: contents">%sveltekit.body%</div>
   </body>
 </html>
