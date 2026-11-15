@@ -286,7 +286,7 @@
     title="Spend per day"
     unit="CNY"
     note="Today's bar is dashed = projected full-day spend."
-    {spendBars}
+    bars={spendBars}
     axisFormat={(v) => (v >= 100 ? String(Math.round(v)) : String(Math.round(v * 10) / 10))}
   />
 {:else if name === "request-form"}

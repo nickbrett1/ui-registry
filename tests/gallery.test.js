@@ -38,16 +38,34 @@ describe("the block demos", () => {
   });
 
   it("renders the blocks' own words, not placeholders", () => {
-    // One distinctive string per block family: the shell's title, a stat label,
-    // a status lane, the empty state's cause-aware copy, and a form constraint.
-    const words = [
-      ["app-shell", "data-download"],
-      ["stat-strip", "Requests today"],
-      ["status-view", "Stuck"],
-      ["empty-state", "No matches for active filters"],
-      ["request-form", "must be a date"],
-    ];
-    for (const [name, text] of words) {
+    // One distinctive string per *published* block, not per family. A demo that
+    // passes a prop the block does not declare gets the block's default -- an
+    // empty array -- and renders its "no data" copy instead. Nothing errors:
+    // `bar-series` shipped showing "No data in this range." because the demo
+    // said `{spendBars}` and the prop is `bars`. Only reading the output
+    // catches that, so every block is named here with a string it can only
+    // produce when its data arrived.
+    const words = {
+      "action-list": "devdash",
+      "app-shell": "data-download",
+      "bar-series": "¥27.40",
+      "burst-timeline": "Balance history",
+      "data-table": "req_9f2a41c8",
+      "detail-panel": "Intervals and the scheduler that keeps them",
+      "empty-state": "No matches for active filters",
+      "filter-panel": "Run",
+      "log-view": "docker compose up -d --build",
+      "meter-strip": "2.1 GB",
+      "request-form": "must be a date",
+      "result-list": "Interval scheduling under load",
+      "stat-strip": "Requests today",
+      "status-view": "Stuck",
+    };
+    // Every published block must be in the table, so a new block cannot be
+    // added without someone deciding what it is supposed to render.
+    expect(Object.keys(words).sort()).toEqual([...publishedBlocks].sort());
+
+    for (const [name, text] of Object.entries(words)) {
       const { container, unmount } = render(Demo, { name });
       expect(container.textContent, `${name} lost "${text}"`).toContain(text);
       unmount();
