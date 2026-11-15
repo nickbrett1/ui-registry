@@ -98,49 +98,54 @@
   // things you operate. Fourteen pills in one row was a list to *read*; five is
   // a decision to make. The order of `blocks` is the order on the page and the
   // order inside a group -- grouping is presentation, not a second taxonomy.
+  // The label is what the shapes *are*, in words someone would use looking for
+  // one: "figures and bars", not "numbers". "Numbers" could mean a metric, a
+  // table of figures or a chart, which is the whole problem with a one-word
+  // category -- it names the container the author had in mind rather than the
+  // thing a reader is trying to find.
   const groups = [
     {
       slug: "frame",
-      label: "frame",
-      note: "the shape a screen sits inside",
+      label: "page frame",
+      note: "the bar across the top of a screen, and the screen that opens on one item",
     },
     {
-      slug: "numbers",
-      label: "numbers",
-      note: "one figure, a series, or a ratio against a ceiling",
+      slug: "figures",
+      label: "figures & bars",
+      note: "one big number, a column of facts, a series over time, a ratio against a ceiling",
     },
     {
       slug: "search",
-      label: "search",
-      note: "narrow down, then read the results, or say why there are none",
+      label: "search & results",
+      note: "narrow the set down, then read the hits, or say why there are none",
     },
     {
       slug: "records",
-      label: "records",
-      note: "many rows, one row, and the form that writes one",
+      label: "tables & forms",
+      note: "rows of records you can scan, and the form that writes one",
     },
     {
-      slug: "ops",
-      label: "ops",
-      note: "state over time, and the things you operate",
+      slug: "status",
+      label: "status & logs",
+      note: "what is running, what you can do to it, and what it said while doing it",
     },
   ];
 
   const blocks = [
-    { name: "app-shell", group: "frame", note: "sticky bar with a mark, a nav slot and your own back control" },
-    { name: "detail-panel", group: "frame", note: "header, metadata grid, prose" },
-    { name: "stat-strip", group: "numbers", note: "label · big tabular value · sub-line" },
-    { name: "meter-strip", group: "numbers", note: "a ratio against a ceiling, as a bar, then the figures" },
-    { name: "bar-series", group: "numbers", note: "a computed value axis, caller-formatted labels, a dashed projection" },
-    { name: "burst-timeline", group: "numbers", note: "horizontal or vertical bars, values, a caption you set" },
-    { name: "filter-panel", group: "search", note: "facets on desktop; a facet adapter for the API's own shape" },
-    { name: "result-list", group: "search", note: "ranked rows, an h3 title, a fold, a row slot" },
-    { name: "empty-state", group: "search", note: "cause-aware zero results" },
-    { name: "data-table", group: "records", note: "column-aligned records, tabular numerics, a cell slot" },
-    { name: "request-form", group: "records", note: "schema-driven, one message per failed rule" },
-    { name: "status-view", group: "ops", note: "four lanes, counts in the head" },
-    { name: "action-list", group: "ops", note: "one row per thing you operate: state, badges, the valid actions" },
-    { name: "log-view", group: "ops", note: "a job's output; the pane scrolls itself and can be followed" },
+    { name: "app-shell", group: "frame", note: "the bar pinned across the top of a screen: mark, title, section links, one action" },
+    { name: "detail-panel", group: "frame", note: "one item opened: title, key facts in a grid, then prose" },
+    { name: "stat-strip", group: "figures", note: "the row of big numbers at the top of a dashboard" },
+    { name: "meter-strip", group: "figures", note: "how full something is, as a bar plus used / total" },
+    { name: "bar-series", group: "figures", note: "a value per day, with today drawn as a projection" },
+    { name: "burst-timeline", group: "figures", note: "activity in fixed time buckets, read across the day" },
+    { name: "filter-panel", group: "search", note: "facet checkboxes down the side; behind a Filters button on a phone" },
+    { name: "result-list", group: "search", note: "ranked hits: title, date, and the snippet the match came from" },
+    { name: "empty-state", group: "search", note: "zero results, and which filter to drop to get some" },
+    { name: "data-table", group: "records", note: "many records in aligned columns, numbers right-aligned" },
+    { name: "request-form", group: "records", note: "the form that creates one of those records, with a message per failed field" },
+    { name: "status-view", group: "status", note: "four columns: pending, done, stuck, blocked" },
+    { name: "action-list", group: "status", note: "one row per thing you operate, showing only the actions valid right now" },
+    { name: "log-view", group: "status", note: "a job's own output, scrolling as it arrives, with Follow" },
   ];
 
   const inGroup = (slug) => blocks.filter((block) => block.group === slug);
@@ -352,6 +357,39 @@
       >build {__NB_BUILD__}</span
     >
   </header>
+
+  <!-- The index, before the palette and before the demos: "which one am I
+       looking for" is the question this page exists to answer, and the sticky
+       bar alone could only ever answer "which group". Every block is named here
+       with the words that describe it, in its group, linked straight to its
+       own demo -- so a reader can find a shape by recognising it rather than by
+       learning five category names first. -->
+  <section class="card index-card" aria-labelledby="index-title">
+    <h2 class="micro" id="index-title">what is in here</h2>
+    <p class="hint">
+      {blockCount} shapes, in {groups.length} groups. Each line is the element and
+      what it is for; press one to jump to it.
+    </p>
+    <div class="index-groups">
+      {#each groups as group}
+        <div class="index-group">
+          <h3 class="index-label">
+            <a href="#g-{group.slug}">{group.label}</a>
+          </h3>
+          <ul>
+            {#each inGroup(group.slug) as block}
+              <li>
+                <a class="index-item" href="#{block.name}">
+                  <code class="num">{block.name}</code>
+                  <span class="hint">{block.note}</span>
+                </a>
+              </li>
+            {/each}
+          </ul>
+        </div>
+      {/each}
+    </div>
+  </section>
 
   <section class="card palette-card" aria-labelledby="palette-title">
     <h2 class="micro" id="palette-title">the palette, and what it means</h2>
@@ -700,6 +738,73 @@
     margin-left: 5px;
     opacity: 0.6;
     font-size: 10px;
+  }
+
+  .index-card {
+    margin-bottom: 28px;
+  }
+
+  .index-groups {
+    display: grid;
+    gap: 18px 28px;
+    margin-top: 14px;
+    grid-template-columns: 1fr;
+  }
+
+  @media (min-width: 42rem) {
+    .index-groups {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .index-label {
+    margin: 0 0 6px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .index-label a {
+    color: var(--ink-strong);
+  }
+
+  .index-group ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* Name and meaning on one line each, name in the monospace the blocks use, so
+     the index teaches the vocabulary the rest of the page speaks. */
+  .index-item {
+    display: grid;
+    grid-template-columns: 8.5rem 1fr;
+    gap: 8px;
+    align-items: baseline;
+    padding: 3px 0;
+    color: var(--ink);
+    text-decoration: none;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .index-item:hover,
+  .index-item:focus-visible {
+    background: var(--bg-hover);
+  }
+
+  .index-item .hint {
+    font-size: 11px;
+  }
+
+  @media (max-width: 30rem) {
+    /* On a phone the name sits above its sentence: two columns of eight and a
+       half rem leaves three words for the description. */
+    .index-item {
+      grid-template-columns: 1fr;
+      gap: 1px;
+      padding: 6px 0;
+    }
   }
 
   .group-head {
