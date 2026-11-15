@@ -16,10 +16,18 @@
     />
     <meta name="theme-color" content="#0f172a" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta
-      name="apple-mobile-web-app-status-bar-style"
-      content="black-translucent"
-    />
+    <!-- Opaque, not translucent. `black-translucent` is the value that lets the
+         page be drawn *under* the status bar, and it is the one place a
+         standalone window could still composite something over the top of the
+         UI: an opaque bar, then a sampled colour surface, each fixed its own
+         layer, and the strip still looked murky on a phone. `black` does not
+         ask for a translucent band at all -- iOS paints a solid strip and the
+         page starts below it, so the top of the app is our CSS and nothing
+         else. The trade is a black strip above a dark navy one; a top nav that
+         is crisp on every device is worth more than a seamless seam.
+         The colour surface below stays: not every engine reports a zero inset
+         in this mode, and it costs nothing when the inset is zero. -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
     <meta name="apple-mobile-web-app-title" content="nb UI" />
     <style>
       /* iOS standalone's scroll-edge blur, worked around with a colour surface.
@@ -35,7 +43,12 @@
             display: block;
             position: fixed;
             inset: 0 0 auto;
-            height: 11px; /* Must exceed WebKit's 10px thin-border threshold. */
+            /* 11px is the threshold (a thinner background is treated as a
+               border and skipped by the sampler); the inset is added on top
+               because the band WebKit composites over is the safe area, not
+               the top 11px of it. Clipped to empty text, so the extra height
+               paints nothing. */
+            height: calc(11px + env(safe-area-inset-top, 0px));
             z-index: 100;
             pointer-events: none;
             background-color: inherit;

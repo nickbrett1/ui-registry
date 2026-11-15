@@ -60,6 +60,20 @@ describe("generated app smoke test", () => {
     );
   });
 
+  it("reports what the device is, so a fix that did not run is visible", () => {
+    const { container } = render(Page);
+    // The top of the viewport is composited by the OS, so a home-screen window
+    // cannot be told apart from a browser tab by looking at the fix -- this
+    // line is the difference between "the CSS is wrong" and "the surface was
+    // never switched on here".
+    const line = container.querySelector("header .device");
+    expect(line).not.toBeNull();
+    // Server-side it can only say it does not know yet; the words are the
+    // contract, the values come from the running document in onMount.
+    expect(line.textContent).toContain("top");
+    expect(line.textContent).toContain("surface");
+  });
+
   it("puts the index first, so it can be the bar that sticks", () => {
     const { container } = render(Page);
     // Not a style assertion: the index owns the status-bar band (padding, not a

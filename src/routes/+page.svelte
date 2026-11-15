@@ -14,6 +14,7 @@
    * said "eleven" while the registry served fourteen, which is the same staleness
    * as genproj's copy of NB_BLOCKS.
    */
+  import { onMount } from "svelte";
   import published from "../../registry/versions/manifest.json";
   import catalogue from "../../registry.json";
 
@@ -46,6 +47,37 @@
     return 0;
   })[versions.length - 1];
   const manifest = { version: latest };
+
+  // The top of the viewport is composited by the OS, not by us, so "the fix is
+  // not working" and "the fix is not running" look exactly the same on a phone
+  // -- and that is the loop this page kept losing. These three facts tell them
+  // apart, and they are *measured* from the document that is actually running
+  // rather than written down: is this a standalone window, what top inset does
+  // the engine resolve, and is the colour surface switched on here. A phone
+  // showing "tab" or "surface off" is a configuration answer, not a CSS one.
+  let device = $state({ mode: "…", top: null, surface: "…" });
+
+  onMount(() => {
+    const mq = (query) => window.matchMedia?.(query)?.matches ?? false;
+    const standalone =
+      mq("(display-mode: standalone)") ||
+      mq("(display-mode: fullscreen)") ||
+      navigator.standalone === true;
+    // The only way to read an env() value is to ask an element that uses it.
+    const probe = document.createElement("div");
+    probe.style.cssText =
+      "position:absolute;top:0;left:0;width:0;height:0;padding-top:env(safe-area-inset-top,0px)";
+    document.body.appendChild(probe);
+    const top = Number.parseFloat(getComputedStyle(probe).paddingTop) || 0;
+    probe.remove();
+    const surface = document.querySelector(".pwa-status-bar-surface");
+    device = {
+      mode: standalone ? "standalone" : "tab",
+      top,
+      surface:
+        surface && getComputedStyle(surface).display !== "none" ? "on" : "off",
+    };
+  });
 
   // What each token is *for*, in the words a consumer would use. A swatch with
   // no label is decoration; a swatch labelled "--warn -- waiting or pending" is
@@ -255,6 +287,16 @@
       <p class="hint lede">
         One theme and {blockCount} blocks. Everything below is the published source, rendered —
         there is no screenshot and no separate gallery.
+      </p>
+      <!-- What this device thinks it is, under the lede rather than beside it:
+           three more pills would push the version and build stamp off a phone's
+           header. These separate "the fix is broken" from "the fix never ran",
+           which on a home-screen app are indistinguishable by eye. -->
+      <p
+        class="hint device"
+        title="display mode · the status-bar inset this engine resolves · whether the top-edge colour surface is displayed"
+      >
+        {device.mode} · top {device.top ?? "?"}px · surface {device.surface}
       </p>
     </div>
     <!-- Two different facts, and telling them apart matters: the pill is the
@@ -489,6 +531,15 @@
   .lede {
     margin: 6px 0 0;
     max-width: 40rem;
+  }
+
+  .device {
+    margin: 4px 0 0;
+    font-family: var(--mono);
+    font-size: 10px;
+    /* Diagnostic, not documentation: it is here to be read off a phone in one
+       glance and then ignored. */
+    opacity: 0.75;
   }
 
   .connect {

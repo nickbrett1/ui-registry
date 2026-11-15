@@ -42,11 +42,31 @@ describe("the iOS top-edge surface", () => {
     expect(style).toContain("@media (display-mode: standalone)");
   });
 
+  it("does not ask iOS for a translucent status bar", () => {
+    // The structural half of the fix. `black-translucent` is the value that
+    // invites the page to be drawn *under* the status bar, and every layer we
+    // could paint there is a layer the OS can composite over. `black` asks for
+    // a solid strip and a page that starts below it -- so the top of the UI is
+    // ours alone. A page cannot fix an OS-material by degrees; it can decline
+    // to be underneath it.
+    const meta =
+      /<meta\s+name="apple-mobile-web-app-status-bar-style"\s+content="([^"]+)"/.exec(
+        html,
+      );
+    expect(meta?.[1]).toBe("black");
+    expect(html).not.toContain('content="black-translucent"');
+    // ...and viewport-fit stays: the side insets in landscape are real, and
+    // stripping `cover` to dodge the top band would cost them.
+    expect(html).toContain("viewport-fit=cover");
+  });
+
   it("meets WebKit's sampling contract without painting over anything", () => {
     const css = enabled().replace(/\s+/g, " ");
     expect(css).toContain("position: fixed");
     expect(css).toContain("inset: 0 0 auto");
-    expect(css).toContain("height: 11px"); // > the 10px thin-border threshold
+    // 11px clears the 10px thin-border threshold; the inset is added because
+    // the band the engine composites over is the safe area, not its top 11px.
+    expect(css).toContain("height: calc(11px + env(safe-area-inset-top, 0px))");
     expect(css).toContain("pointer-events: none");
     expect(css).toContain("background-color: inherit");
     expect(css).toContain("background-clip: text"); // empty text paints nothing
