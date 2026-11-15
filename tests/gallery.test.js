@@ -31,7 +31,7 @@ describe("the blocks on the landing page", () => {
     }
   });
 
-  it("gives each block a heading and an anchor, so the page can be browsed", () => {
+  it("gives each block a heading, under a group the bar links to", () => {
     const { container } = render(Page);
     for (const name of publishedBlocks) {
       const section = container.querySelector(`section.block#${name}`);
@@ -39,7 +39,15 @@ describe("the blocks on the landing page", () => {
       // A heading, not a styled div: on a page this long the outline is the
       // navigation, and a <code> label is not a heading.
       expect(section.querySelector("h2").textContent).toContain(name);
-      expect(container.querySelector(`a[href="#${name}"]`)).not.toBeNull();
+      // The anchor moved up a level. Fourteen links in one row was a list to
+      // read; five groups is a choice to make, and a block is reached through
+      // its group. The block's own id still resolves for anyone linking to it.
+      let node = section.previousElementSibling;
+      while (node && !node.classList.contains("group-head")) {
+        node = node.previousElementSibling;
+      }
+      expect(node).not.toBeNull();
+      expect(container.querySelector(`a[href="#${node.id}"]`)).not.toBeNull();
     }
   });
 

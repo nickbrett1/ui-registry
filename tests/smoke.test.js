@@ -82,14 +82,55 @@ describe("generated app smoke test", () => {
     const wrap = container.querySelector(".wrap");
     const first = wrap.firstElementChild;
     expect(first.tagName).toBe("NAV");
-    expect(first.getAttribute("aria-label")).toBe("Jump to a block");
-    // ...and every demo has the anchor that nav points at, or a pill goes nowhere.
+    expect(first.getAttribute("aria-label")).toBe("Jump to a group of blocks");
+    // ...and every group the bar points at is an element on the page, or a pill
+    // goes nowhere.
     const hrefs = [...first.querySelectorAll("a")].map((a) =>
       a.getAttribute("href"),
     );
     expect(hrefs.length).toBeGreaterThan(0);
     for (const href of hrefs) {
-      expect(wrap.querySelector(`section${href}`)).not.toBeNull();
+      expect(wrap.querySelector(href)).not.toBeNull();
+    }
+  });
+
+  it("groups the blocks, so the bar is a choice and not a list to read", () => {
+    const { container } = render(Page);
+    const wrap = container.querySelector(".wrap");
+    // The bar was fourteen pills in one scrolling row. Fourteen is a list; five
+    // groups is a decision, and it is the only navigation this page has.
+    const pills = [...wrap.querySelector(".jump").querySelectorAll("a")];
+    expect(pills.length).toBeLessThan(8);
+    const grouped = new Set(pills.map((a) => a.getAttribute("href")));
+
+    // Every block sits under exactly one group heading, immediately after it,
+    // and the heading is what the bar links to.
+    const headings = [...wrap.querySelectorAll(".group-head")];
+    expect(headings.length).toBe(grouped.size);
+    for (const heading of headings) {
+      expect(grouped.has(`#${heading.id}`)).toBe(true);
+      expect(heading.querySelector(".group-title").textContent.trim()).not.toBe(
+        "",
+      );
+      expect(heading.nextElementSibling.classList.contains("block")).toBe(true);
+    }
+    // ...and the count in the pill is the count of blocks in that group: the
+    // page and the bar read the same field, so a stale number is a stale field.
+    for (const pill of pills) {
+      const slug = pill.getAttribute("href").replace("#g-", "");
+      const blocksHere = [
+        ...wrap.querySelectorAll(".block"),
+      ].filter((block) => {
+        let node = block.previousElementSibling;
+        while (node && !node.classList.contains("group-head")) {
+          node = node.previousElementSibling;
+        }
+        return node?.id === `g-${slug}`;
+      });
+      expect(pill.querySelector(".count").textContent.trim()).toBe(
+        String(blocksHere.length),
+      );
+      expect(blocksHere.length).toBeGreaterThan(0);
     }
   });
 

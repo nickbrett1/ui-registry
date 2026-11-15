@@ -93,22 +93,61 @@
     { token: "mark", means: "the matched words inside a snippet" },
   ];
 
-  const blocks = [
-    { name: "app-shell", note: "sticky bar with a mark, a nav slot and your own back control" },
-    { name: "stat-strip", note: "label · big tabular value · sub-line" },
-    { name: "result-list", note: "ranked rows, an h3 title, a fold, a row slot" },
-    { name: "filter-panel", note: "facets on desktop; a facet adapter for the API's own shape" },
-    { name: "empty-state", note: "cause-aware zero results" },
-    { name: "status-view", note: "four lanes, counts in the head" },
-    { name: "detail-panel", note: "header, metadata grid, prose" },
-    { name: "burst-timeline", note: "horizontal or vertical bars, values, a caption you set" },
-    { name: "bar-series", note: "a computed value axis, caller-formatted labels, a dashed projection" },
-    { name: "data-table", note: "column-aligned records, tabular numerics, a cell slot" },
-    { name: "request-form", note: "schema-driven, one message per failed rule" },
-    { name: "meter-strip", note: "a ratio against a ceiling, as a bar, then the figures" },
-    { name: "action-list", note: "one row per thing you operate: state, badges, the valid actions" },
-    { name: "log-view", note: "a job's output; the pane scrolls itself and can be followed" },
+  // Five groups, in the order a screen is built: the frame you put content in,
+  // the numbers you lead with, the list you search, the record you act on, the
+  // things you operate. Fourteen pills in one row was a list to *read*; five is
+  // a decision to make. The order of `blocks` is the order on the page and the
+  // order inside a group -- grouping is presentation, not a second taxonomy.
+  const groups = [
+    {
+      slug: "frame",
+      label: "frame",
+      note: "the shape a screen sits inside",
+    },
+    {
+      slug: "numbers",
+      label: "numbers",
+      note: "one figure, a series, or a ratio against a ceiling",
+    },
+    {
+      slug: "search",
+      label: "search",
+      note: "narrow down, then read the results, or say why there are none",
+    },
+    {
+      slug: "records",
+      label: "records",
+      note: "many rows, one row, and the form that writes one",
+    },
+    {
+      slug: "ops",
+      label: "ops",
+      note: "state over time, and the things you operate",
+    },
   ];
+
+  const blocks = [
+    { name: "app-shell", group: "frame", note: "sticky bar with a mark, a nav slot and your own back control" },
+    { name: "detail-panel", group: "frame", note: "header, metadata grid, prose" },
+    { name: "stat-strip", group: "numbers", note: "label · big tabular value · sub-line" },
+    { name: "meter-strip", group: "numbers", note: "a ratio against a ceiling, as a bar, then the figures" },
+    { name: "bar-series", group: "numbers", note: "a computed value axis, caller-formatted labels, a dashed projection" },
+    { name: "burst-timeline", group: "numbers", note: "horizontal or vertical bars, values, a caption you set" },
+    { name: "filter-panel", group: "search", note: "facets on desktop; a facet adapter for the API's own shape" },
+    { name: "result-list", group: "search", note: "ranked rows, an h3 title, a fold, a row slot" },
+    { name: "empty-state", group: "search", note: "cause-aware zero results" },
+    { name: "data-table", group: "records", note: "column-aligned records, tabular numerics, a cell slot" },
+    { name: "request-form", group: "records", note: "schema-driven, one message per failed rule" },
+    { name: "status-view", group: "ops", note: "four lanes, counts in the head" },
+    { name: "action-list", group: "ops", note: "one row per thing you operate: state, badges, the valid actions" },
+    { name: "log-view", group: "ops", note: "a job's output; the pane scrolls itself and can be followed" },
+  ];
+
+  const inGroup = (slug) => blocks.filter((block) => block.group === slug);
+  const groupOf = (slug) => groups.find((group) => group.slug === slug);
+  // A block with no group would be on the page and not in the bar, which is the
+  // one navigation bug a reader cannot describe. tests/smoke.test.js asserts the
+  // split is total instead of trusting this list to stay in step.
 
   // The request book: the screen this block was lifted from. Six columns, two
   // of them numeric-and-tabular, one a pill, one prose.
@@ -274,9 +313,11 @@
        if nothing sits above it. In exchange the index is always one press away,
        which on a phone is the whole difference: fourteen demos is a long scroll
        and the old index scrolled away after the second screen. -->
-  <nav class="jump" aria-label="Jump to a block">
-    {#each blocks as block}
-      <a class="pill info" href="#{block.name}">{block.name}</a>
+  <nav class="jump" aria-label="Jump to a group of blocks">
+    {#each groups as group}
+      <a class="pill info num" href="#g-{group.slug}">
+        {group.label}<span class="count">{inGroup(group.slug).length}</span>
+      </a>
     {/each}
   </nav>
 
@@ -329,7 +370,18 @@
     </ul>
   </section>
 
-  {#each blocks as block}
+  {#each blocks as block, i}
+    {#if block.group !== blocks[i - 1]?.group}
+      <!-- The heading is the anchor the bar points at. One per group, in the
+           flow above its blocks, so the bar and the page cannot disagree about
+           which group a block is in -- both read `block.group`. -->
+      <header class="group-head" id="g-{block.group}">
+        <h2 class="group-title">{groupOf(block.group).label}</h2>
+        <p class="hint">
+          {groupOf(block.group).note} · {inGroup(block.group).length} blocks
+        </p>
+      </header>
+    {/if}
     <section class="block" id={block.name}>
       <div class="block-head">
         <h2 class="block-name"><code class="num">{block.name}</code></h2>
@@ -640,6 +692,36 @@
     font-size: 11px;
     padding: 4px 9px;
     white-space: nowrap;
+  }
+
+  /* The count, not a second word: "numbers 4" reads as one control and still
+     says whether the group is worth opening. */
+  .jump .count {
+    margin-left: 5px;
+    opacity: 0.6;
+    font-size: 10px;
+  }
+
+  .group-head {
+    margin: 0 0 18px;
+    padding-top: 4px;
+    border-top: 1px solid var(--line);
+    /* Same reservation as a block: the bar is sticky and these are anchors. */
+    scroll-margin-top: calc(58px + var(--safe-top, 0px));
+  }
+
+  .group-title {
+    margin: 10px 0 0;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-strong);
+  }
+
+  .group-head .hint {
+    margin: 2px 0 0;
   }
 
   .block {
