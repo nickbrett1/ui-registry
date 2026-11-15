@@ -41,8 +41,10 @@ describe("generated app smoke test", () => {
     // about the site rather than a way into it, and it is the kind of line that
     // is wrong the moment a block is added. Both are gone; the first thing on
     // the page is a group.
-    expect(container.querySelector(".head")).toBeNull();
-    expect(container.querySelector(".lede")).toBeNull();
+    // Scoped to the page's own children: the index now renders every block as a
+    // thumbnail, so a bare ".head" would find one inside a demo.
+    expect(container.querySelector(".page > .head")).toBeNull();
+    expect(container.querySelector(".page > .lede")).toBeNull();
     expect(container.textContent).not.toContain("no separate gallery");
     expect(container.querySelector(".page").firstElementChild).toBe(
       container.querySelector("h1"),
@@ -53,6 +55,39 @@ describe("generated app smoke test", () => {
     const h1 = container.querySelector("h1");
     expect(h1.className).toContain("sr-only");
     expect(h1.textContent.trim()).toBe("@nb UI Registry");
+  });
+
+  it("shows every block as a picture of itself, not only as a name", () => {
+    const { container } = render(Page);
+    const tiles = [...container.querySelectorAll(".tiles > li > a")];
+    // One tile per block, in the column's order: the index is a map, and a map
+    // with a missing road is worse than a list with a missing line.
+    expect(tiles.map((tile) => tile.getAttribute("href"))).toEqual(
+      blocks.map((block) => `/blocks/${block.name}`),
+    );
+
+    for (const tile of tiles) {
+      const name = tile.getAttribute("href").split("/").pop();
+      // `:scope >` because the preview inside the tile is a demo, and demos
+      // have classes of their own (an action list has project names).
+      expect(tile.querySelector(":scope > .name").textContent.trim()).toBe(
+        name,
+      );
+
+      // The preview is the demo itself, laid out and scaled -- so it cannot be
+      // a picture of a shape the registry no longer serves, which is what a
+      // checked-in screenshot would become the first time a block changed.
+      const frame = tile.querySelector(".thumb .frame");
+      expect(frame, `${name} has no preview`).not.toBeNull();
+      expect(frame.children.length, `${name} preview is empty`).toBeGreaterThan(0);
+
+      // ...and it is a picture of another page: a button inside it cannot be
+      // pressed here, so nothing in it may be focusable or announced.
+      expect(tile.querySelector(".thumb").getAttribute("aria-hidden")).toBe(
+        "true",
+      );
+      expect(tile.querySelector(".thumb").hasAttribute("inert")).toBe(true);
+    }
   });
 
   it("names the site in the bar, with the release and the build", () => {

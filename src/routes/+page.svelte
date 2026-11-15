@@ -14,6 +14,7 @@
   import { onMount } from "svelte";
   import { groups, inGroup, palette } from "$lib/catalogue.js";
   import InstallCommand from "$lib/InstallCommand.svelte";
+  import BlockThumb from "$lib/BlockThumb.svelte";
 
   // `installBase` is this deployment's registry, read off the request by
   // `+layout.js`; without it the page still renders, and the command prints a
@@ -67,14 +68,9 @@
       <section class="card group" aria-labelledby="g-{group.slug}">
         <h2 class="group-label" id="g-{group.slug}">{group.label}</h2>
         <p class="hint group-note">{group.note}</p>
-        <ul>
+        <ul class="tiles">
           {#each inGroup(group.slug) as block}
-            <li>
-              <a href={`/blocks/${block.name}`}>
-                <code class="num">{block.name}</code>
-                <span class="go" aria-hidden="true">→</span>
-              </a>
-            </li>
+            <li><BlockThumb name={block.name} /></li>
           {/each}
         </ul>
       </section>
@@ -135,10 +131,13 @@
     border: 0;
   }
 
+  /* One card per group, stacked: the tiles are a fixed size (see BlockThumb),
+     so the card is a shelf they wrap along rather than a column that squeezes
+     them. Side by side, five groups leave 180px each -- one tile, and a
+     thumbnail too small to recognise. */
   .groups {
     display: grid;
     gap: 14px;
-    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
     margin-bottom: 14px;
   }
 
@@ -163,39 +162,23 @@
     line-height: 1.4;
   }
 
-  .group ul {
+  /* Tiles wrap along the card, so a wide screen shows a group in one row and a
+     phone shows two per row -- the number follows the width, the tile does not
+     (it is fixed, because the preview inside it is a scaled 600px canvas). */
+  .tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 168px);
+    gap: 14px 12px;
     margin: 0;
     padding: 0;
     list-style: none;
   }
 
-  /* One name per line, the name in the monospace the blocks use, so the index
-     teaches the vocabulary the rest of the site speaks. */
-  .group a {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 8px;
-    padding: 5px 0;
-    border-top: 1px solid var(--line);
-    color: var(--ink-dim);
-    text-decoration: none;
-    font-size: 12px;
-  }
-
-  .group a:hover,
-  .group a:focus-visible {
-    color: var(--ink-strong);
-    background: var(--bg-hover);
-  }
-
-  .go {
-    color: var(--ink-faint);
-    font-size: 11px;
-  }
-
-  .group a:hover .go {
-    color: var(--accent);
+  @media (max-width: 26rem) {
+    .tiles {
+      grid-template-columns: repeat(auto-fill, 132px);
+      gap: 12px 10px;
+    }
   }
 
   .palette-card,

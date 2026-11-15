@@ -101,7 +101,11 @@ test.describe("the block pages, measured", () => {
       // The column groups the blocks the way a screen is built; the registry
       // lists them as it lists them. Same set, two orders -- compare the set.
       .sort();
-    for (const selector of ["aside.sidebar nav a", "main .groups a"]) {
+    // `> li > a` and not `.tiles a`: the tiles render the *demo* inside each
+    // link, and several demos contain links of their own (result lists, action
+    // lists). Those are pictures of another page, so they are not navigation
+    // here -- and counting them would let a missing tile hide behind them.
+    for (const selector of ["aside.sidebar nav a", "main .tiles > li > a"]) {
       expect([...(await hrefsOf(selector))].sort(), selector).toEqual(published);
     }
   });
