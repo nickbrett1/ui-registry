@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { installBaseFor, installCommand } from "$lib/install.js";
 
 /**
  * The registry, as an MCP server.
@@ -52,9 +53,6 @@ const SEMVER = /^\d+\.\d+\.\d+$/;
  * protocol revision this code was written against (2025-06-18).
  */
 const PROTOCOL_VERSION = "2025-06-18";
-
-/** The CLI whose URL shapes the /r route was measured against. */
-const CLI = "shadcn-svelte@1.8.1";
 
 const json = (status, body) =>
   new Response(JSON.stringify(body), {
@@ -299,8 +297,11 @@ async function callTool(name, args, origin) {
     }
     // The host, never the pin: the pin goes in the base URL, because the CLI
     // appends only index.json / <name>.json and a query cannot survive that.
-    const base = `${origin}/r/v${version}`;
-    const command = `COMPONENTS_REGISTRY_URL="${base}" npx ${CLI} add ${requested.join(" ")} --yes --overwrite`;
+    // Both the base and the line come from $lib/install.js, which is also what
+    // the pages print -- one spelling, so a reader and a model cannot be told
+    // two different commands for the same release.
+    const base = installBaseFor(origin, version);
+    const command = installCommand({ base, items: requested });
     return textContent(command, { version, base, items: requested, command });
   }
 

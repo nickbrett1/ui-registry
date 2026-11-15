@@ -10,9 +10,15 @@
    * nothing else competes with it.
    */
   import BlockDemo from "$lib/BlockDemo.svelte";
+  import InstallCommand from "$lib/InstallCommand.svelte";
   import { blockByName, groupOf, neighbours } from "$lib/catalogue.js";
 
   let { data } = $props();
+
+  // `installBase` arrives from `+layout.js` with the page's own name: the
+  // command on a block page names that block, so the reader never has to
+  // translate "<name>" into the thing they are looking at.
+  const installBase = $derived(data.installBase || "");
 
   const block = $derived(blockByName(data.name));
   const group = $derived(groupOf(block.group));
@@ -41,9 +47,10 @@
   </div>
 
   <footer class="foot">
-    <p class="install">
-      <code class="num">npx shadcn-svelte add {block.name}</code>
-    </p>
+    <div class="get">
+      <p class="install-label hint">install</p>
+      <InstallCommand base={installBase} items={["theme", block.name]} />
+    </div>
     <nav class="pager" aria-label="Previous and next block">
       {#if steps.prev}
         <a class="step prev" href={`/blocks/${steps.prev.name}`}>
@@ -138,10 +145,21 @@
     border-top: 1px solid var(--line);
   }
 
-  .install {
-    margin: 0;
-    font-size: 11.5px;
-    color: var(--ink-muted);
+  /* The command sits under the demo, in a block wide enough to read it: the
+     footer shares its row with the pager, so it takes the whole width until the
+     pager can fit beside it. */
+  .get {
+    flex: 1 1 22rem;
+    min-width: 0;
+  }
+
+  .install-label {
+    margin: 0 0 4px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
   }
 
   .pager {

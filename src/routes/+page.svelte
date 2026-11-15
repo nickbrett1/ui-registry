@@ -8,7 +8,8 @@
    * demo's output, and the group a shape belonged to had scrolled away long
    * before the shape did. A block now has its own page, reached from the column
    * on the left or from the category card below, and this page is only an index:
-   * five sentences, five lists of names, one palette.
+   * five sentences, five lists of names, one palette, and the line that installs
+   * from it.
    */
   import { onMount } from "svelte";
   import {
@@ -17,6 +18,12 @@
     palette,
     publishedBlockCount,
   } from "$lib/catalogue.js";
+  import InstallCommand from "$lib/InstallCommand.svelte";
+
+  // `installBase` is this deployment's registry, read off the request by
+  // `+layout.js`; without it the page still renders, and the command prints a
+  // host that is obviously not one.
+  let { data = {} } = $props();
 
   const blockCount = publishedBlockCount;
 
@@ -97,12 +104,17 @@
     </ul>
   </section>
 
-  <footer class="foot">
-    <p>
-      Take one with <code class="num">npx shadcn-svelte add &lt;name&gt;</code> against this
-      registry's URL — or give genproj's <code class="num">ui-shadcn</code> capability a
-      <code class="num">blocks</code> list and it emits the pinned installs.
+  <section class="card install-card" aria-labelledby="install-title">
+    <h2 class="group-label" id="install-title">install</h2>
+    <p class="hint group-note">
+      The theme first — the blocks are drawn with its palette — then the block you
+      want. Swap <code class="num">bar-series</code> for any name above; each
+      block's own page prints its own line.
     </p>
+    <InstallCommand base={data.installBase} items={["theme", "bar-series"]} />
+  </section>
+
+  <footer class="foot">
     <!-- Diagnostic, not documentation: here to be read off a phone in one glance
          and then ignored. -->
     <p
@@ -199,8 +211,13 @@
     color: var(--accent);
   }
 
-  .palette-card {
+  .palette-card,
+  .install-card {
     padding: 14px 16px;
+  }
+
+  .install-card {
+    margin-bottom: 14px;
   }
 
   .swatches {
@@ -243,10 +260,6 @@
 
   .foot p {
     margin: 0;
-  }
-
-  .foot p + p {
-    margin-top: 6px;
   }
 
   .device {

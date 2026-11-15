@@ -5,8 +5,10 @@ import path from "node:path";
 const ROOT = path.resolve(process.cwd());
 import { render, screen } from "@testing-library/svelte";
 import Page from "../src/routes/+page.svelte";
+import BlockPage from "../src/routes/blocks/[name]/+page.svelte";
 import SiteHeader from "../src/lib/SiteHeader.svelte";
 import { load } from "../src/routes/blocks/[name]/+page.js";
+import { load as layoutLoad } from "../src/routes/+layout.js";
 import {
   blocks,
   groups,
@@ -168,6 +170,42 @@ describe("generated app smoke test", () => {
     );
     expect(css).not.toContain("backdrop-filter");
     expect(layout).not.toContain("backdrop-filter");
+  });
+
+  it("prints an install line that runs, not a sentence about one", () => {
+    // The text this replaced said "take one with `npx shadcn-svelte add <name>`
+    // against this registry's URL": true, and useless -- the reader still had to
+    // find the host, learn that the pin is a path segment, and discover that
+    // `--yes` alone writes nothing. The page now prints the command it means,
+    // built from the request this reader actually made.
+    const { installBase } = layoutLoad({
+      url: new URL("http://ryzen:3012/blocks/bar-series"),
+    });
+    expect(installBase).toBe(`http://ryzen:3012/r/v${latestVersion}`);
+
+    const { container } = render(Page, { data: { installBase } });
+    const command = container.querySelector(".cmd").textContent.trim();
+    // The three ways the line can be wrong, each pinned: where the pin lives,
+    // that the CLI is pinned, and the flag that answers the app.css prompt.
+    expect(command).toContain(`COMPONENTS_REGISTRY_URL="${installBase}"`);
+    expect(command).toContain("npx shadcn-svelte@1.8.1 add theme bar-series");
+    expect(command).toContain("--yes --overwrite");
+    expect(command).not.toContain("?version=");
+    // And it is real text, so a reader without JS (or with a locked-down
+    // clipboard) can still select it.
+    expect(container.querySelector(".copy")).not.toBeNull();
+  });
+
+  it("names the block it is on in that block's own install line", () => {
+    // A block page whose command says "<name>" makes the reader translate the
+    // one thing they were sure of. The page knows which block it is.
+    const { container } = render(BlockPage, {
+      data: { name: "data-table", installBase: "http://ryzen:3012/r/v1.12.0" },
+    });
+    const command = container.querySelector(".cmd").textContent.trim();
+    expect(command).toContain(
+      'COMPONENTS_REGISTRY_URL="http://ryzen:3012/r/v1.12.0" npx shadcn-svelte@1.8.1 add theme data-table --yes --overwrite',
+    );
   });
 
   it("labels every palette variable with what it is for", () => {
