@@ -52,6 +52,21 @@ describe("generated app smoke test", () => {
     expect(container.textContent).toContain("build");
   });
 
+  it("offers a way home from a page in an installed window", () => {
+    // These apps are used from a home screen: no browser chrome, no back
+    // button, and the column is a collapsed drawer on a phone. A block page
+    // without a link to "/" is a dead end, so the bar carries one -- and the
+    // index itself does not, because a link to the page you are on is noise.
+    const inner = render(SiteHeader, { path: "/blocks/bar-series" });
+    const back = inner.container.querySelector(".back");
+    expect(back).not.toBeNull();
+    expect(back.getAttribute("href")).toBe("/");
+    expect(back.textContent.trim()).toContain("index");
+
+    const indexPage = render(SiteHeader, { path: "/" });
+    expect(indexPage.container.querySelector(".back")).toBeNull();
+  });
+
   it("reports what the device is, so a fix that did not run is visible", () => {
     const { container } = render(Page);
     // The top of the viewport is composited by the OS, so a home-screen window

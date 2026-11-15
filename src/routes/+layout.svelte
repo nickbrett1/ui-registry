@@ -11,6 +11,7 @@
    * arrangement: the column answers "where am I", the page answers "what is it".
    */
   import "../app.css";
+  import { page } from "$app/stores";
   import SiteHeader from "$lib/SiteHeader.svelte";
   import SideNav from "$lib/SideNav.svelte";
   import { publishedBlockCount } from "$lib/catalogue.js";
@@ -18,7 +19,7 @@
   let { children } = $props();
 </script>
 
-<SiteHeader />
+<SiteHeader path={$page.url.pathname} />
 
 <div class="body">
   <!-- One nav, rendered twice, because a phone and a desktop need different
