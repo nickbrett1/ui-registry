@@ -343,21 +343,23 @@ The first run found two real forks: `stratechery-search`'s `app-shell` was two
 minor versions behind (no `nav` slot) and `data-download` had hand-edited the
 strip out of its shell, which is why app-shell 1.12.0 grew `footer={false}`.
 
-Who consumes what, as of 1.15.0:
+Who consumes what, as of 1.16.1:
 
 | repo | pin | takes |
 |---|---|---|
-| `data-download` | 1.15.0 | its ten vendored blocks — `app-shell`, `request-form`, `filter-panel`, `result-list`, `detail-panel`, `burst-timeline`, the rest — plus the theme (its ten blocks are byte-identical from 1.12.0 to 1.15.0, so the pin gained roles, not components) |
-| `stratechery-search` | 1.15.0 | `app-shell`, `result-list`, `filter-panel`, the rest — and its components now name roles instead of values |
-| `deepseek-balance` | 1.15.0 | `app-shell`, `stat-strip`, `bar-series`, `data-table` + the theme, generated from the published item (only `app-shell` changed: it gains `footer={false}`) |
-| `devdash` | 1.15.0 | `meter-strip`, `action-list`, `log-view` + the whole theme (and raises `--tap` to 2.75rem) |
-| `data-scout` | 1.15.0 | the **theme only** — it is Python-rendered static HTML, so it has no Svelte to install a block into (and 1.15.0's `--bg-overlay` replaced two hand-mixed grounds) |
+| `data-download` | 1.16.1 | `app-shell` (its opaque bar replaces a 42-line `display-mode: standalone` patch this app had written for the same bug), `request-form`, `filter-panel`, `result-list`, `detail-panel`, `burst-timeline`, the rest — plus the theme |
+| `stratechery-search` | 1.16.1 | `app-shell`, `result-list`, `filter-panel`, the rest — and its components name roles instead of values. Its phone chip row keeps `--bg-overlay` + a blur on purpose: at `top: 50px` it is under the header, not at the top edge, so it has something behind it worth seeing through to |
+| `deepseek-balance` | 1.16.1 | `app-shell` (as `footer={false}`), `stat-strip`, `bar-series`, `data-table` + the theme, generated from the published item |
+| `devdash` | 1.16.1 | `meter-strip`, `action-list`, `log-view` + the whole theme (and raises `--tap` to 2.75rem). No `app-shell`, and nothing sticky — its full-screen job log and provision sheet were already opaque `var(--bg)` |
+| `data-scout` | 1.16.0 | the **theme only** — Python-rendered static HTML, so there is no Svelte to install a block into. 1.16.0 is where its pin sits because the theme is byte-identical from 1.15.0 to 1.16.1; the bug was in its own `report.css`, fixed there (`background: var(--bg)`, no blur) |
 
-`data-scout` is the case that says what a design system is: it cannot use a
-component, but its stylesheet now names the same roles (`--ink`, `--line`,
-`--accent`), so a palette change reaches it too. Its theme copy is manual —
-`check-nb-blocks` compares vendored *components* — and its `.nb-registry.json`
-records the release the copy came from.
+The same defect was in four places and only one of them was a block. It is worth
+saying which: `app-shell`'s `.topbar` (which four consumers inherited), this
+registry's own jump bar, `data-download`'s `display-mode: standalone` patch (a
+consumer fixing the same thing in its own stylesheet, because a pin is not a
+fix), and `data-scout`'s sticky report nav. Everything that owns the top edge is
+now `var(--bg)` with no `backdrop-filter`; the jump bar and `app-shell` have a
+test that says so.
 
 ### A block names a role, never a value — and that is a check
 
