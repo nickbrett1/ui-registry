@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFile } from "node:fs/promises";
+import { readFileSync } from "node:fs";
 import path from "node:path";
 
 const ROOT = path.resolve(process.cwd());
@@ -74,6 +75,22 @@ describe("generated app smoke test", () => {
     expect(line.textContent).toContain("surface");
   });
 
+  it("offers the sticky-or-flat experiment, so the next report is a measurement", () => {
+    // Four rounds of "still fuzzy" were four rounds of guessing at a composite
+    // the server cannot see. The probe is the page asking the phone a question
+    // instead: flatten the bar and the softness either follows the sticky layer
+    // at the scroll edge or it does not.
+    const { container } = render(Page);
+    const probe = container.querySelector("footer .probe");
+    expect(probe).not.toBeNull();
+    expect(probe.textContent).toContain("top bar:");
+    const source = readFileSync(
+      path.join(ROOT, "src", "routes", "+page.svelte"),
+      "utf8",
+    );
+    expect(source).toContain('html[data-topbar="flat"]');
+  });
+
   it("puts the index first, so it can be the bar that sticks", () => {
     const { container } = render(Page);
     // Not a style assertion: the index owns the status-bar band (padding, not a
@@ -118,15 +135,15 @@ describe("generated app smoke test", () => {
     // page and the bar read the same field, so a stale number is a stale field.
     for (const pill of pills) {
       const slug = pill.getAttribute("href").replace("#g-", "");
-      const blocksHere = [
-        ...wrap.querySelectorAll(".block"),
-      ].filter((block) => {
-        let node = block.previousElementSibling;
-        while (node && !node.classList.contains("group-head")) {
-          node = node.previousElementSibling;
-        }
-        return node?.id === `g-${slug}`;
-      });
+      const blocksHere = [...wrap.querySelectorAll(".block")].filter(
+        (block) => {
+          let node = block.previousElementSibling;
+          while (node && !node.classList.contains("group-head")) {
+            node = node.previousElementSibling;
+          }
+          return node?.id === `g-${slug}`;
+        },
+      );
       expect(pill.querySelector(".count").textContent.trim()).toBe(
         String(blocksHere.length),
       );

@@ -557,6 +557,34 @@ The page header now carries a measured line under the lede:
 standalone · top 59px · surface on
 ```
 
+### The viewport: stop occupying the band at all
+
+An opaque bar, a colour surface for WebKit's edge sampler and an opaque
+status-bar style each fixed a real layer, and the top of the page was still soft
+on the phone. What all three had in common is that the page was being asked to
+*occupy the status-bar band*: with `viewport-fit=cover`, `env(safe-area-inset-top)`
+is non-zero because the web view extends under the system chrome, and whatever
+the system draws there — opaque, translucent or glass — is drawn over our
+pixels. Every fix so far was an argument about the colour of that layer.
+
+This page now uses `viewport-fit=auto`. The viewport starts below the band, the
+top inset resolves to 0, and there are no pixels of ours for anything to
+composite over. The cost is the landscape side insets on a notched phone. On a
+reference page that is the right trade: it demonstrates the answer that is safe
+rather than the one that is pretty. A consumer app that wants content
+full-bleed can opt back in with `viewport-fit=cover` — the colour surface is
+still there for exactly that case, and costs nothing when the inset is zero.
+
+### The probe in the footer: sticky, or flat?
+
+One question remains that no server-side test can answer: is the softness about
+the *sticky* bar, or about the band it used to sit in? The footer carries a
+control that sets `html[data-topbar="flat"]`, which turns `.jump` into
+`position: static` so the bar scrolls away like ordinary content. If the top goes
+crisp when flat, the compositing is about a sticky layer at the scroll edge and
+the fix is a different shape of bar, not another colour. It is a probe, not a
+feature, and it is labelled as one.
+
 `standalone`/`tab` is `matchMedia("(display-mode: standalone)")` plus
 `navigator.standalone`; `top` is `env(safe-area-inset-top)` read off a probe
 element (an env() value cannot be read any other way); `surface` is whether the

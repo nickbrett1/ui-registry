@@ -7,7 +7,9 @@ import index from "../registry.json";
 // that happens to match today is exactly what let the generator's copy of the
 // block names drift in genproj. `registry.json` is generated from `blocks/`, so
 // this is the one place that says "every published block is rendered here".
-const publishedBlocks = index.items.filter((item) => item.type === "registry:block").map((item) => item.name);
+const publishedBlocks = index.items
+  .filter((item) => item.type === "registry:block")
+  .map((item) => item.name);
 
 /**
  * The landing page *is* the gallery: every published block is imported from

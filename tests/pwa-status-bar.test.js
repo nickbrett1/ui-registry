@@ -55,9 +55,23 @@ describe("the iOS top-edge surface", () => {
       );
     expect(meta?.[1]).toBe("black");
     expect(html).not.toContain('content="black-translucent"');
-    // ...and viewport-fit stays: the side insets in landscape are real, and
-    // stripping `cover` to dodge the top band would cost them.
-    expect(html).toContain("viewport-fit=cover");
+  });
+
+  it("does not ask for the status-bar band at all", () => {
+    // The fourth and last layer. With `viewport-fit=cover` the web view extends
+    // under the system chrome, so `env(safe-area-inset-top)` is non-zero and
+    // whatever the system paints there lands on our pixels -- which is why an
+    // opaque bar, a colour surface and an opaque status bar style each fixed
+    // something real and none of them made the top of the page crisp. Without
+    // `cover` the viewport starts below the band and there is nothing of ours
+    // to composite over. A consumer app that wants full-bleed is free to opt
+    // back in; this page is the reference, so it shows the safe answer.
+    // Comments stripped: this file explains the decision, and the prose is
+    // allowed to name the value the meta may not use.
+    const markup = html.replace(/<!--[\s\S]*?-->/g, "");
+    const viewport = /<meta\s+name="viewport"\s+content="([^"]+)"/.exec(markup);
+    expect(viewport?.[1]).toBe("width=device-width, initial-scale=1");
+    expect(markup).not.toContain("viewport-fit");
   });
 
   it("meets WebKit's sampling contract without painting over anything", () => {
