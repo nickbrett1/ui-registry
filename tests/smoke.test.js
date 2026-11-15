@@ -95,6 +95,16 @@ describe("generated app smoke test", () => {
     const labels = groups.map((group) => group.label);
     expect(labels).toEqual([...labels].sort((a, b) => a.localeCompare(b)));
 
+    // ...and each group's own list reads alphabetically. A column is scanned
+    // for one name, not read end to end, so the rows have to be in the order a
+    // reader would guess rather than the order the shapes are reached for.
+    for (const group of groups) {
+      const names = inGroup(group.slug).map((block) => block.name);
+      expect(names, `${group.label} is out of order`).toEqual(
+        [...names].sort((a, b) => a.localeCompare(b)),
+      );
+    }
+
     // Previous/next walks `blocks`, so that array must follow the column's group
     // order -- otherwise the footer sends a reader somewhere the column does not
     // agree is next.

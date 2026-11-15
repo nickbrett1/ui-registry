@@ -55,23 +55,25 @@ export const groups = [
 // It is the only prose a block page carries besides the demo itself.
 //
 // The order here is the order of the column and the order of previous/next, so
-// it must follow the groups above. Within a group it is *not* alphabetical: it
-// is the order the shapes are reached for -- the headline numbers, then the
-// ratio, then the series, then the buckets -- and that order is a sentence
-// people read in the column, where names alone would be a wall.
+// it must follow the groups above and be alphabetical inside each one. It was
+// a curated order -- headline numbers, then the ratio, then the series, then
+// the buckets -- which read as a sentence and was invisible to anyone who did
+// not already know the shapes: hunting for `stat-strip` meant reading the
+// column for it at the top of a group that starts with `bar-series`. A lookup
+// is faster to scan in one predictable order than in a good one.
 export const blocks = [
-  { name: "stat-strip", group: "figures", note: "the row of big numbers at the top of a dashboard" },
-  { name: "meter-strip", group: "figures", note: "how full something is, as a bar plus used / total" },
   { name: "bar-series", group: "figures", note: "a value per day, with today drawn as a projection" },
   { name: "burst-timeline", group: "figures", note: "activity in fixed time buckets, read across the day" },
+  { name: "meter-strip", group: "figures", note: "how full something is, as a bar plus used / total" },
+  { name: "stat-strip", group: "figures", note: "the row of big numbers at the top of a dashboard" },
   { name: "app-shell", group: "frame", note: "the bar pinned across the top of a screen: mark, title, section links, one action" },
   { name: "detail-panel", group: "frame", note: "one item opened: title, key facts in a grid, then prose" },
+  { name: "empty-state", group: "search", note: "zero results, and which filter to drop to get some" },
   { name: "filter-panel", group: "search", note: "facet checkboxes down the side; behind a Filters button on a phone" },
   { name: "result-list", group: "search", note: "ranked hits: title, date, and the snippet the match came from" },
-  { name: "empty-state", group: "search", note: "zero results, and which filter to drop to get some" },
-  { name: "status-view", group: "status", note: "four columns: pending, done, stuck, blocked" },
   { name: "action-list", group: "status", note: "one row per thing you operate, showing only the actions valid right now" },
   { name: "log-view", group: "status", note: "a job's own output, scrolling as it arrives, with Follow" },
+  { name: "status-view", group: "status", note: "four columns: pending, done, stuck, blocked" },
   { name: "data-table", group: "records", note: "many records in aligned columns, numbers right-aligned" },
   { name: "request-form", group: "records", note: "the form that creates one of those records, with a message per failed field" },
 ];
