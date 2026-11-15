@@ -554,9 +554,15 @@
       calc(16px + var(--safe-left, 0px));
     margin: 0 calc(-16px - var(--safe-right, 0px)) 20px
       calc(-16px - var(--safe-left, 0px));
-    background: var(--bg-overlay);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    /* A SOLID surface, not a glass one -- and this is the whole fix for the
+       washed-out top on an iPhone home screen. `--bg-overlay` + backdrop-filter
+       looked right in a browser tab and read as a grey smear in a standalone
+       window: iOS composites the status-bar band and the top of the scrollport
+       through a translucent layer, so 93% of the ground plus a blur of whatever
+       was sliding under it lifted the whole strip (the pills at 10px and the
+       clock sitting on top of it were the first things to go). This bar is the
+       page's chrome, not something floating over it: it should be the ground. */
+    background: var(--bg);
     border-bottom: 1px solid var(--line);
   }
 
@@ -566,7 +572,12 @@
 
   .jump .pill {
     flex: none;
-    font-size: 10px;
+    /* One size up from the theme's 10px/1px chips, and a taller target: these
+       are the only controls on the page a thumb reaches for, and a 16px-tall
+       pill is a miss. The bar grows to ~46px, which is why `.block` below
+       reserves more than the old 52px. */
+    font-size: 11px;
+    padding: 4px 9px;
     white-space: nowrap;
   }
 
@@ -574,7 +585,7 @@
     margin-bottom: 40px;
     /* An anchor jump must not land the block's name under the sticky bar. The
        bar is 10px + a pill + 10px + its border, and it grows by the top inset. */
-    scroll-margin-top: calc(52px + var(--safe-top, 0px));
+    scroll-margin-top: calc(58px + var(--safe-top, 0px));
   }
 
   .block-head {

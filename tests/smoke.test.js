@@ -79,6 +79,35 @@ describe("generated app smoke test", () => {
     }
   });
 
+  it("the top bar is an opaque surface, not a pane of glass", async () => {
+    // The bug, reported against an iPhone home-screen window: the strip at the
+    // top of the viewport rendered washed out and its pills were barely
+    // readable. `--bg-overlay` plus `backdrop-filter: blur()` is the right
+    // answer for a sheet that floats over a page in a browser tab and the wrong
+    // one for the page's own chrome -- iOS composites the status-bar band
+    // through the translucent layer, so the ground lifts to a grey smear. This
+    // bar is at the top edge of the viewport on every device, which is exactly
+    // where a translucent surface cannot be trusted.
+    const source = await readFile(
+      path.join(ROOT, "src", "routes", "+page.svelte"),
+      "utf8",
+    );
+    // Comments stripped first: this file explains the bug in prose, and prose
+    // is allowed to name the property that the declaration may not use.
+    const css = source
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/<!--[\s\S]*?-->/g, "");
+    const rule = css.match(/\.jump \{([\s\S]*?)\n {2}\}/);
+    expect(
+      rule,
+      "the .jump rule moved -- this test reads it by name",
+    ).toBeTruthy();
+    expect(rule[1]).toContain("background: var(--bg)");
+    expect(rule[1]).not.toContain("backdrop-filter");
+    // And nothing else may reintroduce a blur at the top of the page.
+    expect(css).not.toContain("backdrop-filter");
+  });
+
   it("labels every palette variable with what it is for", () => {
     const { container } = render(Page);
     for (const token of ["bg", "ink", "accent", "ok", "warn", "bad", "mark"]) {
