@@ -9,6 +9,11 @@
 
 FROM node:22-slim AS build
 WORKDIR /app
+# The commit this image is built from, so the page can name its own build.
+# `.git` is in `.dockerignore` (the build context should not carry history), so
+# `git rev-parse` inside the image answers nothing; CI passes the revision in.
+ARG NB_BUILD_COMMIT=unknown
+ENV NB_BUILD_COMMIT=$NB_BUILD_COMMIT
 COPY package.json package-lock.json* .npmrc* ./
 RUN PINNED_NPM="$(node -p "try{require('./package.json').packageManager}catch(e){''}" 2>/dev/null || true)" \
     && if [ -n "$PINNED_NPM" ] && [ "$(npm --version)" != "${PINNED_NPM#npm@}" ]; then \

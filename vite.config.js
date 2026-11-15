@@ -12,6 +12,14 @@ import { defineConfig } from "vite";
  * page on the phone was the current one. A build stamp can.
  */
 function buildStamp() {
+  // Environment first. The image build excludes `.git` from its context
+  // (`.dockerignore`), so `git rev-parse` there answers nothing and the page
+  // said `build unknown` while running a perfectly good commit -- the pill was
+  // right and unhelpful at once. CI knows the revision; pass it in.
+  for (const name of ["NB_BUILD_COMMIT", "BUILDKITE_COMMIT", "GITHUB_SHA"]) {
+    const fromEnv = process.env[name];
+    if (fromEnv) return fromEnv.slice(0, 7);
+  }
   try {
     return execSync("git rev-parse --short HEAD", { encoding: "utf8" }).trim();
   } catch {
