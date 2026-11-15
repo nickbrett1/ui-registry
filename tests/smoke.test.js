@@ -5,59 +5,51 @@ import path from "node:path";
 const ROOT = path.resolve(process.cwd());
 import { render, screen } from "@testing-library/svelte";
 import Page from "../src/routes/+page.svelte";
+import SiteHeader from "../src/lib/SiteHeader.svelte";
+import { load } from "../src/routes/blocks/[name]/+page.js";
+import {
+  blocks,
+  groups,
+  groupOf,
+  inGroup,
+  latestVersion,
+} from "../src/lib/catalogue.js";
 import { GET } from "../src/routes/health/+server.js";
+import index from "../registry.json";
+
+const publishedBlocks = index.items
+  .filter((item) => item.type === "registry:block")
+  .map((item) => item.name);
 
 describe("generated app smoke test", () => {
   it("renders the registry landing page", () => {
-    const { container } = render(Page);
-    // By name, not "the only h1": `detail-panel` legitimately renders its own h1
-    // in its sample, since a detail page's title is the page's title.
+    render(Page);
+    // By name, not "the only h1": the app-shell demo legitimately renders its
+    // own heading. The name of the registry is the page's own h1.
     expect(
       screen.getByRole("heading", { level: 1, name: "@nb UI Registry" }),
     ).toBeInTheDocument();
-    // Scoped to the page header: the app-shell sample also says it, as a subtitle.
-    expect(container.querySelector("header .micro").textContent).toContain(
-      "house design system",
-    );
   });
 
-  it("says what the registry is in the lede, and which version it serves", async () => {
+  it("says what the registry is in the lede, and which version it serves", () => {
     const { container } = render(Page);
-    // The block count is *counted* from the catalogue. It said "eleven" while
-    // the registry served fourteen -- a literal the page had no way to notice,
-    // pinned here by an assertion that also could not notice.
-    const catalogue = JSON.parse(
-      await readFile(path.join(ROOT, "registry.json"), "utf8"),
-    );
-    const blocks = catalogue.items.filter(
-      (item) => item.type === "registry:block",
-    ).length;
-    // These two facts used to live in a "what this is" card above the blocks.
-    // The card is gone -- it was three paragraphs of prose to scroll past to
-    // reach the thing you came for, and on a phone it was most of the first
-    // screen -- so the assertions follow the facts to where they now are.
-    const lede = container.querySelector("header .lede").textContent;
+    const lede = container.querySelector(".lede").textContent;
     expect(lede.toLowerCase()).toContain("one theme");
-    expect(lede).toContain(`${blocks} blocks`);
+    expect(lede).toContain(`${publishedBlocks.length} blocks`);
+  });
 
+  it("names the site in the bar, with the release and the build", () => {
+    const { container } = render(SiteHeader);
+    expect(container.querySelector(".micro").textContent).toContain(
+      "house design system",
+    );
     // The version is read from the published manifest, so the pill cannot
-    // advertise one the registry does not serve.
-    const published = JSON.parse(
-      await readFile(
-        path.join(ROOT, "registry", "versions", "manifest.json"),
-        "utf8",
-      ),
+    // advertise one the registry does not serve. The stamp is the *document*:
+    // a page can be on the current release and still be an old bundle.
+    expect(container.querySelector(".pill").textContent.trim()).toBe(
+      `v${latestVersion}`,
     );
-    const versions = [
-      ...new Set(published.items.map((item) => item.version)),
-    ].sort((a, b) => {
-      const [x, y] = [a.split(".").map(Number), b.split(".").map(Number)];
-      for (let i = 0; i < 3; i += 1) if (x[i] !== y[i]) return x[i] - y[i];
-      return 0;
-    });
-    expect(container.querySelector("header .pill").textContent.trim()).toBe(
-      `v${versions[versions.length - 1]}`,
-    );
+    expect(container.textContent).toContain("build");
   });
 
   it("reports what the device is, so a fix that did not run is visible", () => {
@@ -66,7 +58,7 @@ describe("generated app smoke test", () => {
     // cannot be told apart from a browser tab by looking at the fix -- this
     // line is the difference between "the CSS is wrong" and "the surface was
     // never switched on here".
-    const line = container.querySelector("header .device");
+    const line = container.querySelector(".device");
     expect(line).not.toBeNull();
     // Server-side it can only say it does not know yet; the words are the
     // contract, the values come from the running document in onMount.
@@ -74,64 +66,33 @@ describe("generated app smoke test", () => {
     expect(line.textContent).toContain("surface");
   });
 
-  it("puts the index first, so it can be the bar that sticks", () => {
-    const { container } = render(Page);
-    // Not a style assertion: the index owns the status-bar band (padding, not a
-    // sticky offset), and it can only own it if nothing is above it. Move
-    // anything ahead of it and the pills end up under the clock on a phone.
-    const wrap = container.querySelector(".wrap");
-    const first = wrap.firstElementChild;
-    expect(first.tagName).toBe("NAV");
-    expect(first.getAttribute("aria-label")).toBe("Jump to a group of blocks");
-    // ...and every group the bar points at is an element on the page, or a pill
-    // goes nowhere.
-    const hrefs = [...first.querySelectorAll("a")].map((a) =>
-      a.getAttribute("href"),
+  it("gives every published block exactly one page, in one group", () => {
+    // The sidebar, the overview cards and the routes all read this list. A
+    // second copy of the names is how a navigation points at pages that are not
+    // there, and a block in no group is a block no column can link to.
+    expect(blocks.map((block) => block.name).sort()).toEqual(
+      [...publishedBlocks].sort(),
     );
-    expect(hrefs.length).toBeGreaterThan(0);
-    for (const href of hrefs) {
-      expect(wrap.querySelector(href)).not.toBeNull();
+    expect(new Set(blocks.map((b) => b.name)).size).toBe(blocks.length);
+    let counted = 0;
+    for (const group of groups) {
+      expect(group.label.trim()).not.toBe("");
+      expect(group.note.trim()).not.toBe("");
+      counted += inGroup(group.slug).length;
+    }
+    expect(counted).toBe(blocks.length);
+    for (const block of blocks) {
+      expect(groupOf(block.group), `${block.name} has no group`).toBeTruthy();
+      expect(block.note.trim()).not.toBe("");
     }
   });
 
-  it("groups the blocks, so the bar is a choice and not a list to read", () => {
-    const { container } = render(Page);
-    const wrap = container.querySelector(".wrap");
-    // The bar was fourteen pills in one scrolling row. Fourteen is a list; five
-    // groups is a decision, and it is the only navigation this page has.
-    const pills = [...wrap.querySelector(".jump").querySelectorAll("a")];
-    expect(pills.length).toBeLessThan(8);
-    const grouped = new Set(pills.map((a) => a.getAttribute("href")));
-
-    // Every block sits under exactly one group heading, immediately after it,
-    // and the heading is what the bar links to.
-    const headings = [...wrap.querySelectorAll(".group-head")];
-    expect(headings.length).toBe(grouped.size);
-    for (const heading of headings) {
-      expect(grouped.has(`#${heading.id}`)).toBe(true);
-      expect(heading.querySelector(".group-title").textContent.trim()).not.toBe(
-        "",
-      );
-      expect(heading.nextElementSibling.classList.contains("block")).toBe(true);
+  it("routes /blocks/<name> for every block, and 404s the rest", () => {
+    for (const name of publishedBlocks) {
+      expect(load({ params: { name } })).toEqual({ name });
     }
-    // ...and the count in the pill is the count of blocks in that group: the
-    // page and the bar read the same field, so a stale number is a stale field.
-    for (const pill of pills) {
-      const slug = pill.getAttribute("href").replace("#g-", "");
-      const blocksHere = [...wrap.querySelectorAll(".block")].filter(
-        (block) => {
-          let node = block.previousElementSibling;
-          while (node && !node.classList.contains("group-head")) {
-            node = node.previousElementSibling;
-          }
-          return node?.id === `g-${slug}`;
-        },
-      );
-      expect(pill.querySelector(".count").textContent.trim()).toBe(
-        String(blocksHere.length),
-      );
-      expect(blocksHere.length).toBeGreaterThan(0);
-    }
+    // `error(404)` throws; a missing block must not render an empty page.
+    expect(() => load({ params: { name: "not-a-block" } })).toThrow();
   });
 
   it("the top bar is an opaque surface, not a pane of glass", async () => {
@@ -144,7 +105,7 @@ describe("generated app smoke test", () => {
     // bar is at the top edge of the viewport on every device, which is exactly
     // where a translucent surface cannot be trusted.
     const source = await readFile(
-      path.join(ROOT, "src", "routes", "+page.svelte"),
+      path.join(ROOT, "src", "lib", "SiteHeader.svelte"),
       "utf8",
     );
     // Comments stripped first: this file explains the bug in prose, and prose
@@ -152,15 +113,20 @@ describe("generated app smoke test", () => {
     const css = source
       .replace(/\/\*[\s\S]*?\*\//g, "")
       .replace(/<!--[\s\S]*?-->/g, "");
-    const rule = css.match(/\.jump \{([\s\S]*?)\n {2}\}/);
+    const rule = css.match(/\.top \{([\s\S]*?)\n {2}\}/);
     expect(
       rule,
-      "the .jump rule moved -- this test reads it by name",
+      "the .top rule moved -- this test reads it by name",
     ).toBeTruthy();
     expect(rule[1]).toContain("background: var(--bg)");
     expect(rule[1]).not.toContain("backdrop-filter");
     // And nothing else may reintroduce a blur at the top of the page.
+    const layout = await readFile(
+      path.join(ROOT, "src", "routes", "+layout.svelte"),
+      "utf8",
+    );
     expect(css).not.toContain("backdrop-filter");
+    expect(layout).not.toContain("backdrop-filter");
   });
 
   it("labels every palette variable with what it is for", () => {
@@ -168,8 +134,8 @@ describe("generated app smoke test", () => {
     for (const token of ["bg", "ink", "accent", "ok", "warn", "bad", "mark"]) {
       expect(container.textContent).toContain(`--${token}`);
     }
-    // The old "tokens at work" panel showed five pills with no explanation; the
-    // labels are the whole point now, so pin one that cannot be guessed.
+    // A swatch with no explanation is decoration; the labels are the whole
+    // point, so pin one that cannot be guessed.
     expect(container.textContent).toContain(
       "the matched words inside a snippet",
     );
@@ -181,14 +147,19 @@ describe("generated app smoke test", () => {
     // something spends them, because a page that ignores them looks fine on a
     // desktop and hides its own header on a home screen.
     const theme = await readFile(path.join(ROOT, "src", "app.css"), "utf8");
-    const page = await readFile(
-      path.join(ROOT, "src", "routes", "+page.svelte"),
+    const header = await readFile(
+      path.join(ROOT, "src", "lib", "SiteHeader.svelte"),
+      "utf8",
+    );
+    const layout = await readFile(
+      path.join(ROOT, "src", "routes", "+layout.svelte"),
       "utf8",
     );
 
     expect(theme).toContain("--safe-top: env(safe-area-inset-top");
     expect(theme).toContain("--safe-bottom: env(safe-area-inset-bottom");
-    expect(page).toContain("var(--safe-top");
+    expect(header).toContain("var(--safe-top");
+    expect(layout).toContain("var(--safe-bottom");
   });
 
   it("health endpoint returns ok", async () => {

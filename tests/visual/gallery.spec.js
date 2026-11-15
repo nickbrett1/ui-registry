@@ -79,28 +79,46 @@ function readBaseline() {
   }
 }
 
-test.describe("the gallery, measured", () => {
-  test("every block keeps its computed style", async ({ page }, testInfo) => {
+test.describe("the block pages, measured", () => {
+  test("the column links to every published block", async ({ page }) => {
     await page.goto("/");
+    const hrefs = await page
+      .locator("aside.sidebar nav a")
+      .evaluateAll((links) => links.map((link) => link.getAttribute("href")));
+    // Not a literal list: the navigation must reach every block the registry
+    // publishes, which is the failure a reader describes as "I could not find
+    // it" and no unit test can see.
+    const published = INDEX.items
+      .filter((item) => item.type === "registry:block")
+      .map((item) => `/blocks/${item.name}`)
+      // The column groups the blocks the way a screen is built; the registry
+      // lists them as it lists them. Same set, two orders -- compare the set.
+      .sort();
+    expect([...hrefs].sort()).toEqual(published);
+  });
+
+  test("every block keeps its computed style", async ({ page }, testInfo) => {
     mkdirSync(SCREENS, { recursive: true });
 
-    const ids = await page
-      .locator("section.block")
-      .evaluateAll((sections) => sections.map((section) => section.id));
     // Not a literal count: the gallery must measure every block the registry
     // publishes, which is what this file is the gate for.
     const published = INDEX.items
       .filter((item) => item.type === "registry:block")
       .map((item) => item.name)
       .sort();
-    expect(ids.sort()).toEqual(published);
 
     const current = readBaseline();
     const next = UPDATE ? {} : null;
     const project = testInfo.project.name;
 
-    for (const id of ids) {
-      const section = page.locator(`section.block#${id}`);
+    for (const id of published) {
+      // One page per block now: the demo is what changes, and it is measured on
+      // its own -- a block compared against the page ground and a block on a
+      // card resolve different colours, so the surface is part of the reading.
+      await page.goto(`/blocks/${id}`);
+      const section = page.locator(".stage");
+      await section.waitFor();
+
       // Evidence: one image per block per viewport, uploaded by CI. Not compared
       // -- see the config for why pixels cannot be the gate.
       await section.screenshot({ path: `${SCREENS}/${id}-${project}.png` });

@@ -1,67 +1,56 @@
 import { describe, it, expect } from "vitest";
 import { render } from "@testing-library/svelte";
-import Page from "../src/routes/+page.svelte";
+import Demo from "../src/lib/BlockDemo.svelte";
+import { blocks } from "../src/lib/catalogue.js";
 import index from "../registry.json";
 
 // The published block list is the source of truth, not a literal: a list here
 // that happens to match today is exactly what let the generator's copy of the
 // block names drift in genproj. `registry.json` is generated from `blocks/`, so
-// this is the one place that says "every published block is rendered here".
+// this is the one place that says "every published block has a page".
 const publishedBlocks = index.items
   .filter((item) => item.type === "registry:block")
   .map((item) => item.name);
 
 /**
- * The landing page *is* the gallery: every published block is imported from
- * `blocks/` — the same bytes `registry.json` publishes — and rendered inline.
- *
- * `tests/blocks.test.js` proves they compile; this proves they *render*, which
- * is where an undefined prop or a missing `$derived` shows up.
+ * Each block now has its own page; the demo component is what that page renders.
+ * `tests/blocks.test.js` proves the blocks compile; this proves they *render*,
+ * which is where an undefined prop or a missing `$derived` shows up.
  */
-describe("the blocks on the landing page", () => {
-  it("renders every published block", () => {
-    const { container } = render(Page);
-    const sections = container.querySelectorAll("section.block");
-    expect(sections.length).toBe(publishedBlocks.length);
+describe("the block demos", () => {
+  it("every published block has a demo, and the catalogue agrees", () => {
+    expect(blocks.map((block) => block.name).sort()).toEqual(
+      [...publishedBlocks].sort(),
+    );
   });
 
-  it("names every block the registry publishes", () => {
-    const { container } = render(Page);
-    const text = container.textContent;
+  it("renders each block with its sample data", () => {
     for (const name of publishedBlocks) {
-      expect(text).toContain(name);
-    }
-  });
-
-  it("gives each block a heading, under a group the bar links to", () => {
-    const { container } = render(Page);
-    for (const name of publishedBlocks) {
-      const section = container.querySelector(`section.block#${name}`);
-      expect(section).not.toBeNull();
-      // A heading, not a styled div: on a page this long the outline is the
-      // navigation, and a <code> label is not a heading.
-      expect(section.querySelector("h2").textContent).toContain(name);
-      // The anchor moved up a level. Fourteen links in one row was a list to
-      // read; five groups is a choice to make, and a block is reached through
-      // its group. The block's own id still resolves for anyone linking to it.
-      let node = section.previousElementSibling;
-      while (node && !node.classList.contains("group-head")) {
-        node = node.previousElementSibling;
-      }
-      expect(node).not.toBeNull();
-      expect(container.querySelector(`a[href="#${node.id}"]`)).not.toBeNull();
+      const { container, unmount } = render(Demo, { name });
+      // A block that renders nothing is the failure this catches: an empty
+      // switch arm, or a prop the block now ignores.
+      expect(
+        container.textContent.trim().length,
+        `${name} rendered nothing`,
+      ).toBeGreaterThan(0);
+      unmount();
     }
   });
 
   it("renders the blocks' own words, not placeholders", () => {
-    const { container } = render(Page);
-    const text = container.textContent;
     // One distinctive string per block family: the shell's title, a stat label,
     // a status lane, the empty state's cause-aware copy, and a form constraint.
-    expect(text).toContain("data-download");
-    expect(text).toContain("Requests today");
-    expect(text).toContain("Stuck");
-    expect(text).toContain("No matches for active filters");
-    expect(text).toContain("must be a date");
+    const words = [
+      ["app-shell", "data-download"],
+      ["stat-strip", "Requests today"],
+      ["status-view", "Stuck"],
+      ["empty-state", "No matches for active filters"],
+      ["request-form", "must be a date"],
+    ];
+    for (const [name, text] of words) {
+      const { container, unmount } = render(Demo, { name });
+      expect(container.textContent, `${name} lost "${text}"`).toContain(text);
+      unmount();
+    }
   });
 });
