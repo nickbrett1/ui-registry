@@ -9,12 +9,18 @@
    * starting under a heading read as a continuation of it. Here the structure
    * holds still and only the demo changes, which is the MUI / Ant Design
    * arrangement: the column answers "where am I", the page answers "what is it".
+   *
+   * On a narrow screen there is no column at all. There used to be a collapsible
+   * "all blocks" drawer at the top of the page, and it was the landing page
+   * again in a smaller box: the same five groups and the same fourteen names,
+   * one tap from a bar that already links home. The honest phone navigation is
+   * two things -- "← index" in the bar, and the index's own category cards --
+   * so the drawer is gone rather than kept as a second copy of them.
    */
   import "../app.css";
   import { page } from "$app/stores";
   import SiteHeader from "$lib/SiteHeader.svelte";
   import SideNav from "$lib/SideNav.svelte";
-  import { publishedBlockCount } from "$lib/catalogue.js";
 
   let { children } = $props();
 </script>
@@ -22,17 +28,6 @@
 <SiteHeader path={$page.url.pathname} />
 
 <div class="body">
-  <!-- One nav, rendered twice, because a phone and a desktop need different
-       containers for it and neither can be expressed as the other: on a narrow
-       screen it is a drawer above the page, on a wide one a sticky column
-       beside it. Two loops over the same list, never two lists. -->
-  <details class="drawer">
-    <summary>
-      all blocks<span class="count">{publishedBlockCount}</span>
-    </summary>
-    <SideNav />
-  </details>
-
   <aside class="sidebar" aria-label="Blocks">
     <SideNav />
   </aside>
@@ -77,10 +72,8 @@
     padding: 22px 0;
   }
 
-  .drawer {
-    display: none;
-  }
-
+  /* A phone gets the page and the bar, nothing else: 13rem of column beside
+     12rem of content is not a layout, and the index is one tap away. */
   @media (max-width: 56rem) {
     .body {
       flex-direction: column;
@@ -89,41 +82,6 @@
 
     .sidebar {
       display: none;
-    }
-
-    .drawer {
-      display: block;
-      margin-top: 12px;
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      background: var(--bg-raised);
-    }
-
-    .drawer summary {
-      display: flex;
-      align-items: baseline;
-      gap: 6px;
-      padding: 9px 12px;
-      cursor: pointer;
-      font-size: 12px;
-      color: var(--ink);
-      /* The tap target is the whole row, and iOS will not give a <summary>
-         one for free. */
-      min-height: var(--tap);
-    }
-
-    .drawer summary .count {
-      font-family: var(--mono);
-      font-size: 10px;
-      color: var(--ink-faint);
-    }
-
-    .drawer[open] summary {
-      border-bottom: 1px solid var(--line);
-    }
-
-    .drawer :global(.nav) {
-      padding: 12px;
     }
   }
 </style>

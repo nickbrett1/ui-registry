@@ -80,21 +80,30 @@ function readBaseline() {
 }
 
 test.describe("the block pages, measured", () => {
-  test("the column links to every published block", async ({ page }) => {
+  test("the column and the index both link to every published block", async ({
+    page,
+  }) => {
     await page.goto("/");
-    const hrefs = await page
-      .locator("aside.sidebar nav a")
-      .evaluateAll((links) => links.map((link) => link.getAttribute("href")));
+    const hrefsOf = (selector) =>
+      page
+        .locator(selector)
+        .evaluateAll((links) => links.map((link) => link.getAttribute("href")));
+
     // Not a literal list: the navigation must reach every block the registry
     // publishes, which is the failure a reader describes as "I could not find
-    // it" and no unit test can see.
+    // it" and no unit test can see. Two navigations, one on each side of the
+    // 56rem breakpoint -- the column is hidden on a phone and the index cards
+    // are what is left, so both have to be complete, not just the one the
+    // desktop happens to use.
     const published = INDEX.items
       .filter((item) => item.type === "registry:block")
       .map((item) => `/blocks/${item.name}`)
       // The column groups the blocks the way a screen is built; the registry
       // lists them as it lists them. Same set, two orders -- compare the set.
       .sort();
-    expect([...hrefs].sort()).toEqual(published);
+    for (const selector of ["aside.sidebar nav a", "main .groups a"]) {
+      expect([...(await hrefsOf(selector))].sort(), selector).toEqual(published);
+    }
   });
 
   test("every block keeps its computed style", async ({ page }, testInfo) => {
