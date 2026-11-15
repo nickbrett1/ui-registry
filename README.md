@@ -457,6 +457,30 @@ because a literal "eleven" is how this list went stale twice. (`/blocks` was a s
 asking someone to press a button to reach the only content was a wasted tap —
 and on an iPhone home screen the button sat under the status bar.)
 
+#### The gallery's own navigation: name the thing, then index it
+
+The page is fourteen demos, and for a while its only navigation was fourteen
+pills in one sideways-scrolling row. That is a list to *read*, not a decision to
+make, so the blocks are grouped into five. The second attempt at the labels was
+still wrong in an instructive way: `frame`, `numbers`, `search`, `records`,
+`ops`. Every one of those names the container the author had in mind. "Numbers"
+could be a metric, a table of figures or a chart — which is precisely the
+ambiguity a reader arrives with, so the label resolved nothing. The labels are
+now the shapes themselves (`page frame`, `figures & bars`, `search & results`,
+`tables & forms`, `status & logs`), and the block notes are written the way
+someone would describe a screen they have already seen: *"the row of big numbers
+at the top of a dashboard"*, not *"label · big tabular value · sub-line"*.
+
+Grouping alone still could not answer the question the page exists for — *which
+one am I looking for?* A sticky bar can say which group you are near; it cannot
+say that `empty-state` is what you want when zero results need an explanation.
+So the page opens on an index: all of them, grouped, each named with its
+description and linked to its own demo, above the palette. The index answers
+"which of these do I want"; the palette answers "how do I paint it", which is
+the second question. `tests/smoke.test.js` pins the count pill on each group
+against the blocks the page actually emits, so the bar and the page cannot
+disagree.
+
 **Three rules, all enforced by `tests/blocks.test.js`:** no block hardcodes a
 colour (a tint is `color-mix(in srgb, var(--bg) 88%, transparent)`, derived from
 the token so a palette change moves the blocks with it), no block blurs what is
