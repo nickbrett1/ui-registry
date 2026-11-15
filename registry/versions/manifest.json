@@ -30,6 +30,13 @@
       "publishedAt": "2026-11-15T01:40:49.642Z"
     },
     {
+      "name": "action-list",
+      "version": "1.16.1",
+      "sha256": "c5db8e249c9c5332bb94880917a2657e99f8ee7b0925323ad49146241603b0ba",
+      "bytes": 5474,
+      "publishedAt": "2026-11-15T01:45:27.935Z"
+    },
+    {
       "name": "app-shell",
       "version": "1.3.0",
       "sha256": "bf41c79f2514d9b51e034e5179b359201491cf63c306fd62e232187e97030f83",
@@ -142,6 +149,13 @@
       "publishedAt": "2026-11-15T01:40:49.330Z"
     },
     {
+      "name": "app-shell",
+      "version": "1.16.1",
+      "sha256": "ba3e800206161c65ba5164cae3317e29f3a574d69af094b58040038b06e4c414",
+      "bytes": 13216,
+      "publishedAt": "2026-11-15T01:45:27.612Z"
+    },
+    {
       "name": "bar-series",
       "version": "1.9.0",
       "sha256": "afa2b1a3a9eebec36c95f94732a1797aad48357ce842c73c5e9826b85efa0529",
@@ -203,6 +217,13 @@
       "sha256": "afa2b1a3a9eebec36c95f94732a1797aad48357ce842c73c5e9826b85efa0529",
       "bytes": 8709,
       "publishedAt": "2026-11-15T01:40:49.544Z"
+    },
+    {
+      "name": "bar-series",
+      "version": "1.16.1",
+      "sha256": "afa2b1a3a9eebec36c95f94732a1797aad48357ce842c73c5e9826b85efa0529",
+      "bytes": 8709,
+      "publishedAt": "2026-11-15T01:45:27.825Z"
     },
     {
       "name": "burst-timeline",
@@ -317,6 +338,13 @@
       "publishedAt": "2026-11-15T01:40:49.521Z"
     },
     {
+      "name": "burst-timeline",
+      "version": "1.16.1",
+      "sha256": "4a0a0b5a6c090be4955de9630970b6708786fdc9adfb8f5837bc077b4f311fbc",
+      "bytes": 7566,
+      "publishedAt": "2026-11-15T01:45:27.798Z"
+    },
+    {
       "name": "data-table",
       "version": "1.8.0",
       "sha256": "35332e73be2b1c7c7a4643b6a46c5a8b0e01047e2b16273fbbb22e9dc3bf1040",
@@ -385,6 +413,13 @@
       "sha256": "35332e73be2b1c7c7a4643b6a46c5a8b0e01047e2b16273fbbb22e9dc3bf1040",
       "bytes": 5235,
       "publishedAt": "2026-11-15T01:40:49.567Z"
+    },
+    {
+      "name": "data-table",
+      "version": "1.16.1",
+      "sha256": "35332e73be2b1c7c7a4643b6a46c5a8b0e01047e2b16273fbbb22e9dc3bf1040",
+      "bytes": 5235,
+      "publishedAt": "2026-11-15T01:45:27.855Z"
     },
     {
       "name": "detail-panel",
@@ -499,6 +534,13 @@
       "publishedAt": "2026-11-15T01:40:49.498Z"
     },
     {
+      "name": "detail-panel",
+      "version": "1.16.1",
+      "sha256": "9a1bea7e149ed9f679de0c042056890bad2a69554d262b4bb3b146f36f8fc023",
+      "bytes": 3696,
+      "publishedAt": "2026-11-15T01:45:27.772Z"
+    },
+    {
       "name": "empty-state",
       "version": "1.3.0",
       "sha256": "a319d34b12bd64a81aa1c20ed8af0669404ba15b79ca1342c9191f7b2a327b63",
@@ -609,6 +651,13 @@
       "sha256": "a319d34b12bd64a81aa1c20ed8af0669404ba15b79ca1342c9191f7b2a327b63",
       "bytes": 2777,
       "publishedAt": "2026-11-15T01:40:49.450Z"
+    },
+    {
+      "name": "empty-state",
+      "version": "1.16.1",
+      "sha256": "a319d34b12bd64a81aa1c20ed8af0669404ba15b79ca1342c9191f7b2a327b63",
+      "bytes": 2777,
+      "publishedAt": "2026-11-15T01:45:27.718Z"
     },
     {
       "name": "filter-panel",
@@ -723,6 +772,13 @@
       "publishedAt": "2026-11-15T01:40:49.423Z"
     },
     {
+      "name": "filter-panel",
+      "version": "1.16.1",
+      "sha256": "0e3a6e689b16fc35bd1d763448d0287097a5bdb3af5b18eb1fddc355de19fc37",
+      "bytes": 9865,
+      "publishedAt": "2026-11-15T01:45:27.692Z"
+    },
+    {
       "name": "log-view",
       "version": "1.13.0",
       "sha256": "01d295c6747a1816e89a04f0acb5291494c6da22bb1541d3cf0152d3f36a69c8",
@@ -751,6 +807,13 @@
       "publishedAt": "2026-11-15T01:40:49.667Z"
     },
     {
+      "name": "log-view",
+      "version": "1.16.1",
+      "sha256": "3e39d262d8052d03fe54c2a8022e67381150876db9567e74fb1db6072d63fa36",
+      "bytes": 4444,
+      "publishedAt": "2026-11-15T01:45:27.974Z"
+    },
+    {
       "name": "meter-strip",
       "version": "1.13.0",
       "sha256": "da166590f85ebe1f3ccd6772bbf466f167159f61d229dbdd3b6a78e283dce72c",
@@ -777,6 +840,13 @@
       "sha256": "da166590f85ebe1f3ccd6772bbf466f167159f61d229dbdd3b6a78e283dce72c",
       "bytes": 4065,
       "publishedAt": "2026-11-15T01:40:49.619Z"
+    },
+    {
+      "name": "meter-strip",
+      "version": "1.16.1",
+      "sha256": "da166590f85ebe1f3ccd6772bbf466f167159f61d229dbdd3b6a78e283dce72c",
+      "bytes": 4065,
+      "publishedAt": "2026-11-15T01:45:27.907Z"
     },
     {
       "name": "request-form",
@@ -891,6 +961,13 @@
       "publishedAt": "2026-11-15T01:40:49.590Z"
     },
     {
+      "name": "request-form",
+      "version": "1.16.1",
+      "sha256": "9cad6109c7c7e74966868c0d9f7ceeebf5f90026cc93476766d59eb75f54f74f",
+      "bytes": 4862,
+      "publishedAt": "2026-11-15T01:45:27.882Z"
+    },
+    {
       "name": "result-list",
       "version": "1.3.0",
       "sha256": "f86d7e6e0ad07eb929c89d5d5b963846d109efcb4c2e4425fe10497f39ccb99e",
@@ -1001,6 +1078,13 @@
       "sha256": "3ac1156a4f4c18f59a3e38dc037bbd0b8dc51c6178bc43d2bd7e8df2ae99a71d",
       "bytes": 5071,
       "publishedAt": "2026-11-15T01:40:49.392Z"
+    },
+    {
+      "name": "result-list",
+      "version": "1.16.1",
+      "sha256": "3ac1156a4f4c18f59a3e38dc037bbd0b8dc51c6178bc43d2bd7e8df2ae99a71d",
+      "bytes": 5071,
+      "publishedAt": "2026-11-15T01:45:27.666Z"
     },
     {
       "name": "stat-strip",
@@ -1115,6 +1199,13 @@
       "publishedAt": "2026-11-15T01:40:49.358Z"
     },
     {
+      "name": "stat-strip",
+      "version": "1.16.1",
+      "sha256": "72ca1724bd5ba94ece15e4f2eec61f1624b398002186052ce7fdf96e0e522a64",
+      "bytes": 2179,
+      "publishedAt": "2026-11-15T01:45:27.640Z"
+    },
+    {
       "name": "status-view",
       "version": "1.3.0",
       "sha256": "a0fcea3eeed9491fe313d84e173c96cf8ce8d5b2de103d6d6d65e576a1823e87",
@@ -1225,6 +1316,13 @@
       "sha256": "a0fcea3eeed9491fe313d84e173c96cf8ce8d5b2de103d6d6d65e576a1823e87",
       "bytes": 3582,
       "publishedAt": "2026-11-15T01:40:49.474Z"
+    },
+    {
+      "name": "status-view",
+      "version": "1.16.1",
+      "sha256": "a0fcea3eeed9491fe313d84e173c96cf8ce8d5b2de103d6d6d65e576a1823e87",
+      "bytes": 3582,
+      "publishedAt": "2026-11-15T01:45:27.744Z"
     },
     {
       "name": "theme",
@@ -1358,6 +1456,13 @@
       "sha256": "7810f565c9cd418ed399de76562deeee91810a764dcb205a8a8dbb04d99352f9",
       "bytes": 8482,
       "publishedAt": "2026-11-15T01:40:49.304Z"
+    },
+    {
+      "name": "theme",
+      "version": "1.16.1",
+      "sha256": "7810f565c9cd418ed399de76562deeee91810a764dcb205a8a8dbb04d99352f9",
+      "bytes": 8482,
+      "publishedAt": "2026-11-15T01:45:27.583Z"
     }
   ]
 }

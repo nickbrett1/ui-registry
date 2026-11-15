@@ -3,8 +3,9 @@
    * AppShell — the house application frame.
    *
    * Replaces the bespoke top bars in stratechery-search, deepseek-balance and
-   * data-download. Sticky header with a backdrop blur, wordmark + micro subtitle,
-   * back pill for non-root views, 68rem main, and a footer strip.
+   * data-download. Sticky header on an opaque ground (not a blur — see the
+   * `.topbar` rule and 1.16.0), wordmark + micro subtitle, back pill for
+   * non-root views, 68rem main, and a footer strip.
    *
    * Two slots, added in 1.4.0 because the three consumers all needed them and
    * all three had to bypass the block to get them:

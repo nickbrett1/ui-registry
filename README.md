@@ -484,6 +484,13 @@ reintroduce it without the build saying so.
 
 `theme` is byte-identical to 1.15.0 in this release. Only `app-shell` changed.
 
+1.16.1 exists for one reason: `app-shell`'s own doc comment still described the
+bar as "sticky header with a backdrop blur", which is now the opposite of what
+the rule does. A version is immutable, so the sentence could not be corrected in
+place — 1.16.1 is 1.16.0's bytes with that line fixed. Nothing else differs;
+`theme` is still byte-identical. Pin 1.16.1 and you get 1.16.0's behaviour plus
+documentation that agrees with it.
+
 ### What 1.15.0 added: the ink, accent and ground roles the theme was already using
 
 `stratechery-search` is where this theme came from, and it was one of the two
