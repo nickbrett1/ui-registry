@@ -131,6 +131,17 @@
     border: 0;
   }
 
+  /* Every gap on this page is this one gap. The cards used to carry their own
+     `margin-bottom`, which is how the palette and the install card ended up
+     touching: a card that forgot the rule looked *shorter*, not broken, so it
+     went unnoticed until someone read the page. One `gap` cannot be forgotten
+     by a card that has not been written yet. */
+  .page {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
   /* One card per group, stacked: the tiles are a fixed size (see BlockThumb),
      so the card is a shelf they wrap along rather than a column that squeezes
      them. Side by side, five groups leave 180px each -- one tile, and a
@@ -138,7 +149,6 @@
   .groups {
     display: grid;
     gap: 14px;
-    margin-bottom: 14px;
   }
 
   .group {
@@ -186,10 +196,6 @@
     padding: 14px 16px;
   }
 
-  .install-card {
-    margin-bottom: 14px;
-  }
-
   .swatches {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
@@ -220,8 +226,10 @@
     color: var(--ink);
   }
 
+  /* The footer is not another card: it keeps a little more air than `gap`
+     gives, and it is the only element here that asks for it. */
   .foot {
-    margin-top: 24px;
+    margin-top: 10px;
     padding-top: 10px;
     border-top: 1px solid var(--line);
     font-size: 12px;

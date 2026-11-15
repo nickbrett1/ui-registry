@@ -258,6 +258,26 @@ describe("generated app smoke test", () => {
     );
   });
 
+  it("spaces the index's cards with one gap, not with per-card margins", async () => {
+    // The bug: every card carried its own `margin-bottom`, and the palette card
+    // — added later — carried none, so it sat flush against the install card.
+    // A missing margin reads as a card that is shorter, not as a page that is
+    // wrong. One `gap` on the stack cannot be forgotten by a card that has not
+    // been written yet, so that is the rule, and this is the rule's guard.
+    const source = await readFile(
+      path.join(ROOT, "src", "routes", "+page.svelte"),
+      "utf8",
+    );
+    const css = source
+      .replace(/<!--[\s\S]*?-->/g, "")
+      .replace(/\/\*[\s\S]*?\*\//g, "");
+    const stack = css.match(/\n {2}\.page \{([\s\S]*?)\n {2}\}/);
+    expect(stack, "the .page rule moved -- this test reads it by name").toBeTruthy();
+    expect(stack[1]).toContain("display: flex");
+    expect(stack[1]).toContain("gap: 14px");
+    expect(css).not.toContain("margin-bottom");
+  });
+
   it("labels every palette variable with what it is for", () => {
     const { container } = render(Page);
     for (const token of ["bg", "ink", "accent", "ok", "warn", "bad", "mark"]) {
