@@ -179,7 +179,7 @@
       "tag": "header.has-nav.svelte-frkq6n.topbar",
       "style": {
         "color": "rgb(226, 232, 240)",
-        "backgroundColor": "color(srgb 0.0588235 0.0901961 0.164706 / 0.88)",
+        "backgroundColor": "rgb(15, 23, 42)",
         "borderTopColor": "rgb(226, 232, 240)",
         "borderTopWidth": "0px",
         "borderTopStyle": "none",
@@ -7851,7 +7851,7 @@
       "tag": "header.has-nav.svelte-frkq6n.topbar",
       "style": {
         "color": "rgb(226, 232, 240)",
-        "backgroundColor": "color(srgb 0.0588235 0.0901961 0.164706 / 0.88)",
+        "backgroundColor": "rgb(15, 23, 42)",
         "borderTopColor": "rgb(226, 232, 240)",
         "borderTopWidth": "0px",
         "borderTopStyle": "none",

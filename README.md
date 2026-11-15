@@ -455,10 +455,34 @@ because a literal "eleven" is how this list went stale twice. (`/blocks` was a s
 asking someone to press a button to reach the only content was a wasted tap —
 and on an iPhone home screen the button sat under the status bar.)
 
-**Two rules, both enforced by `tests/blocks.test.js`:** no block hardcodes a
-colour (a translucent tint is `color-mix(in srgb, var(--bg) 88%, transparent)`,
-derived from the token so a palette change moves the blocks with it), and the
-served item's `content` is byte-identical to the source file.
+**Three rules, all enforced by `tests/blocks.test.js`:** no block hardcodes a
+colour (a tint is `color-mix(in srgb, var(--bg) 88%, transparent)`, derived from
+the token so a palette change moves the blocks with it), no block blurs what is
+behind it (see 1.16.0 — a bar that owns the top of the viewport must be
+opaque), and the served item's `content` is byte-identical to the source file.
+
+### What 1.16.0 fixed: a bar that owns the top of the viewport cannot be glass
+
+`app-shell`'s top bar was `color-mix(in srgb, var(--bg) 88%, transparent)` with
+a `backdrop-filter: blur(8px)` — glass, and it looked right in a browser tab.
+In an iOS home-screen window it looked broken: iOS composites the status-bar
+band through the translucent layer, so 12% of whatever was scrolling under the
+bar, plus a blur of it, lifted the strip to a grey smear and the ink on it
+stopped being legible. It read as a rendering fault, not as a design.
+
+The bar is now `background: var(--bg)` — fully opaque, the same `#0f172a` as
+`theme-color` and the page behind it — and there is no blur to composite. This
+is not a taste change: a bar that sits at the top edge of the viewport and owns
+the safe-area band has nothing above it to see through to, so translucency buys
+nothing and costs contrast exactly where the status bar is already competing
+for it. The same defect was in this registry's own jump bar, fixed the same way.
+
+Consumers get it by re-vendoring `app-shell`; nobody has to opt in. The
+regression is a check rather than a comment — `tests/blocks.test.js` fails any
+block whose style tag mentions `backdrop-filter`, so a future block cannot
+reintroduce it without the build saying so.
+
+`theme` is byte-identical to 1.15.0 in this release. Only `app-shell` changed.
 
 ### What 1.15.0 added: the ink, accent and ground roles the theme was already using
 

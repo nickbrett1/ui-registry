@@ -94,8 +94,8 @@ describe("the blocks", () => {
       const withoutComments = style.replace(/\/\*[\s\S]*?\*\//g, "");
       const hexes = withoutComments.match(/#[0-9a-fA-F]{3,8}\b/g) ?? [];
       const rgb = withoutComments.match(/\b(?:rgba?|hsla?)\(/g) ?? [];
-      // No exceptions. The theme has a token for every colour a layout needs, and
-      // a translucent tint is `color-mix(in srgb, var(--bg) 88%, transparent)` --
+      // No exceptions. The theme has a token for every colour a layout needs,
+      // and a tint is `color-mix(in srgb, var(--bg) 88%, transparent)` --
       // derived from the token, so a palette change moves the blocks with it.
       expect(
         hexes,
@@ -105,6 +105,26 @@ describe("the blocks", () => {
         rgb,
         `${name} hardcodes an rgb()/hsl() colour: ${rgb.join(", ")}`,
       ).toEqual([]);
+    }
+  });
+
+  it("no block blurs what is behind it", async () => {
+    // `backdrop-filter` on a bar that owns the top of the viewport is a bug in
+    // an iOS home-screen window: iOS composites the status-bar band through the
+    // translucent layer, so the bar lifts to a grey smear and its ink stops
+    // being legible. app-shell shipped `color-mix(--bg 88%)` + `blur(8px)` for
+    // long enough that four consumer apps inherited it. A sheet that overlaps
+    // content lower down can be translucent if it must -- nothing here needs to
+    // be, and a block cannot tell where it will be mounted.
+    for (const name of await blockDirs()) {
+      const { content } = await loadBlock(name);
+      const style =
+        /<style[\s\S]*?>([\s\S]*?)<\/style>/.exec(content)?.[1] ?? "";
+      const withoutComments = style.replace(/\/\*[\s\S]*?\*\//g, "");
+      expect(
+        withoutComments,
+        `${name} uses backdrop-filter; a block that lands at the top of a viewport must be opaque`,
+      ).not.toContain("backdrop-filter");
     }
   });
 

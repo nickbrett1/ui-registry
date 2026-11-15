@@ -1,0 +1,23 @@
+{
+  "$schema": "https://shadcn-svelte.com/schema/registry-item.json",
+  "name": "meter-strip",
+  "title": "Meter Strip",
+  "type": "registry:block",
+  "author": "nickbrett1 <https://github.com/nickbrett1>",
+  "description": "A capacity bar (used against a ceiling, as a filled bar with a role=progressbar) over a row of figures. Lifted from devdash, where the same strip is both the page's header and the NAS dashboard's iframe.",
+  "dependencies": [],
+  "devDependencies": [],
+  "registryDependencies": [],
+  "files": [
+    {
+      "type": "registry:file",
+      "target": "nb/MeterStrip.svelte",
+      "content": "<script>\n  /**\n   * MeterStrip — a capacity bar over a row of figures.\n   *\n   * Lifted from devdash, where it is the strip the NAS dashboard iframes: the VM's\n   * memory as \"used / total\" with a bar, then three counts underneath. The tile\n   * and the page render the same component for the reason a block exists at all —\n   * two copies of the same figures drift, and the dashboard quietly starts\n   * disagreeing with the page it summarises.\n   *\n   * Why not `stat-strip` with a bar bolted on: a stat is a number with a sub-line,\n   * and the interesting number here is a *ratio against a ceiling*. The bar is\n   * the fact — \"2.1 / 8 GB\" as a filled bar is a glance, as a string it is a\n   * calculation. So the ratio is required and the figures are the annotation.\n   *\n   * `used`/`total` are numbers (the bar needs them). The printed labels are\n   * separate strings because the caller's formatter knows the units and this\n   * block does not: devdash writes \"2.1 GB\", not \"2.1\".\n   */\n  let {\n    label = \"\",\n    used = 0,\n    total = 0,\n    usedLabel = \"\",\n    totalLabel = \"\",\n    figures = [],\n    /** ok | warn | bad — the bar's colour, i.e. how close to the ceiling it is. */\n    tone = \"ok\",\n  } = $props();\n\n  const pct = $derived(total > 0 ? Math.min(100, Math.max(0, (used / total) * 100)) : 0);\n</script>\n\n<section class=\"card meter-strip\" aria-label={label || \"capacity\"}>\n  <div class=\"meter-label\">\n    <span class=\"micro\">{label}</span>\n    <span class=\"num reading\">{usedLabel || used} / {totalLabel || total}</span>\n  </div>\n  <div\n    class=\"bar\"\n    role=\"progressbar\"\n    aria-valuenow={used}\n    aria-valuemin=\"0\"\n    aria-valuemax={total}\n    aria-label={label || \"capacity\"}\n  >\n    <span class={tone} style=\"width: {pct}%\"></span>\n  </div>\n  {#if figures.length > 0}\n    <div class=\"figures\" style=\"--fig-cols: {figures.length}\">\n      {#each figures as figure}\n        <div class=\"figure\">\n          <span class=\"n num\">{figure.value}</span>\n          <span class=\"k micro\" title={figure.hint ?? \"\"}>{figure.label}</span>\n        </div>\n      {/each}\n    </div>\n  {/if}\n</section>\n\n<style>\n  .meter-strip {\n    padding: 14px 16px;\n  }\n\n  .meter-label {\n    display: flex;\n    justify-content: space-between;\n    align-items: baseline;\n    gap: 12px;\n    margin-bottom: 6px;\n  }\n\n  .reading {\n    font-size: 13px;\n    color: var(--ink-dim);\n  }\n\n  .bar {\n    height: 8px;\n    border-radius: 4px;\n    background: var(--bg-sunken);\n    overflow: hidden;\n  }\n\n  .bar span {\n    display: block;\n    height: 100%;\n    border-radius: 4px;\n    background: var(--ok);\n    transition: width 240ms ease;\n  }\n\n  .bar span.warn {\n    background: var(--warn);\n  }\n\n  .bar span.bad {\n    background: var(--bad);\n  }\n\n  .figures {\n    display: grid;\n    grid-template-columns: repeat(var(--fig-cols, 3), 1fr);\n    gap: 10px;\n    margin-top: 14px;\n  }\n\n  .figure {\n    display: flex;\n    flex-direction: column;\n    gap: 2px;\n  }\n\n  .n {\n    font-size: 17px;\n    font-weight: 700;\n    line-height: 1.2;\n    color: var(--ink);\n  }\n\n  .k {\n    margin: 0;\n  }\n</style>\n"
+    }
+  ],
+  "meta": {
+    "source": "blocks/meter-strip/MeterStrip.svelte",
+    "sha256": "8bbeafcba07ef16ed6acbdc49d1577e880dbf527595b5fa26285629b0259e554",
+    "bytes": 3091
+  }
+}
