@@ -28,7 +28,7 @@ const BLOCKS = [
     title: "App Shell",
     component: "AppShell.svelte",
     description:
-      "Sticky top bar with backdrop blur, wordmark, a top-level tab nav with aria-current, back pill on non-root views, 68rem main, and footer strip. The house application frame.",
+      "Sticky top bar on an opaque ground, wordmark, a top-level tab nav with aria-current (links or router buttons), back pill on non-root views, 68rem main, and footer strip. The house application frame.",
   },
   {
     name: "stat-strip",

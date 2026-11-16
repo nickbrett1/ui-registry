@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { render, fireEvent } from "@testing-library/svelte";
 import { createRawSnippet } from "svelte";
 import { readFile } from "node:fs/promises";
@@ -132,12 +132,44 @@ describe("AppShell: the app's views are visible, not hidden behind a pill (1.10.
   it("is navigation, not the actions slot: a destination does not look like a state", () => {
     // The bug this closes: data-download put `<a class="pill">Plan types</a>`
     // in `actions`, where it sat next to the status pill and read as one.
+    // `:is(a, button)`: a destination and a route change are the same tab (see
+    // the next test), and the highlight has to cover both or the block only
+    // looks finished for half its consumers.
     expect(appShellSource).toMatch(
-      /\.main-nav a\[aria-current="page"\] \{[^}]*background: var\(--accent-soft\);[^}]*color: var\(--accent\);/,
+      /\.main-nav :is\(a, button\)\[aria-current="page"\] \{[^}]*background: var\(--accent-soft\);[^}]*color: var\(--accent\);/,
     );
     expect(appShellSource).toMatch(
-      /\.pill\.back|\.main-nav a \{[\s\S]*?border-radius: var\(--radius-sm\)/,
+      /\.pill\.back|\.main-nav :is\(a, button\) \{[\s\S]*?border-radius: var\(--radius-sm\)/,
     );
+  });
+
+  it("renders a view that is a route change as a button, in the same tab row", () => {
+    // Measured against stratechery-search: its views are `go()` calls on a
+    // querystring router, so it could not use `nav` at all and drew a segmented
+    // control in `actions` instead -- the registry demo, which can use `href`,
+    // showed a shape nobody could install. A view with `onclick` gets the tab,
+    // a view with `href` keeps the link, and both are marked the same way.
+    const go = vi.fn();
+    const { container } = render(AppShell, {
+      title: "Stratechery Search",
+      nav: [
+        { label: "search", current: true, onclick: () => go("/") },
+        { label: "corpus", current: false, onclick: () => go("/stats") },
+      ],
+    });
+
+    const tabs = container.querySelectorAll(".main-nav button");
+    expect([...tabs].map((tab) => tab.textContent.trim())).toEqual([
+      "search",
+      "corpus",
+    ]);
+    // Not a link: `href` would reload the app instead of routing inside it.
+    expect(container.querySelector(".main-nav a")).toBeNull();
+    expect(tabs[0].getAttribute("aria-current")).toBe("page");
+    expect(tabs[1].hasAttribute("aria-current")).toBe(false);
+
+    fireEvent.click(tabs[1]);
+    expect(go).toHaveBeenCalledWith("/stats");
   });
 
   it("names the nav for a screen reader, defaulting to 'Sections'", () => {

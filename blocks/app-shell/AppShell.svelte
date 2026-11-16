@@ -35,6 +35,15 @@
    *                every consumer stops re-inventing it. `current` is the
    *                caller's truth (it knows its router); the block never
    *                guesses from the URL.
+   *
+   *                A view may be a *route change* rather than a link: give it
+   *                `onclick` instead of `href` and it renders as a `<button>`
+   *                (1.13.0). Without that, a client-side router could not use
+   *                this row at all -- its `go()` is an action and `href` would
+   *                reload the app -- so stratechery-search rendered its own
+   *                segmented control in `actions` and the registry demo showed
+   *                a tab row no consumer could install. Same tab either way:
+   *                the shape belongs to the block, the routing to the caller.
    *   `embedded` -- true when the shell is not a page: a Homepage dashboard
    *                card iframed into someone else's layout (1.11.0). A card is
    *                not a viewport, so the shell must not claim one -- and this
@@ -102,11 +111,19 @@
       {#if nav?.length}
         <nav class="main-nav" aria-label={navLabel}>
           {#each nav as item}
-            <a
-              href={item.href}
-              aria-current={item.current ? "page" : undefined}
-              >{item.label}</a
-            >
+            {#if item.href}
+              <a
+                href={item.href}
+                aria-current={item.current ? "page" : undefined}
+                >{item.label}</a
+              >
+            {:else}
+              <button
+                type="button"
+                aria-current={item.current ? "page" : undefined}
+                onclick={item.onclick}>{item.label}</button
+              >
+            {/if}
           {/each}
         </nav>
       {/if}
@@ -235,13 +252,22 @@
     display: none;
   }
 
-  .main-nav a {
+  /* `a` or `button`, one tab: the `href` case is a destination, the `onclick`
+     case is a route change, and a reader must not be able to tell which they
+     are looking at (see the `nav` note above). The button reset is here rather
+     than on the element so both start from the same box. */
+  .main-nav :is(a, button) {
     padding: 4px 10px;
+    border: 0;
     border-radius: var(--radius-sm);
+    background: transparent;
     color: var(--ink-muted);
+    font-family: inherit;
     font-size: 12.5px;
     line-height: 1.4;
     white-space: nowrap;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
     /* 32px of touch target is the floor: the row's height is set by the
        wordmark anyway, so a shorter tab only shrinks what you can hit. */
     min-height: 30px;
@@ -249,13 +275,18 @@
     align-items: center;
   }
 
-  .main-nav a:hover {
+  .main-nav :is(a, button):hover {
     background: var(--bg-hover);
     color: var(--ink);
     text-decoration: none;
   }
 
-  .main-nav a[aria-current="page"] {
+  .main-nav :is(a, button):focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+  }
+
+  .main-nav :is(a, button)[aria-current="page"] {
     background: var(--accent-soft);
     color: var(--accent);
     font-weight: 600;
@@ -333,7 +364,7 @@
       gap: 10px;
     }
 
-    .main-nav a {
+    .main-nav :is(a, button) {
       padding: 4px 8px;
       font-size: 12px;
     }
