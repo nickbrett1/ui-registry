@@ -351,6 +351,7 @@ Who consumes what, as of 1.16.1:
 | `stratechery-search` | 1.16.1 | `app-shell`, `result-list`, `filter-panel`, the rest — and its components name roles instead of values. Its phone chip row keeps `--bg-overlay` + a blur on purpose: at `top: 50px` it is under the header, not at the top edge, so it has something behind it worth seeing through to |
 | `deepseek-balance` | 1.16.1 | `app-shell` (as `footer={false}`), `stat-strip`, `bar-series`, `data-table` + the theme, generated from the published item |
 | `devdash` | 1.16.1 | `meter-strip`, `action-list`, `log-view` + the whole theme (and raises `--tap` to 2.75rem). No `app-shell`, and nothing sticky — its full-screen job log and provision sheet were already opaque `var(--bg)` |
+| `galactic-unicorn-remote` | 1.17.0 | the whole theme plus `app-shell`, `device-mirror`, `command-pad`, `message-bar`, `confirm-prompt`. It is the UI the four 1.17.0 shapes were lifted from: the mirror is the panel, the pad is its routines and Cancel, the bar is the idle-screen composer, the prompt is the 409 conflict. Its length chooser is `.seg.tap`, not a fifth block — see 1.17.0 |
 | `data-scout` | 1.16.0 | the **theme only** — Python-rendered static HTML, so there is no Svelte to install a block into. 1.16.0 is where its pin sits because the theme is byte-identical from 1.15.0 to 1.16.1; the bug was in its own `report.css`, fixed there (`background: var(--bg)`, no blur) |
 
 The same defect was in four places and only one of them was a block. It is worth
@@ -423,14 +424,15 @@ container, and refuses to reuse a server already on the port — a server there 
 `blocks/` holds the house **layouts** — the second half of the problem this
 registry exists for. The theme makes a new project _look_ right; the blocks make
 a page _structurally_ right without anyone re-deriving a top bar or a status
-lane. The list is derived from the four UIs that already ship
-(`stratechery-search`, `deepseek-balance`, `data-download`, `devdash`), not
+lane. The list is derived from the five UIs that already ship
+(`stratechery-search`, `deepseek-balance`, `data-download`, `devdash`,
+`galactic-unicorn-remote`), not
 ported from shadcn's React blocks: no project here has a sidebar, a login page or a settings
 form, so those are deliberately absent.
 
 | block            | installed as              | what it is                                                                            |
 | ---------------- | ------------------------- | ------------------------------------------------------------------------------------- |
-| `app-shell`      | `nb/AppShell.svelte`      | sticky blurred top bar, `mark`/`nav`/`actions`/`back` slots, `titleTag`, 68rem main, footer (`footer={false}` for none), `embedded` for a card |
+| `app-shell`      | `nb/AppShell.svelte`      | sticky **opaque** top bar, `mark`/`nav`/`actions`/`back` slots, `titleTag`, 68rem main, footer (`footer={false}` for none), `embedded` for a card |
 | `stat-strip`     | `nb/StatStrip.svelte`     | label · big tabular value · sub-line, collapsing to one column                        |
 | `result-list`    | `nb/ResultList.svelte`    | ranked rows + `row` slot, `titleTag` heading, "n more" fold                           |
 | `filter-panel`   | `nb/FilterPanel.svelte`   | facets: checkbox list or one-from-N radios, optional bars and a note, `adaptFacets`   |
@@ -444,6 +446,10 @@ form, so those are deliberately absent.
 | `meter-strip`    | `nb/MeterStrip.svelte`    | used-against-a-ceiling bar (`role="progressbar"`) with the reading beside it, then figures |
 | `action-list`    | `nb/ActionList.svelte`    | one row per thing you *operate*: state pill, badges, and `actions`/`note`/`aside` per row |
 | `log-view`       | `nb/LogView.svelte`       | a job's output in a panel: state pill, notice, self-scrolling `pre` (bindable), actions |
+| `device-mirror`  | `nb/DeviceMirror.svelte`  | a live mirror of a remote device: freshness dot + "last seen", a `screen` slot or its headline, a relayed countdown, the state word, a live banner |
+| `command-pad`    | `nb/CommandPad.svelte`    | a grid of one-press commands with a glyph and a tone each; `busyId`/`confirmedId` light the one in flight; `readonly` is the same keypad as a legend |
+| `message-bar`    | `nb/MessageBar.svelte`    | one short line sent to something: label-wrapped field, caller `sanitize`, `maxLength`, pending Send |
+| `confirm-prompt` | `nb/ConfirmPrompt.svelte` | an action that would interrupt something: name it, then Replace / Keep, with the confirm button bindable for focus |
 
 ```bash
 npm run build:blocks            # blocks/*/*.svelte -> registry/<name>.json -> registry.json
@@ -459,7 +465,7 @@ and on an iPhone home screen the button sat under the status bar.)
 
 #### The gallery's own navigation: name the thing, then index it
 
-The page is fourteen demos, and for a while its only navigation was fourteen
+The page is eighteen demos, and for a while its only navigation was fourteen
 pills in one sideways-scrolling row. That is a list to *read*, not a decision to
 make, so the blocks are grouped into five. The second attempt at the labels was
 still wrong in an instructive way: `frame`, `numbers`, `search`, `records`,
@@ -486,6 +492,51 @@ colour (a tint is `color-mix(in srgb, var(--bg) 88%, transparent)`, derived from
 the token so a palette change moves the blocks with it), no block blurs what is
 behind it (see 1.16.0 — a bar that owns the top of the viewport must be
 opaque), and the served item's `content` is byte-identical to the source file.
+
+### What 1.17.0 added, and why
+
+`galactic-unicorn-remote` is the fifth consumer and the first one that is not a
+dashboard *about* data: it is a phone remote for a physical LED panel. That
+changed the question a block answers. Four blocks were missing, and each one is
+missing for a reason the existing fourteen could not paper over:
+
+- **`device-mirror`** — a status lane holds records and a meter holds a ratio;
+  neither can say *what the hardware is drawing right now*. The mirror owns the
+  part that is easy to get wrong: it shows a **freshness heartbeat** ("panel: last
+  seen 2 s ago") beside the device's own screen, and takes the countdown as a
+  formatted string because the server relays `remaining_s` and never computes a
+  clock. `compact` drops the heartbeat for a widget that has no room to explain
+  it; `centered` makes an idle screen a badge rather than a left-aligned report.
+- **`command-pad`** — `action-list` puts the valid actions beside a *record's*
+  state, with badges and a note. A remote has no record: it has a keypad, one
+  large target per command, each carrying the picture the physical panel has.
+  The per-item state is only "unavailable", "in flight" and "confirmed", so the
+  block takes `busyId`/`confirmedId` rather than a status object. `readonly` is
+  the same keypad as a legend — the tile at `/tile` needs exactly that, and a
+  second block for it would be two drawings of one keypad.
+- **`message-bar`** — `request-form` is schema-driven and answers with one
+  message per failed rule; a line of text that scrolls across an LED matrix is
+  one field and one limit. `sanitize` runs **on every keystroke**, not on submit,
+  because the panel's LED font has no glyph for a curly quote or an emoji and a
+  field that visibly accepts what the receiver will refuse is a lie discovered
+  after pressing Send.
+- **`confirm-prompt`** — a 409 is not a toast. "Booktime is running — start
+  Bathtime instead?" is a question with two answers, and the block exposes its
+  confirm button as a bindable element so the *caller* decides which answer
+  deserves focus. A block that focused its own confirm button would make that
+  judgement for a page it cannot see.
+
+The countdown-length chooser is deliberately **not** a fifth block. It is one
+choice from a closed set, which the theme already spells `.seg`; what was
+missing was a size, not a shape. 1.17.0 adds `.seg.tap` — the same control,
+owning its row, every target at `--tap` — because two ways to draw a segmented
+control is how a design system starts and nine looks is how it ends. The
+consumer sets `--tap: 56px`; the block names the role, the app decides.
+
+The remote's own picture of the panel (the 53x11 matrix with the firmware's
+weather glyphs inside it) stayed in the app, not the registry: it is a drawing
+of *that* device, not a layout. It is passed to the mirror through its `screen`
+slot, which is what a slot is for.
 
 ### What 1.16.0 fixed: a bar that owns the top of the viewport cannot be glass
 

@@ -10,7 +10,8 @@
  *
  * It answers exactly two questions:
  *
- *   1. Does every block in `web/src/lib/components/nb/` still match the release
+ *   1. Does every block in the project's `nb/` directory (`web/src/lib/...` or
+ *      `src/lib/...`, or `$NB_BLOCKS_DIR`) still match the release
  *      named in `.nb-registry.json`? (drift — someone edited a block here, so
  *      the next copy either loses that edit or silently reverts an upstream fix)
  *   2. Is every block published at that version? (a per-version index is a
@@ -40,7 +41,11 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { basename, join } from "node:path";
 
-const BLOCKS_DIR = "web/src/lib/components/nb";
+const BLOCKS_DIR =
+  process.env.NB_BLOCKS_DIR ??
+  (existsSync("web/src/lib/components/nb")
+    ? "web/src/lib/components/nb"
+    : "src/lib/components/nb");
 const PIN_FILE = ".nb-registry.json";
 const VERBOSE = process.argv.includes("--verbose");
 

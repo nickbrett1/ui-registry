@@ -1,0 +1,23 @@
+{
+  "$schema": "https://shadcn-svelte.com/schema/registry-item.json",
+  "name": "message-bar",
+  "title": "Message Bar",
+  "type": "registry:block",
+  "author": "nickbrett1 <https://github.com/nickbrett1>",
+  "description": "One short line sent to something: a field wrapped by its label, a caller-owned character rule, a length cap, and a pending Send. The single-line counterpart to request-form. Lifted from galactic-unicorn-remote's idle-screen composer.",
+  "dependencies": [],
+  "devDependencies": [],
+  "registryDependencies": [],
+  "files": [
+    {
+      "type": "registry:file",
+      "target": "nb/MessageBar.svelte",
+      "content": "<script>\n  /**\n   * MessageBar — one short line sent *to* something.\n   *\n   * Lifted from galactic-unicorn-remote's idle-only composer: a message that\n   * scrolls across the panel's LED matrix. It is deliberately not `request-form`:\n   * that block is schema-driven, renders a field per rule and answers with one\n   * error message per failed constraint. This is one line, one limit, one\n   * button, and the interesting states are \"empty\", \"sending\" and \"sent\".\n   *\n   * `sanitize` is the caller's character rule (the panel's LED font has no\n   * glyph for a curly quote or an emoji) and is applied on every keystroke, not\n   * on submit: a field that visibly accepts something the receiver will refuse\n   * is a lie the user only discovers after pressing Send. The block owns the\n   * write-back, because a dropped character leaves the bound value unchanged and\n   * the DOM would otherwise keep showing what was just refused.\n   *\n   * The field is wrapped by its `<label>`, so the caller passes the words and no\n   * id has to be coordinated across two components.\n   */\n  let {\n    label = \"Message\",\n    placeholder = \"\",\n    maxLength = null,\n    submitLabel = \"Send\",\n    hint = \"\",\n    value = $bindable(\"\"),\n    disabled = false,\n    pending = false,\n    sanitize = (text) => text,\n    onsubmit,\n  } = $props();\n\n  const empty = $derived(value.trim().length === 0);\n\n  function onInput(event) {\n    const clean = sanitize(event.currentTarget.value);\n    // Write it back even when it matches the previous value: a refused emoji\n    // leaves `value` unchanged, and without this the input would still show it.\n    if (clean !== event.currentTarget.value) event.currentTarget.value = clean;\n    value = clean;\n  }\n\n  function handleSubmit(event) {\n    event.preventDefault();\n    const text = value.trim();\n    if (!text || disabled || pending) return;\n    onsubmit?.(text);\n  }\n</script>\n\n<form class=\"message\" onsubmit={handleSubmit}>\n  <label class=\"field\">\n    <span class=\"sr-only\">{label}</span>\n    <input\n      type=\"text\"\n      {placeholder}\n      maxlength={maxLength ?? undefined}\n      value={value}\n      {disabled}\n      oninput={onInput}\n    />\n  </label>\n  <button\n    type=\"submit\"\n    class=\"btn primary send\"\n    disabled={disabled || pending || empty}\n    aria-busy={pending ? \"true\" : undefined}\n    class:pending\n  >\n    {submitLabel}\n  </button>\n</form>\n\n{#if hint}\n  <p class=\"hint\">{hint}</p>\n{/if}\n\n<style>\n  .message {\n    display: grid;\n    grid-template-columns: minmax(0, 1fr) auto;\n    gap: 8px;\n    align-items: start;\n  }\n\n  .field {\n    display: block;\n    min-width: 0;\n  }\n\n  .field input {\n    width: 100%;\n    min-height: var(--tap);\n  }\n\n  .send {\n    min-height: var(--tap);\n    padding: 0 16px;\n    font-weight: 700;\n  }\n\n  .send.pending {\n    opacity: 0.7;\n  }\n\n  /* Visually hidden, still the field's accessible name. */\n  .sr-only {\n    position: absolute;\n    width: 1px;\n    height: 1px;\n    padding: 0;\n    margin: -1px;\n    overflow: hidden;\n    clip: rect(0, 0, 0, 0);\n    white-space: nowrap;\n    border: 0;\n  }\n</style>\n"
+    }
+  ],
+  "meta": {
+    "source": "blocks/message-bar/MessageBar.svelte",
+    "sha256": "7c100a7e3ece9c2efa705f1f076c7761ed82366bd207184c7ce81a481310b911",
+    "bytes": 3084
+  }
+}

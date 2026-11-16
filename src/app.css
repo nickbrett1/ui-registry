@@ -263,6 +263,22 @@ code {
   cursor: default;
 }
 
+/* A segmented control that owns its row and whose every target is a thumb.
+   `.seg` is the compact desktop grammar (5px of padding, 12px type); a phone
+   setting chooser -- the countdown length on a remote -- needs the same
+   one-from-N grammar at `--tap` height. This is a size variant, not a second
+   control: the structure, the selected state and `aria-pressed` stay `.seg`'s. */
+.seg.tap {
+  display: flex;
+  width: 100%;
+}
+.seg.tap button {
+  flex: 1;
+  min-height: var(--tap);
+  padding: 0 8px;
+  font-size: 13px;
+}
+
 .btn {
   background: transparent;
   color: var(--ink-dim);

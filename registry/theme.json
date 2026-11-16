@@ -180,6 +180,16 @@
       "opacity": "0.35",
       "cursor": "default"
     },
+    ".seg.tap": {
+      "display": "flex",
+      "width": "100%"
+    },
+    ".seg.tap button": {
+      "flex": "1",
+      "min-height": "var(--tap)",
+      "padding": "0 8px",
+      "font-size": "13px"
+    },
     ".btn": {
       "background": "transparent",
       "color": "var(--ink-dim)",
@@ -279,8 +289,8 @@
   },
   "meta": {
     "source": "src/app.css",
-    "sha256": "5742f863c32da534bcd3ffc4ec7eaa7c1a8502d7968cc97950039f7c20131694",
-    "bytes": 10779,
+    "sha256": "f69deb2fd2aa943455999805a32acadaf4932eed11499d7dbe7a118edf31a8cb",
+    "bytes": 11307,
     "variables": 37
   }
 }

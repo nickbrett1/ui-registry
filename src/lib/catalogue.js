@@ -72,9 +72,13 @@ export const blocks = [
   { name: "filter-panel", group: "search", note: "facet checkboxes down the side; behind a Filters button on a phone" },
   { name: "result-list", group: "search", note: "ranked hits: title, date, and the snippet the match came from" },
   { name: "action-list", group: "status", note: "one row per thing you operate, showing only the actions valid right now" },
+  { name: "command-pad", group: "status", note: "a keypad of one-press commands, each with its own picture and its pressed state" },
+  { name: "confirm-prompt", group: "status", note: "the action would interrupt something — replace it, or keep it" },
+  { name: "device-mirror", group: "status", note: "a live mirror of a remote device: how fresh it is, and what it is showing" },
   { name: "log-view", group: "status", note: "a job's own output, scrolling as it arrives, with Follow" },
   { name: "status-view", group: "status", note: "four columns: pending, done, stuck, blocked" },
   { name: "data-table", group: "records", note: "many records in aligned columns, numbers right-aligned" },
+  { name: "message-bar", group: "records", note: "one short line sent to something, with a limit and a pending Send" },
   { name: "request-form", group: "records", note: "the form that creates one of those records, with a message per failed field" },
 ];
 

@@ -1,0 +1,23 @@
+{
+  "$schema": "https://shadcn-svelte.com/schema/registry-item.json",
+  "name": "confirm-prompt",
+  "title": "Confirm Prompt",
+  "type": "registry:block",
+  "author": "nickbrett1 <https://github.com/nickbrett1>",
+  "description": "An action that would interrupt something: name the conflict and give two answers, Replace and Keep, with the confirm button bindable so the caller can move focus. Lifted from galactic-unicorn-remote's routine conflict.",
+  "dependencies": [],
+  "devDependencies": [],
+  "registryDependencies": [],
+  "files": [
+    {
+      "type": "registry:file",
+      "target": "nb/ConfirmPrompt.svelte",
+      "content": "<script>\n  /**\n   * ConfirmPrompt — the action would interrupt something; say what, then let the\n   * reader choose.\n   *\n   * Lifted from galactic-unicorn-remote's conflict affordance: pressing\n   * \"Bathtime\" while \"Booktime\" is running answers 409, and the honest UI is not\n   * a toast that vanished — it is a question with two answers, Replace and Keep.\n   * The alternative was a silent switch to the newly pressed routine, which is\n   * how two people end up disagreeing about what the panel is doing.\n   *\n   * `element` is `$bindable` on purpose: a disclosure that asks for a decision\n   * has to move focus to it, and *which* answer deserves focus is the caller's\n   * judgement (the safer one, usually). A block that focused its own confirm\n   * button would be making that judgement for a page it cannot see.\n   *\n   * `tone` names the interruption's weight: warn (another thing is running),\n   * bad (this destroys something), accent (a choice that is merely pending).\n   */\n  let {\n    message = \"\",\n    confirmLabel = \"Replace\",\n    cancelLabel = \"Keep\",\n    tone = \"warn\",\n    onconfirm,\n    oncancel,\n    element = $bindable(),\n  } = $props();\n\n  const id = $props.id();\n</script>\n\n<div\n  class=\"card prompt tone-{tone}\"\n  role=\"alertdialog\"\n  aria-labelledby={id}\n>\n  <p id={id} class=\"message\">{message}</p>\n  <div class=\"actions\">\n    <button type=\"button\" class=\"btn primary confirm\" bind:this={element} onclick={onconfirm}>\n      {confirmLabel}\n    </button>\n    <button type=\"button\" class=\"btn keep\" onclick={oncancel}>\n      {cancelLabel}\n    </button>\n  </div>\n</div>\n\n<style>\n  .prompt {\n    padding: 16px;\n    display: flex;\n    flex-direction: column;\n    gap: 8px;\n    border-width: 2px;\n  }\n\n  .message {\n    margin: 0;\n    font-weight: 600;\n  }\n\n  .tone-warn {\n    border-color: var(--warn);\n  }\n  .tone-warn .message {\n    color: var(--warn);\n  }\n  .tone-bad {\n    border-color: var(--bad);\n  }\n  .tone-bad .message {\n    color: var(--bad);\n  }\n  .tone-accent {\n    border-color: var(--accent);\n  }\n  .tone-accent .message {\n    color: var(--accent);\n  }\n\n  .actions {\n    display: grid;\n    grid-template-columns: 1fr 1fr;\n    gap: 8px;\n  }\n\n  .actions .btn {\n    min-height: var(--tap);\n    justify-content: center;\n    font-weight: 700;\n  }\n</style>\n"
+    }
+  ],
+  "meta": {
+    "source": "blocks/confirm-prompt/ConfirmPrompt.svelte",
+    "sha256": "3feda79a73f2689335d7bad141741021f6371f51eedfd48ba3b7acf79b776d35",
+    "bytes": 2290
+  }
+}

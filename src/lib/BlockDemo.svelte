@@ -7,7 +7,7 @@
    * which is the cheapest possible check that every published block is a working
    * component.
    *
-   * All fourteen demos live here rather than one component per block because
+   * All eighteen demos live here rather than one component per block because
    * what varies between them is their *data*, not their structure: one switch on
    * the name keeps the sample props beside the sample markup, and a block page
    * decides only which name it is showing.
@@ -25,6 +25,10 @@
   import RequestForm from "../../blocks/request-form/RequestForm.svelte";
   import MeterStrip from "../../blocks/meter-strip/MeterStrip.svelte";
   import ActionList from "../../blocks/action-list/ActionList.svelte";
+  import DeviceMirror from "../../blocks/device-mirror/DeviceMirror.svelte";
+  import CommandPad from "../../blocks/command-pad/CommandPad.svelte";
+  import MessageBar from "../../blocks/message-bar/MessageBar.svelte";
+  import ConfirmPrompt from "../../blocks/confirm-prompt/ConfirmPrompt.svelte";
   import LogView from "../../blocks/log-view/LogView.svelte";
 
   let { name } = $props();
@@ -184,7 +188,19 @@
 
   let formValues = $state({ planType: "delta", from: "", limit: 500 });
   const formErrors = { from: ["is required", "must be a date (YYYY-MM-DD)"] };
-</script>
+
+  // The remote's shapes: a mirror that relays the device's own countdown, a
+  // keypad whose commands are the panel's routines plus one stop, a composer
+  // for the idle screen, and the conflict the panel answers with a 409.
+  const panelLiveness = { label: "panel", seen: "2 s ago" };
+  const padCommands = [
+    { id: "bathtime", label: "Bathtime", icon: "🦆", tone: "ok" },
+    { id: "booktime", label: "Booktime", icon: "📖", tone: "ok" },
+    { id: "cleanup", label: "Cleanup", icon: "🧸", tone: "ok" },
+    { id: "cancel", label: "Cancel", icon: "✕", tone: "bad", span: "full", tall: true },
+  ];
+  let messageText = $state("");
+  const panelText = (text) => text.replace(/[^\x20-\x7e]/g, "");</script>
 
 {#if name === "app-shell"}
   <div class="shell-frame">
@@ -313,6 +329,35 @@
       {/if}
     {/snippet}
   </ActionList>
+{:else if name === "device-mirror"}
+  <DeviceMirror
+    name="panel"
+    liveness={panelLiveness}
+    state="countdown"
+    headline="Bathtime"
+    countdown="3:34"
+    stateWord="Counting down"
+    banner="Dinner in ten"
+  />
+{:else if name === "command-pad"}
+  <CommandPad items={padCommands} label="Routines" busyId="booktime" onpress={() => {}} />
+{:else if name === "message-bar"}
+  <MessageBar
+    bind:value={messageText}
+    label="Message for the panel"
+    placeholder="Dinner in ten"
+    maxLength={60}
+    sanitize={panelText}
+    onsubmit={() => {}}
+  />
+{:else if name === "confirm-prompt"}
+  <ConfirmPrompt
+    message="Booktime is running — start Bathtime instead?"
+    confirmLabel="Replace"
+    cancelLabel="Keep"
+    onconfirm={() => {}}
+    oncancel={() => {}}
+  />
 {:else if name === "log-view"}
   <LogView
     title="provision data-scout"

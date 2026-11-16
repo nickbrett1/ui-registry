@@ -115,6 +115,34 @@ const BLOCKS = [
       "One row per thing you operate: name, state pill, metadata badges, and the actions that are valid for that row right now. Per-row slots for the buttons, a note and an aside. Lifted from devdash's project list.",
   },
   {
+    name: "device-mirror",
+    title: "Device Mirror",
+    component: "DeviceMirror.svelte",
+    description:
+      "A live mirror of a remote device: a freshness heartbeat, the screen it is drawing (or its headline), a relayed countdown, a state word and a live banner. The card is a second view of the hardware, not a dashboard about it. Lifted from galactic-unicorn-remote's panel mirror.",
+  },
+  {
+    name: "command-pad",
+    title: "Command Pad",
+    component: "CommandPad.svelte",
+    description:
+      "One large press per command, in a grid, each carrying its own glyph and tone: available, in flight, confirmed, or disabled. Read-only it becomes the legend of the same keypad, with the active command lit. Lifted from galactic-unicorn-remote's routine buttons.",
+  },
+  {
+    name: "message-bar",
+    title: "Message Bar",
+    component: "MessageBar.svelte",
+    description:
+      "One short line sent to something: a field wrapped by its label, a caller-owned character rule, a length cap, and a pending Send. The single-line counterpart to request-form. Lifted from galactic-unicorn-remote's idle-screen composer.",
+  },
+  {
+    name: "confirm-prompt",
+    title: "Confirm Prompt",
+    component: "ConfirmPrompt.svelte",
+    description:
+      "An action that would interrupt something: name the conflict and give two answers, Replace and Keep, with the confirm button bindable so the caller can move focus. Lifted from galactic-unicorn-remote's routine conflict.",
+  },
+  {
     name: "log-view",
     title: "Log View",
     component: "LogView.svelte",

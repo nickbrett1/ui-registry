@@ -1,7 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 /**
- * The visual gate: what the eleven blocks look like, measured.
+ * The visual gate: what the eighteen blocks look like, measured.
  *
  * There are two halves, and the split is deliberate.
  *

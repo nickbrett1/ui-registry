@@ -235,6 +235,74 @@
       ]
     },
     {
+      "name": "device-mirror",
+      "title": "Device Mirror",
+      "type": "registry:block",
+      "author": "nickbrett1 <https://github.com/nickbrett1>",
+      "description": "A live mirror of a remote device: a freshness heartbeat, the screen it is drawing (or its headline), a relayed countdown, a state word and a live banner. The card is a second view of the hardware, not a dashboard about it. Lifted from galactic-unicorn-remote's panel mirror.",
+      "dependencies": [],
+      "devDependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "type": "registry:file",
+          "path": "blocks/device-mirror/DeviceMirror.svelte",
+          "target": "nb/DeviceMirror.svelte"
+        }
+      ]
+    },
+    {
+      "name": "command-pad",
+      "title": "Command Pad",
+      "type": "registry:block",
+      "author": "nickbrett1 <https://github.com/nickbrett1>",
+      "description": "One large press per command, in a grid, each carrying its own glyph and tone: available, in flight, confirmed, or disabled. Read-only it becomes the legend of the same keypad, with the active command lit. Lifted from galactic-unicorn-remote's routine buttons.",
+      "dependencies": [],
+      "devDependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "type": "registry:file",
+          "path": "blocks/command-pad/CommandPad.svelte",
+          "target": "nb/CommandPad.svelte"
+        }
+      ]
+    },
+    {
+      "name": "message-bar",
+      "title": "Message Bar",
+      "type": "registry:block",
+      "author": "nickbrett1 <https://github.com/nickbrett1>",
+      "description": "One short line sent to something: a field wrapped by its label, a caller-owned character rule, a length cap, and a pending Send. The single-line counterpart to request-form. Lifted from galactic-unicorn-remote's idle-screen composer.",
+      "dependencies": [],
+      "devDependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "type": "registry:file",
+          "path": "blocks/message-bar/MessageBar.svelte",
+          "target": "nb/MessageBar.svelte"
+        }
+      ]
+    },
+    {
+      "name": "confirm-prompt",
+      "title": "Confirm Prompt",
+      "type": "registry:block",
+      "author": "nickbrett1 <https://github.com/nickbrett1>",
+      "description": "An action that would interrupt something: name the conflict and give two answers, Replace and Keep, with the confirm button bindable so the caller can move focus. Lifted from galactic-unicorn-remote's routine conflict.",
+      "dependencies": [],
+      "devDependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "type": "registry:file",
+          "path": "blocks/confirm-prompt/ConfirmPrompt.svelte",
+          "target": "nb/ConfirmPrompt.svelte"
+        }
+      ]
+    },
+    {
       "name": "log-view",
       "title": "Log View",
       "type": "registry:block",
