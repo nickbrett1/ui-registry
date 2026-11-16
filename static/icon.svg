@@ -16,25 +16,25 @@
   -->
   <defs>
     <radialGradient id="lamp" cx="0.16" cy="0.06" r="0.95">
-      <stop offset="0" stop-color="#7dd3fc" stop-opacity="0.22" />
-      <stop offset="0.5" stop-color="#7dd3fc" stop-opacity="0.05" />
-      <stop offset="1" stop-color="#7dd3fc" stop-opacity="0" />
+      <stop offset="0" stop-color="#38bdf8" stop-opacity="0.22" />
+      <stop offset="0.5" stop-color="#38bdf8" stop-opacity="0.05" />
+      <stop offset="1" stop-color="#38bdf8" stop-opacity="0" />
     </radialGradient>
   </defs>
 
   <!-- Full bleed: iOS rounds the corners itself, so any inset or transparency
        shows up as a dark ring or a white one depending on the wallpaper. -->
-  <rect width="512" height="512" fill="#0f172a" />
+  <rect width="512" height="512" fill="#0b1220" />
   <rect width="512" height="512" fill="url(#lamp)" />
 
   <!-- Four pieces, 168px each with a 24px gutter. The composition sits inside
        the maskable safe zone (76px margin = 15%), so a launcher that crops to a
        circle loses none of it. -->
-  <rect x="76" y="76" width="168" height="168" rx="44" fill="#7dd3fc" />
-  <rect x="268" y="76" width="168" height="168" rx="44" fill="#fce4b8" />
-  <rect x="76" y="268" width="168" height="168" rx="44" fill="#6ee7b7" />
+  <rect x="76" y="76" width="168" height="168" rx="44" fill="#38bdf8" />
+  <rect x="268" y="76" width="168" height="168" rx="44" fill="#fcd34d" />
+  <rect x="76" y="268" width="168" height="168" rx="44" fill="#34d399" />
 
   <!-- The piece not yet taken: an outline in the warning accent, fat enough
        (26px) to still read as a ring at 60px rather than a smudge. -->
-  <rect x="281" y="281" width="142" height="142" rx="71" fill="none" stroke="#fdba74" stroke-width="26" />
+  <rect x="281" y="281" width="142" height="142" rx="71" fill="none" stroke="#fb923c" stroke-width="26" />
 </svg>

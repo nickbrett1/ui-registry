@@ -10,7 +10,7 @@ describe("home-screen / PWA icon contract", () => {
     expect(html).toContain('rel="apple-touch-icon"');
     expect(html).toContain('href="%sveltekit.assets%/apple-touch-icon.png"');
     expect(html).toContain('rel="manifest"');
-    expect(html).toContain('name="theme-color" content="#0f172a"');
+    expect(html).toContain('name="theme-color" content="#0b1220"');
     expect(html).toContain('name="apple-mobile-web-app-capable" content="yes"');
   });
 
@@ -18,8 +18,8 @@ describe("home-screen / PWA icon contract", () => {
     const manifest = JSON.parse(
       await readFile(path.join(ROOT, "static", "manifest.webmanifest"), "utf8"),
     );
-    expect(manifest.background_color).toBe("#0f172a");
-    expect(manifest.theme_color).toBe("#0f172a");
+    expect(manifest.background_color).toBe("#0b1220");
+    expect(manifest.theme_color).toBe("#0b1220");
     expect(manifest.display).toBe("standalone");
     expect(manifest.icons.length).toBeGreaterThanOrEqual(2);
   });
@@ -42,11 +42,11 @@ describe("home-screen / PWA icon contract", () => {
 
   it("icon.svg uses the canonical house palette, not a dark tile with a line", async () => {
     const svg = await readFile(path.join(ROOT, "static", "icon.svg"), "utf8");
-    expect(svg).toContain("#0f172a"); // --bg, the ground
-    expect(svg).toContain("#7dd3fc"); // --accent
-    expect(svg).toContain("#fce4b8"); // --mark
-    expect(svg).toContain("#6ee7b7"); // --ok
-    expect(svg).toContain("#fdba74"); // --warn, the piece not yet taken
+    expect(svg).toContain("#0b1220"); // --bg, the ground
+    expect(svg).toContain("#38bdf8"); // --accent
+    expect(svg).toContain("#fcd34d"); // --mark
+    expect(svg).toContain("#34d399"); // --ok
+    expect(svg).toContain("#fb923c"); // --warn, the piece not yet taken
     // The mark has to read at home-screen size: the type is gone, so the
     // signature is shape - four pieces inside the maskable safe zone.
     expect(svg).not.toContain("<text");

@@ -497,7 +497,8 @@ describe("the theme has one source of truth", () => {
       await readFile(path.join(ROOT, "registry", "theme.json"), "utf8"),
     );
     expect(item.css[":root"]).toEqual({ "color-scheme": "dark" });
-    expect(item.cssVars.theme["--bg"]).toBe("#0f172a");
+    // Spot-check that the split carried real values, not just the shape.
+    expect(item.cssVars.theme["--bg"]).toBe("#0b1220");
   });
 
   it("registers the theme as a variable-carrying item, not a file with a target", async () => {

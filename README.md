@@ -107,7 +107,7 @@ COMPONENTS_REGISTRY_URL="$(doppler secrets get COMPONENTS_REGISTRY_URL \
 
 Two reasons, and the second is the one that bit.
 
-1. **One copy of the version.** The pin has to live *somewhere* per consumer —
+1. **One copy of the version.** The pin has to live _somewhere_ per consumer —
    a project's look must not change because someone published a release, so
    there is no floating "latest" (see "Registry" below, and note the endpoint
    answers `{"error":"version required"}` to an unpinned item read). If the
@@ -115,10 +115,10 @@ Two reasons, and the second is the one that bit.
    one would be the one nobody checked. genproj composes the pin from its
    catalog's `themeVersion`; a hand-written command carries its own.
 2. **A versioned secret makes every consumer move at once, invisibly.** The
-   secret is read at install time, so changing it changes what *every* project
+   secret is read at install time, so changing it changes what _every_ project
    installs the next time it re-runs the command — including projects that
-   pinned deliberately. Host-in-the-secret means moving the estate's *address*
-   is silent (an operator's business) while moving its *version* is always a
+   pinned deliberately. Host-in-the-secret means moving the estate's _address_
+   is silent (an operator's business) while moving its _version_ is always a
    visible edit in the thing that pins it.
 
 The estate-wide consequence: re-pointing the registry host is one Doppler edit
@@ -177,8 +177,8 @@ item's `title` and `description` (not just `name`/`type`/`relativeUrl`), because
 the published items do — so one request answers "what exists" and "which one is
 this page", on the exact base a project is already pinned to. Generated
 projects' styling rules point at it as the step before writing markup
-(`specs/027` in genproj), which is what makes *install a block* cheaper than
-*write a layout*:
+(`specs/027` in genproj), which is what makes _install a block_ cheaper than
+_write a layout_:
 
 ```bash
 curl -s http://ryzen:3012/r/v1.10.1/index.json \
@@ -212,7 +212,7 @@ npm run publish:item -- --list                   # what is published, and whethe
 
 `--dry-run` runs every check a real publish runs (name, version, immutability,
 stray file) and then prints the target path and digest instead of writing. It
-exits non-zero for a publish that *would* be refused, so it is a pre-flight, not
+exits non-zero for a publish that _would_ be refused, so it is a pre-flight, not
 a rehearsal. `--list` answers the question nothing else answers: an item whose
 working copy differs from its newest published version is either a change
 waiting for a version number, or one that shipped only inside a release.
@@ -327,10 +327,10 @@ once, in the repo whose bytes are at stake) and the base from
 `COMPONENTS_REGISTRY_URL` (the host — never a pin, the same rule as genproj),
 then asks two questions:
 
-| Question | Failure means |
-|---|---|
-| does every vendored block still match `v<pin>`? | a block was edited locally, so the next install either loses the edit or silently reverts an upstream fix |
-| is every vendored file published at `v<pin>`? | a renamed block, a local invention wearing the house name, or a pin whose index does not actually carry that block |
+| Question                                        | Failure means                                                                                                      |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| does every vendored block still match `v<pin>`? | a block was edited locally, so the next install either loses the edit or silently reverts an upstream fix          |
+| is every vendored file published at `v<pin>`?   | a renamed block, a local invention wearing the house name, or a pin whose index does not actually carry that block |
 
 Formatting is not drift: comments, whitespace and prettier's trailing commas are
 stripped from both sides before comparing, because a consumer's own
@@ -345,14 +345,14 @@ strip out of its shell, which is why app-shell 1.12.0 grew `footer={false}`.
 
 Who consumes what, as of 1.16.1:
 
-| repo | pin | takes |
-|---|---|---|
-| `data-download` | 1.16.1 | `app-shell` (its opaque bar replaces a 42-line `display-mode: standalone` patch this app had written for the same bug), `request-form`, `filter-panel`, `result-list`, `detail-panel`, `burst-timeline`, the rest — plus the theme |
-| `stratechery-search` | 1.16.1 | `app-shell`, `result-list`, `filter-panel`, the rest — and its components name roles instead of values. Its phone chip row keeps `--bg-overlay` + a blur on purpose: at `top: 50px` it is under the header, not at the top edge, so it has something behind it worth seeing through to |
-| `deepseek-balance` | 1.16.1 | `app-shell` (as `footer={false}`), `stat-strip`, `bar-series`, `data-table` + the theme, generated from the published item |
-| `devdash` | 1.16.1 | `meter-strip`, `action-list`, `log-view` + the whole theme (and raises `--tap` to 2.75rem). No `app-shell`, and nothing sticky — its full-screen job log and provision sheet were already opaque `var(--bg)` |
-| `galactic-unicorn-remote` | 1.17.0 | the whole theme plus `app-shell`, `device-mirror`, `command-pad`, `message-bar`, `confirm-prompt`. It is the UI the four 1.17.0 shapes were lifted from: the mirror is the panel, the pad is its routines and Cancel, the bar is the idle-screen composer, the prompt is the 409 conflict. Its length chooser is `.seg.tap`, not a fifth block — see 1.17.0 |
-| `data-scout` | 1.16.0 | the **theme only** — Python-rendered static HTML, so there is no Svelte to install a block into. 1.16.0 is where its pin sits because the theme is byte-identical from 1.15.0 to 1.16.1; the bug was in its own `report.css`, fixed there (`background: var(--bg)`, no blur) |
+| repo                      | pin    | takes                                                                                                                                                                                                                                                                                                                                                       |
+| ------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `data-download`           | 1.16.1 | `app-shell` (its opaque bar replaces a 42-line `display-mode: standalone` patch this app had written for the same bug), `request-form`, `filter-panel`, `result-list`, `detail-panel`, `burst-timeline`, the rest — plus the theme                                                                                                                          |
+| `stratechery-search`      | 1.16.1 | `app-shell`, `result-list`, `filter-panel`, the rest — and its components name roles instead of values. Its phone chip row keeps `--bg-overlay` + a blur on purpose: at `top: 50px` it is under the header, not at the top edge, so it has something behind it worth seeing through to                                                                      |
+| `deepseek-balance`        | 1.16.1 | `app-shell` (as `footer={false}`), `stat-strip`, `bar-series`, `data-table` + the theme, generated from the published item                                                                                                                                                                                                                                  |
+| `devdash`                 | 1.16.1 | `meter-strip`, `action-list`, `log-view` + the whole theme (and raises `--tap` to 2.75rem). No `app-shell`, and nothing sticky — its full-screen job log and provision sheet were already opaque `var(--bg)`                                                                                                                                                |
+| `galactic-unicorn-remote` | 1.18.0 | the whole theme plus `app-shell`, `device-mirror`, `command-pad`, `message-bar`, `confirm-prompt`. It is the UI the four 1.17.0 shapes were lifted from: the mirror is the panel, the pad is its routines and Cancel, the bar is the idle-screen composer, the prompt is the 409 conflict. Its length chooser is `.seg.tap`, not a fifth block — see 1.17.0 |
+| `data-scout`              | 1.16.0 | the **theme only** — Python-rendered static HTML, so there is no Svelte to install a block into. 1.16.0 is where its pin sits because the theme is byte-identical from 1.15.0 to 1.16.1; the bug was in its own `report.css`, fixed there (`background: var(--bg)`, no blur)                                                                                |
 
 The same defect was in four places and only one of them was a block. It is worth
 saying which: `app-shell`'s `.topbar` (which four consumers inherited), this
@@ -364,8 +364,8 @@ test that says so.
 
 ### A block names a role, never a value — and that is a check
 
-`var(--warn)` is a claim about what a colour is *for*; `#fdba74` is a claim about
-what it *is*. The registry only works because blocks make the first kind of
+`var(--warn)` is a claim about what a colour is _for_; `#fdba74` is a claim about
+what it _is_. The registry only works because blocks make the first kind of
 claim: a consumer re-skins seven roles in one `:root` block and every installed
 block follows. A literal in a block ends that — it looks installed and correct
 while quietly opting itself out of every future theme change, which is the same
@@ -401,10 +401,10 @@ A registry whose blocks can silently change appearance is a registry nobody
 re-vendors. The gate is deliberately split, because the two halves fail
 differently:
 
-| Half | What it is | Can it gate? |
-|---|---|---|
-| `tests/visual/baseline.json` | every block's **computed** colour, type, spacing, radii and layout, per viewport | yes — computed values come from the theme's tokens, so they are the same numbers on every machine |
-| `reports/screens/<block>-<viewport>.png` | one PNG per block per viewport, uploaded as a CI artifact | no — a pixel diff compares font hinting and gamma as much as design, and has to be tolerated so loosely it stops noticing |
+| Half                                     | What it is                                                                       | Can it gate?                                                                                                              |
+| ---------------------------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `tests/visual/baseline.json`             | every block's **computed** colour, type, spacing, radii and layout, per viewport | yes — computed values come from the theme's tokens, so they are the same numbers on every machine                         |
+| `reports/screens/<block>-<viewport>.png` | one PNG per block per viewport, uploaded as a CI artifact                        | no — a pixel diff compares font hinting and gamma as much as design, and has to be tolerated so loosely it stops noticing |
 
 ```bash
 npm run shots              # gate: computed styles must match the baseline
@@ -417,7 +417,7 @@ loses its radius to a utility class, has no changed line in its own file.
 
 The `webServer` builds and runs `build/index.js`, the artifact that ships to the
 container, and refuses to reuse a server already on the port — a server there is
-*some other build*, and trusting it silently measures the wrong checkout.
+_some other build_, and trusting it silently measures the wrong checkout.
 
 ### The blocks
 
@@ -430,26 +430,26 @@ lane. The list is derived from the five UIs that already ship
 ported from shadcn's React blocks: no project here has a sidebar, a login page or a settings
 form, so those are deliberately absent.
 
-| block            | installed as              | what it is                                                                            |
-| ---------------- | ------------------------- | ------------------------------------------------------------------------------------- |
-| `app-shell`      | `nb/AppShell.svelte`      | sticky **opaque** top bar, `mark`/`nav`/`actions`/`back` slots, `titleTag`, 68rem main, footer (`footer={false}` for none), `embedded` for a card |
-| `stat-strip`     | `nb/StatStrip.svelte`     | label · big tabular value · sub-line, collapsing to one column                        |
-| `result-list`    | `nb/ResultList.svelte`    | ranked rows + `row` slot, `titleTag` heading, "n more" fold                           |
-| `filter-panel`   | `nb/FilterPanel.svelte`   | facets: checkbox list or one-from-N radios, optional bars and a note, `adaptFacets`   |
-| `empty-state`    | `nb/EmptyState.svelte`    | cause-aware zero results (filters vs query vs error)                                  |
-| `status-view`    | `nb/StatusView.svelte`    | four lanes, count in each head, pill per row                                          |
-| `detail-panel`   | `nb/DetailPanel.svelte`   | header, metadata grid, prose body, `history.back()`                                   |
-| `burst-timeline` | `nb/BurstTimeline.svelte` | horizontal/vertical bars, `showValues`, `caption`, audit grid                         |
-| `bar-series`     | `nb/BarSeries.svelte`     | value axis in the caller's unit, per-bar display strings, a dashed projection bar     |
-| `data-table`     | `nb/DataTable.svelte`     | column labels, tabular numerics, hairline rows, a `row` slot of cells                 |
-| `request-form`   | `nb/RequestForm.svelte`   | schema-driven form, one message per failed constraint                                 |
-| `meter-strip`    | `nb/MeterStrip.svelte`    | used-against-a-ceiling bar (`role="progressbar"`) with the reading beside it, then figures |
-| `action-list`    | `nb/ActionList.svelte`    | one row per thing you *operate*: state pill, badges, and `actions`/`note`/`aside` per row |
-| `log-view`       | `nb/LogView.svelte`       | a job's output in a panel: state pill, notice, self-scrolling `pre` (bindable), actions |
-| `device-mirror`  | `nb/DeviceMirror.svelte`  | a live mirror of a remote device: freshness dot + "last seen", a `screen` slot or its headline, a relayed countdown, the state word, a live banner |
+| block            | installed as              | what it is                                                                                                                                           |
+| ---------------- | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `app-shell`      | `nb/AppShell.svelte`      | sticky **opaque** top bar, `mark`/`nav`/`actions`/`back` slots, `titleTag`, 68rem main, footer (`footer={false}` for none), `embedded` for a card    |
+| `stat-strip`     | `nb/StatStrip.svelte`     | label · big tabular value · sub-line, collapsing to one column                                                                                       |
+| `result-list`    | `nb/ResultList.svelte`    | ranked rows + `row` slot, `titleTag` heading, "n more" fold                                                                                          |
+| `filter-panel`   | `nb/FilterPanel.svelte`   | facets: checkbox list or one-from-N radios, optional bars and a note, `adaptFacets`                                                                  |
+| `empty-state`    | `nb/EmptyState.svelte`    | cause-aware zero results (filters vs query vs error)                                                                                                 |
+| `status-view`    | `nb/StatusView.svelte`    | four lanes, count in each head, pill per row                                                                                                         |
+| `detail-panel`   | `nb/DetailPanel.svelte`   | header, metadata grid, prose body, `history.back()`                                                                                                  |
+| `burst-timeline` | `nb/BurstTimeline.svelte` | horizontal/vertical bars, `showValues`, `caption`, audit grid                                                                                        |
+| `bar-series`     | `nb/BarSeries.svelte`     | value axis in the caller's unit, per-bar display strings, a dashed projection bar                                                                    |
+| `data-table`     | `nb/DataTable.svelte`     | column labels, tabular numerics, hairline rows, a `row` slot of cells                                                                                |
+| `request-form`   | `nb/RequestForm.svelte`   | schema-driven form, one message per failed constraint                                                                                                |
+| `meter-strip`    | `nb/MeterStrip.svelte`    | used-against-a-ceiling bar (`role="progressbar"`) with the reading beside it, then figures                                                           |
+| `action-list`    | `nb/ActionList.svelte`    | one row per thing you _operate_: state pill, badges, and `actions`/`note`/`aside` per row                                                            |
+| `log-view`       | `nb/LogView.svelte`       | a job's output in a panel: state pill, notice, self-scrolling `pre` (bindable), actions                                                              |
+| `device-mirror`  | `nb/DeviceMirror.svelte`  | a live mirror of a remote device: freshness dot + "last seen", a `screen` slot or its headline, a relayed countdown, the state word, a live banner   |
 | `command-pad`    | `nb/CommandPad.svelte`    | a grid of one-press commands with a glyph and a tone each; `busyId`/`confirmedId` light the one in flight; `readonly` is the same keypad as a legend |
-| `message-bar`    | `nb/MessageBar.svelte`    | one short line sent to something: label-wrapped field, caller `sanitize`, `maxLength`, pending Send |
-| `confirm-prompt` | `nb/ConfirmPrompt.svelte` | an action that would interrupt something: name it, then Replace / Keep, with the confirm button bindable for focus |
+| `message-bar`    | `nb/MessageBar.svelte`    | one short line sent to something: label-wrapped field, caller `sanitize`, `maxLength`, pending Send                                                  |
+| `confirm-prompt` | `nb/ConfirmPrompt.svelte` | an action that would interrupt something: name it, then Replace / Keep, with the confirm button bindable for focus                                   |
 
 ```bash
 npm run build:blocks            # blocks/*/*.svelte -> registry/<name>.json -> registry.json
@@ -466,7 +466,7 @@ and on an iPhone home screen the button sat under the status bar.)
 #### The gallery's own navigation: name the thing, then index it
 
 The page is eighteen demos, and for a while its only navigation was fourteen
-pills in one sideways-scrolling row. That is a list to *read*, not a decision to
+pills in one sideways-scrolling row. That is a list to _read_, not a decision to
 make, so the blocks are grouped into five. The second attempt at the labels was
 still wrong in an instructive way: `frame`, `numbers`, `search`, `records`,
 `ops`. Every one of those names the container the author had in mind. "Numbers"
@@ -474,11 +474,11 @@ could be a metric, a table of figures or a chart — which is precisely the
 ambiguity a reader arrives with, so the label resolved nothing. The labels are
 now the shapes themselves (`page frame`, `figures & bars`, `search & results`,
 `tables & forms`, `status & logs`), and the block notes are written the way
-someone would describe a screen they have already seen: *"the row of big numbers
-at the top of a dashboard"*, not *"label · big tabular value · sub-line"*.
+someone would describe a screen they have already seen: _"the row of big numbers
+at the top of a dashboard"_, not _"label · big tabular value · sub-line"_.
 
-Grouping alone still could not answer the question the page exists for — *which
-one am I looking for?* A sticky bar can say which group you are near; it cannot
+Grouping alone still could not answer the question the page exists for — _which
+one am I looking for?_ A sticky bar can say which group you are near; it cannot
 say that `empty-state` is what you want when zero results need an explanation.
 So the page opens on an index: all of them, grouped, each named with its
 description and linked to its own demo, above the palette. The index answers
@@ -493,21 +493,57 @@ the token so a palette change moves the blocks with it), no block blurs what is
 behind it (see 1.16.0 — a bar that owns the top of the viewport must be
 opaque), and the served item's `content` is byte-identical to the source file.
 
+### What 1.18.0 changed: the palette was legible and still looked washed out
+
+1.17.0 was correct and flat. Standing in front of the phone that runs the
+remote, the report was "the colours look washed out", and the measurements
+agreed with the eyes while disagreeing with the lint: every pairing cleared
+4.5:1 (ink 14.5, `--ok` 11.7, `--accent` 10.7), because _contrast_ and _chroma_
+are different questions. A 300-weight pastel is not a quiet colour, it is a
+colour with the saturation taken out: a keypad of pale mint glyphs at 15 % alpha
+on slate has nothing in it that says "press me", and a ground of `#0f172a` next
+to a near-black phone bezel reads as grey.
+
+So the semantic hues moved to their 400s and the tints got denser:
+
+| role          | 1.17.0               | 1.18.0             | why                                                     |
+| ------------- | -------------------- | ------------------ | ------------------------------------------------------- |
+| `--bg`        | `#0f172a`            | `#0b1220`          | the ground went deeper so the tints separate from it    |
+| `--bg-raised` | 55 %                 | 72 %               | a card has to be a surface, not a suggestion            |
+| `--bg-sunken` | `rgba(15,23,42,.35)` | `rgba(2,6,16,.45)` | it was the same colour as the ground, so it did nothing |
+| `--accent`    | `#7dd3fc` sky-300    | `#38bdf8` sky-400  | links and "on" states carry the accent as a colour      |
+| `--ok`        | `#6ee7b7`            | `#34d399`          | the "go" key                                            |
+| `--warn`      | `#fdba74`            | `#fb923c`          |                                                         |
+| `--bad`       | `#fca5a5`            | `#f87171`          | Cancel is the one red thing on the screen               |
+| `--mark`      | `#fce4b8`            | `#fcd34d`          | fintechnick's amber, one step warmer                    |
+| tints         | 14–18 %              | 16–22 %            | denser, so a `.pill` and a `.notice` read as coloured   |
+
+The ink ramp is untouched: it was never the problem, and 15:1 body text is not
+an accident worth re-rolling for a hue change. The one cost is that `--bad` on
+the new ground is 6.8:1 rather than 9.4:1 — still well past the 4.5:1 the lint
+enforces, and the trade a saturated red makes on a dark ground.
+
+The icon is regenerated from the same five literals (`icon.svg` is pinned
+against the theme by `tests/icon.test.js`), and `theme-color` /
+`manifest.theme_color` move with `--bg`: browser chrome that keeps the old navy
+above a page that does not is a seam at the top of the screen, which is exactly
+the sort of "blurry strip" the last three rounds were chasing.
+
 ### What 1.17.0 added, and why
 
 `galactic-unicorn-remote` is the fifth consumer and the first one that is not a
-dashboard *about* data: it is a phone remote for a physical LED panel. That
+dashboard _about_ data: it is a phone remote for a physical LED panel. That
 changed the question a block answers. Four blocks were missing, and each one is
 missing for a reason the existing fourteen could not paper over:
 
 - **`device-mirror`** — a status lane holds records and a meter holds a ratio;
-  neither can say *what the hardware is drawing right now*. The mirror owns the
+  neither can say _what the hardware is drawing right now_. The mirror owns the
   part that is easy to get wrong: it shows a **freshness heartbeat** ("panel: last
   seen 2 s ago") beside the device's own screen, and takes the countdown as a
   formatted string because the server relays `remaining_s` and never computes a
   clock. `compact` drops the heartbeat for a widget that has no room to explain
   it; `centered` makes an idle screen a badge rather than a left-aligned report.
-- **`command-pad`** — `action-list` puts the valid actions beside a *record's*
+- **`command-pad`** — `action-list` puts the valid actions beside a _record's_
   state, with badges and a note. A remote has no record: it has a keypad, one
   large target per command, each carrying the picture the physical panel has.
   The per-item state is only "unavailable", "in flight" and "confirmed", so the
@@ -522,7 +558,7 @@ missing for a reason the existing fourteen could not paper over:
   after pressing Send.
 - **`confirm-prompt`** — a 409 is not a toast. "Booktime is running — start
   Bathtime instead?" is a question with two answers, and the block exposes its
-  confirm button as a bindable element so the *caller* decides which answer
+  confirm button as a bindable element so the _caller_ decides which answer
   deserves focus. A block that focused its own confirm button would make that
   judgement for a page it cannot see.
 
@@ -535,7 +571,7 @@ consumer sets `--tap: 56px`; the block names the role, the app decides.
 
 The remote's own picture of the panel (the 53x11 matrix with the firmware's
 weather glyphs inside it) stayed in the app, not the registry: it is a drawing
-of *that* device, not a layout. It is passed to the mirror through its `screen`
+of _that_ device, not a layout. It is passed to the mirror through its `screen`
 slot, which is what a slot is for.
 
 ### What 1.16.0 fixed: a bar that owns the top of the viewport cannot be glass
@@ -606,7 +642,7 @@ needs it in its own `index.html`/`app.html` -- `data-download`,
 Two CSS rounds (an opaque bar, then the colour surface) each fixed a real layer
 and the strip still looked murky on the phone. The setting underneath both was
 `apple-mobile-web-app-status-bar-style: black-translucent`, and that is the
-value that *invites the page to be drawn under the status bar*. Everything we
+value that _invites the page to be drawn under the status bar_. Everything we
 paint there is a layer the system can composite over, so the one strip we cannot
 style was also the one strip at the top of every screen.
 
@@ -648,7 +684,7 @@ Four fixes, four layers, and the top of the page was still soft on the phone: an
 opaque bar (1.16.0), a colour surface for WebKit's edge sampler, an opaque
 status-bar style, and a surface grown to cover the safe area. Each fixed a real
 layer. What they had in common was the defect: with `viewport-fit=cover` the web
-view extends *under* the system chrome, `env(safe-area-inset-top)` is non-zero,
+view extends _under_ the system chrome, `env(safe-area-inset-top)` is non-zero,
 and whatever the system draws there lands on our pixels. Every fix was an
 argument about the colour of a layer that was never ours.
 
@@ -671,7 +707,7 @@ available answer when the overlap is deliberate.
 
 The diagnostic lesson is worth keeping too: the three CSS rounds were all
 unverifiable from here, and the two things that made progress were reading the
-*mechanism* (WebKit's sampler) and then measuring on the device (`standalone ·
+_mechanism_ (WebKit's sampler) and then measuring on the device (`standalone ·
 top 59px · surface on`, still in the header). A screenshot cannot tell a broken
 fix from an absent one.
 
@@ -679,17 +715,17 @@ fix from an absent one.
 
 `stratechery-search` is where this theme came from, and it was one of the two
 consumers still on `1.11.0`. Re-pinning it turned up a dozen colour literals in its components that
-were not one-offs: every one of them was a *role the theme was already
-spelling out in its own rules but had not named*. So they are named, and the
+were not one-offs: every one of them was a _role the theme was already
+spelling out in its own rules but had not named_. So they are named, and the
 theme's own rules use them too.
 
-| literal | sites | role |
-| --- | --- | --- |
-| `#fff`, `#f1f5f9` | 11 — hover ink, the active nav item, a page `h1` | `--ink-strong` |
-| `rgba(125, 211, 252, 0.4 \| 0.45)` | 5 — the border of a hovered or primary control | `--accent-line` |
-| `rgba(125, 211, 252, 0.55)` | 1 — the border of a *selected* one | `--accent-line-strong` |
-| `rgba(125, 211, 252, 0.1)` | 1 — the fill behind a selected chip | `--accent-soft` (0.14) |
-| `rgba(15, 23, 42, 0.93)` | 1 — a sticky row that scrolls over the page | `--bg-overlay` |
+| literal                            | sites                                            | role                   |
+| ---------------------------------- | ------------------------------------------------ | ---------------------- |
+| `#fff`, `#f1f5f9`                  | 11 — hover ink, the active nav item, a page `h1` | `--ink-strong`         |
+| `rgba(125, 211, 252, 0.4 \| 0.45)` | 5 — the border of a hovered or primary control   | `--accent-line`        |
+| `rgba(125, 211, 252, 0.55)`        | 1 — the border of a _selected_ one               | `--accent-line-strong` |
+| `rgba(125, 211, 252, 0.1)`         | 1 — the fill behind a selected chip              | `--accent-soft` (0.14) |
+| `rgba(15, 23, 42, 0.93)`           | 1 — a sticky row that scrolls over the page      | `--bg-overlay`         |
 
 Two of these are judgement calls, recorded so they can be argued with:
 `--accent-soft` already existed at 0.14 and a second 0.1 tint would be a
@@ -699,7 +735,7 @@ picked" are the only two states a consumer was actually drawing.
 
 The theme's own `.seg button.on`, `.btn:hover` and `.btn.primary` borders now
 name these roles, so the literals are gone from the theme as well — one file
-still holds values, and that file is the one that is *made* of values.
+still holds values, and that file is the one that is _made_ of values.
 
 While in here: the landing page and the MCP `initialize` instructions both said
 "eleven blocks" while the catalogue served fourteen. Both now count
@@ -726,9 +762,9 @@ Migrating `devdash` onto the system is what produced these, and each one is a
 pattern that recurred in a third place rather than an invention:
 
 - `meter-strip` — a ratio against a ceiling. `stat-strip` states figures; here
-  the bar *is* the fact, so it is a `role="progressbar"` with the reading beside
+  the bar _is_ the fact, so it is a `role="progressbar"` with the reading beside
   it (clamped to 0–100, and 0 when the ceiling is 0 rather than a NaN width).
-- `action-list` — one row per thing you *operate*, as against `result-list`,
+- `action-list` — one row per thing you _operate_, as against `result-list`,
   which is something you read and rank. Per-row slots for the actions, a note
   and an aside, because which action is valid is the row's business.
 - `log-view` — a job's output. The one place a `pre` is right, with the pane
@@ -763,7 +799,7 @@ resizes the card to fit. Its reporter posts `document.body.offsetHeight` every
 1500ms, which is Homepage's `homepage-iframe-resize` contract. After adopting
 `app-shell` the card grew unbounded blank space below its content, and the
 reason was the shell, not the widget: `.shell { min-height: 100dvh }` makes
-`<body>` at least as tall as the *iframe*, so the reporter measured the frame it
+`<body>` at least as tall as the _iframe_, so the reporter measured the frame it
 was already given instead of what it contained. Every poll could therefore only
 ever ask for a taller frame — a feedback loop with no fixed point.
 
@@ -805,7 +841,7 @@ title starts at or below the bar's bottom.
 Two fixes, both found by looking at the ported `data-download` on a phone.
 
 **`app-shell` grew `nav`.** The port had put its other view in the `actions`
-slot as `<a class="pill">Plan types</a>` — and a pill is what a *state* looks
+slot as `<a class="pill">Plan types</a>` — and a pill is what a _state_ looks
 like in this system. On a 390px screen the only hint that a second screen
 existed sat next to the title in the same shape as a status badge, so "what
 views are there?" had no answer. Navigation is the bar's job and it has one
@@ -813,7 +849,7 @@ shape, so the block owns it: `nav={[{ label, href, current }]}` renders a tab
 row with `aria-current="page"`, the active tab tinted with `--accent-soft`,
 and the micro subtitle dropped below 520px — the subtitle repeats what the
 highlighted tab already says, and it was the thing pushing the second tab out
-of reach. The bar came out *shorter* (61px → 55px) with more in it.
+of reach. The bar came out _shorter_ (61px → 55px) with more in it.
 
 **The theme grew the page intro.** `.lede` and `.sub-lede` are names a page
 reaches for by instinct; the theme did not define them, so `data-download`'s
@@ -825,20 +861,20 @@ feature: it looks like it worked.
 
 ### What 1.9.0 added, and why
 
-`bar-series` is the first block that is a *chart*, and it exists because
+`bar-series` is the first block that is a _chart_, and it exists because
 `burst-timeline` is a sparkline: percentage heights, no axis, a `count`. That is
 right for "recent bursts" and wrong for three daily charts that each have to say
 how much — spend in CNY, usage time in minutes, cost per hour in fen. Converting
 `deepseek-balance` needed the second animal, and the difference is all in the
 claims a chart makes:
 
-| added                 | why the sparkline could not carry it                                                                                                                                     |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| a computed y-axis     | ticks land on multiples of a nice step, so a maximum of 135 minutes labels 0/50/100/150 rather than 37.5 / 75 / 112.5                                                   |
-| `axisFormat`          | the API emits numbers and the reader wants `2h 15m`; a block that insists on plain numbers pushes that conversion into every consumer, which is how three copies start   |
-| `bar.display`         | geometry is the block's business (`bar.value` sets the height); the string is the consumer's, because only it knows the currency                                       |
-| `bar.projected`       | today's spend so far, extended to a full day, is a different claim from a measured bar — it is drawn hollow and dashed, never solid                                      |
-| a `null` value keeps its slot | "we held no snapshots" is a fact about the day; dropping the bar would silently close the gap in the axis                                                       |
+| added                         | why the sparkline could not carry it                                                                                                                                   |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| a computed y-axis             | ticks land on multiples of a nice step, so a maximum of 135 minutes labels 0/50/100/150 rather than 37.5 / 75 / 112.5                                                  |
+| `axisFormat`                  | the API emits numbers and the reader wants `2h 15m`; a block that insists on plain numbers pushes that conversion into every consumer, which is how three copies start |
+| `bar.display`                 | geometry is the block's business (`bar.value` sets the height); the string is the consumer's, because only it knows the currency                                       |
+| `bar.projected`               | today's spend so far, extended to a full day, is a different claim from a measured bar — it is drawn hollow and dashed, never solid                                    |
+| a `null` value keeps its slot | "we held no snapshots" is a fact about the day; dropping the bar would silently close the gap in the axis                                                              |
 
 The general rule this one taught: **a block earns its place when a second
 consumer needs the same geometry but its own words.** `burst-timeline` and
@@ -970,12 +1006,12 @@ carries — a sentence an agent had to read, understand and then get right by
 hand, for the one step in adopting the design system that had no interface
 (`shadcn-svelte@1.8.1` ships no MCP server and no `registry list`).
 
-| Tool | Answers |
-|---|---|
-| `browse_registry` | what is published at a version: name, title, type, description, files |
-| `search_registry` | which of them is my problem — matched against name, title and description |
-| `get_item` | the item's JSON *including file contents*, so a block is read rather than installed blind |
-| `install_command` | the one line that installs it, spelled correctly |
+| Tool              | Answers                                                                                   |
+| ----------------- | ----------------------------------------------------------------------------------------- |
+| `browse_registry` | what is published at a version: name, title, type, description, files                     |
+| `search_registry` | which of them is my problem — matched against name, title and description                 |
+| `get_item`        | the item's JSON _including file contents_, so a block is read rather than installed blind |
+| `install_command` | the one line that installs it, spelled correctly                                          |
 
 `install_command` is a tool rather than documentation because it is the thing
 that gets got wrong: the pin belongs in the base — `/r/v1.12.0` — never in a
