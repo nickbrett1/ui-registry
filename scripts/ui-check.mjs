@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
- * ui-check.mjs — cheap, deterministic UI verdict for a running dev server.
+ * ui-check.mjs — cheap, deterministic UI verdict for a running preview server
+ * (point UI_BASE_URL at a dev server to check that instead).
  *
  * Replaces "screenshot the page and ask a vision model" with a text verdict:
  * a few hundred tokens of JSON instead of a ~25k-token image call.
@@ -54,12 +55,53 @@ const DEFAULT_TIMEOUT_MS = 15000;
 const DEFAULT_PAGE_URL = 'http://127.0.0.1:4173';
 
 // Resolution order for the CDP endpoint. The OrbStack host alias is a DEFAULT,
-// not a hardcode: host.docker.internal is broken in this estate by design
-// (in-container tailscaled answers NXDOMAIN with an SOA, so glibc will not
-// fall through), and UI_CDP_URL overrides both.
+// not a hardcode: host.docker.internal does not resolve inside these containers
+// (`getent hosts` exits 2, Node dns gives ENOTFOUND; lookups go to the Tailscale
+// MagicDNS nameserver at 100.100.100.100). So 0.250.250.254 is the default
+// because it works here, and UI_CDP_URL overrides both.
 const DEFAULT_CDP_CANDIDATES = ['http://0.250.250.254:9222', 'http://host.docker.internal:9222'];
 
 const OVERFLOW_TOLERANCE_PX = 2;
+
+// A CDP command that never gets a response must not be allowed to outlive the
+// overall budget: Page.navigate in particular stays pending for as long as the
+// loader is unresolved (a blackholed host, or a container-loopback URL the host
+// browser cannot route to). This is the per-command ceiling; `CdpSession` also
+// clamps it to whatever remains of --timeout, so --timeout bounds the whole run.
+const DEFAULT_CDP_COMMAND_TIMEOUT_MS = 10000;
+
+// A cleanup command (today only Target.closeTarget) must NOT inherit the run's
+// verdict deadline. The deadline exists to bound *producing a verdict*, and the
+// paths that exhaust it — a stalled navigation, a page that never fires load, a
+// slow Runtime.evaluate — are exactly the paths where a browser target was
+// created and has to be closed. `send()` clamps to whatever remains of the
+// deadline, so after an overrun its budget collapses to the 1ms floor and the
+// close rejects; the caller swallows that reject, so the tab leaks silently.
+// Hence a small, fixed allowance that ignores the deadline. This is not a second
+// clock: it bounds one cleanup round-trip, not the run. Cost: wall-clock may
+// exceed --timeout by up to this much, and only when the target was created.
+const CDP_CLEANUP_TIMEOUT_MS = 2000;
+
+// When tier 2 is about to load a loopback URL in a *host* browser with no
+// --browser-url, the odds are known-bad: the host's 127.0.0.1 is the host, not
+// the container. It still works under VS Code's port auto-forward, so it is
+// attempted rather than skipped — but with a short cap, so the common failing
+// case degrades in ~3s instead of burning the whole budget to learn it.
+//
+// THE TRADE, STATED SO NOBODY "FIXES" THIS UPWARD WITHOUT READING IT:
+// 3s is shorter than the 15s default overall budget on purpose, and that means
+// a loopback page that is slow-but-working — most often a *cold* port forward
+// that needs more than 3s to establish on the first navigation — is demoted to
+// tier 1's verdict on that run even though the page itself is fine. That is
+// accepted: the alternative (the old behaviour) was to hang with no verdict at
+// all, which is strictly worse. Do not raise this toward the overall budget to
+// "avoid the demotion": that reintroduces the hang for the common no-forward
+// case, which is the case this script exists to survive. A caller who needs a
+// genuinely slow loopback page checked must pass --browser-url (a host-reachable
+// URL, no leash) rather than widen this.
+const LOOPBACK_NAVIGATION_TIMEOUT_MS = 3000;
+
+const isLoopbackUrl = (url) => /^https?:\/\/(127\.0\.0\.1|localhost|\[::1\])[:/]/.test(url);
 
 // ---------------------------------------------------------------------------
 // args
@@ -108,7 +150,7 @@ function parseArgs(argv) {
   return opts;
 }
 
-const HELP = `ui-check.mjs — cheap UI verdict for a running dev server.
+const HELP = `ui-check.mjs — cheap UI verdict for a running preview server.
 
   node scripts/ui-check.mjs [--url URL] [--expect-text S] [--expect-selector CSS]
 
@@ -210,7 +252,10 @@ async function runTier1(opts, verdict, deadline) {
     });
     html = await res.text();
   } catch (err) {
-    verdict.error('unreachable', `${opts.url} could not be fetched: ${err.message}`);
+    verdict.error(
+      'unreachable',
+      `no server answered at ${opts.url} (${err.message}); "npm run preview" serves ${DEFAULT_PAGE_URL}, and UI_BASE_URL points this check at a dev server (vite dev defaults to 5173)`,
+    );
     return;
   }
 
@@ -265,8 +310,13 @@ async function runTier1(opts, verdict, deadline) {
 // ---------------------------------------------------------------------------
 
 class CdpSession {
-  constructor(ws) {
+  /**
+   * @param ws        an open WebSocket
+   * @param deadline  epoch ms after which no command may still be pending
+   */
+  constructor(ws, deadline = Number.POSITIVE_INFINITY) {
     this.ws = ws;
+    this.deadline = deadline;
     this.nextId = 1;
     this.pending = new Map();
     this.listeners = [];
@@ -281,8 +331,9 @@ class CdpSession {
       return;
     }
     if (msg.id !== undefined && this.pending.has(msg.id)) {
-      const { resolve, reject } = this.pending.get(msg.id);
+      const { resolve, reject, timer } = this.pending.get(msg.id);
       this.pending.delete(msg.id);
+      clearTimeout(timer);
       if (msg.error) reject(new Error(`${msg.error.message}${msg.error.data ? ` (${msg.error.data})` : ''}`));
       else resolve(msg.result);
       return;
@@ -292,22 +343,59 @@ class CdpSession {
 
   on(fn) { this.listeners.push(fn); }
 
-  send(method, params = {}, sessionId = undefined) {
+  /**
+   * Send a CDP command and settle on its response, its send error, or the
+   * command timeout — never on silence. The timeout is the smaller of the
+   * per-command ceiling and whatever remains of the overall deadline, so a
+   * stalled command cannot make the run outlive --timeout.
+   */
+  send(method, params = {}, sessionId = undefined, timeoutMs = undefined) {
+    const budget = Math.max(
+      1,
+      Math.min(timeoutMs ?? DEFAULT_CDP_COMMAND_TIMEOUT_MS, this.deadline - Date.now()),
+    );
+    return this._dispatch(method, params, sessionId, budget);
+  }
+
+  /**
+   * Like send(), but with a fixed budget that deliberately ignores the overall
+   * deadline. Only for cleanup that must still happen once the verdict budget
+   * is spent — see CDP_CLEANUP_TIMEOUT_MS for why inheriting the deadline here
+   * makes the close a silent no-op on exactly the paths that need it.
+   */
+  sendCleanup(method, params = {}, sessionId = undefined) {
+    return this._dispatch(method, params, sessionId, CDP_CLEANUP_TIMEOUT_MS);
+  }
+
+  _dispatch(method, params, sessionId, budget) {
     const id = this.nextId++;
     const payload = { id, method, params };
     if (sessionId) payload.sessionId = sessionId;
     return new Promise((resolve, reject) => {
-      this.pending.set(id, { resolve, reject });
+      const timer = setTimeout(() => {
+        if (!this.pending.has(id)) return;
+        this.pending.delete(id);
+        reject(new Error(`CDP command ${method} did not respond within ${budget}ms`));
+      }, budget);
+      this.pending.set(id, { resolve, reject, timer });
       try {
         this.ws.send(JSON.stringify(payload));
       } catch (err) {
+        clearTimeout(timer);
         this.pending.delete(id);
         reject(err);
       }
     });
   }
 
-  close() { try { this.ws.close(); } catch { /* already gone */ } }
+  close() {
+    for (const [id, pending] of this.pending) {
+      this.pending.delete(id);
+      clearTimeout(pending.timer);
+      pending.reject(new Error('CDP session closed before the command responded'));
+    }
+    try { this.ws.close(); } catch { /* already gone */ }
+  }
 }
 
 function openWebSocket(url, timeoutMs) {
@@ -355,6 +443,52 @@ async function resolveCdpBase(opts, deadline) {
 // tier 2 — run the page in the shared browser
 // ---------------------------------------------------------------------------
 
+function originOf(url) {
+  try {
+    return new URL(url).origin;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Decide whether tier 2 looked at a DIFFERENT document than tier 1, and so
+ * whether its runtime findings must not be attributed to the app.
+ *
+ * This is the misattribution guard. When the preview server is not the one the
+ * check thinks it is (a squatter on the port, a stale tab, a proxy), tier 2 can
+ * load a foreign error page — a same-origin 404 document, for example — and
+ * report *its* console error as the app's. Tier 1 already fetched the real page
+ * and got `expectStatus` cleanly, so the honest outcome is to keep tier 1's
+ * verdict and say tier 2 stopped early. It is the same degradation contract as
+ * an unreachable browser: demote, never pass.
+ *
+ * The trigger is the main-frame DOCUMENT status and nothing else. A client-side
+ * title change after hydration is legitimate; title may corroborate a message,
+ * never fire the demotion. All of the following are required:
+ *   - tier 1 saw exactly `expectStatus`, with no errors;
+ *   - tier 2's document status is >= 400 and differs from tier 1's;
+ *   - tier 2's page origin is the same origin as `opts.url` (a cross-origin
+ *     page is a deliberate --browser-url, not a squatter).
+ */
+function shouldDemoteTier2OnDocumentStatus({
+  expectStatus,
+  tier1Status,
+  tier1ErrorCount,
+  documentStatus,
+  pageUrl,
+  url,
+}) {
+  if (tier1Status === null || tier1Status === undefined) return false;
+  if (tier1Status !== expectStatus || tier1ErrorCount !== 0) return false;
+  if (documentStatus === null || documentStatus === undefined) return false;
+  if (documentStatus < 400) return false;
+  if (documentStatus === tier1Status) return false;
+  const pageOrigin = originOf(pageUrl);
+  if (pageOrigin === null || pageOrigin !== originOf(url)) return false;
+  return true;
+}
+
 async function runTier2(opts, verdict, deadline) {
   verdict.tiersAttempted.push(2);
 
@@ -376,7 +510,7 @@ async function runTier2(opts, verdict, deadline) {
     return;
   }
 
-  const session = new CdpSession(ws);
+  const session = new CdpSession(ws, deadline);
   let targetId = null;
 
   try {
@@ -389,6 +523,15 @@ async function runTier2(opts, verdict, deadline) {
     const consoleErrors = [];
     const failedRequests = [];
     let loadFired = false;
+    // The main-frame document response, as the browser saw it.
+    // `responseReceived` fires again for each hop in a redirect chain and once
+    // for the final response, so the last Document entry is the document
+    // actually rendered. A 404 *document* is not a Network.loadingFailed — which
+    // is why a foreign error page used to be attributed to the app instead of
+    // ending the check.
+    let documentStatus = null;
+    let documentUrl = null;
+    let documentMimeType = null;
 
     session.on((msg) => {
       if (!msg.method) return;
@@ -409,6 +552,15 @@ async function runTier2(opts, verdict, deadline) {
           if (params.type !== 'error') break;
           const text = (params.args || []).map((a) => a.value ?? a.description ?? a.type).join(' ');
           consoleErrors.push(`console: ${String(text).slice(0, 300)}`);
+          break;
+        }
+        case 'Network.responseReceived': {
+          // Last Document wins, so a redirect chain resolves to the document
+          // the browser actually rendered.
+          if (params.type !== 'Document' || !params.response) break;
+          documentStatus = params.response.status;
+          documentUrl = params.response.url || null;
+          documentMimeType = params.response.mimeType || null;
           break;
         }
         case 'Network.loadingFailed': {
@@ -432,14 +584,38 @@ async function runTier2(opts, verdict, deadline) {
     await session.send('Page.enable', {}, sessionId);
 
     const pageUrl = opts.browserUrl || opts.url;
-    if (!opts.browserUrl && /^https?:\/\/(127\.0\.0\.1|localhost)[:/]/.test(opts.url)) {
+    // When no browser URL is supplied and the page is loopback, tier 2 loads
+    // the container's own 127.0.0.1 in a *host* browser. That cannot work
+    // unless VS Code auto-forwards the port, so it is warned about and then
+    // attempted with a short leash: a bounded attempt that degrades is worth
+    // one cheap try, because the auto-forward is exactly the interactive
+    // devcontainer case this script is written for. See LOOPBACK_NAVIGATION_TIMEOUT_MS.
+    const navigatingLoopbackInHostBrowser = !opts.browserUrl && isLoopbackUrl(opts.url);
+    if (navigatingLoopbackInHostBrowser) {
       verdict.warn(
         'browser-url-is-loopback',
-        `tier 2 loaded ${pageUrl} in a host browser. That only works while VS Code forwards the container port; set --browser-url to a host-reachable URL for headless runs.`,
+        `tier 2 loaded ${pageUrl} in a host browser. That only works while VS Code forwards the container port, so this run falls back to tier 1 if the host browser cannot reach it; set --browser-url to a host-reachable URL for headless runs.`,
       );
     }
 
-    const nav = await session.send('Page.navigate', { url: pageUrl }, sessionId);
+    let nav;
+    try {
+      nav = await session.send(
+        'Page.navigate',
+        { url: pageUrl },
+        sessionId,
+        navigatingLoopbackInHostBrowser ? LOOPBACK_NAVIGATION_TIMEOUT_MS : undefined,
+      );
+    } catch (err) {
+      // The browser accepted Page.navigate but never answered. In practice this
+      // is the loopback/no-port-forward case: the navigation never settles and
+      // the page is simply not reachable from the host browser. That is an
+      // infrastructure gap, not a defect in the page — tier 1 already judged
+      // the page itself, so keep its verdict and say why tier 2 stopped.
+      verdict.tier2SkipReason = `page did not load in the host browser (navigation to ${pageUrl} did not complete: ${err.message})`;
+      verdict.evidence.tier2StoppedEarly = true;
+      return;
+    }
     if (nav && nav.errorText) {
       verdict.tier2SkipReason = `browser could not load the page: ${nav.errorText}`;
       verdict.evidence.tier2StoppedEarly = true;
@@ -454,6 +630,39 @@ async function runTier2(opts, verdict, deadline) {
       // (no port forward), not a defect in the page — tier 1 already judged the
       // page itself. Say so rather than inventing a failure.
       verdict.tier2SkipReason = 'page did not load in the host browser (likely no container→host port forward)';
+      verdict.evidence.tier2StoppedEarly = true;
+      return;
+    }
+
+    // Record what the browser actually loaded. Kept even when tier 2 proceeds:
+    // the document status is the primary evidence that tier 1 and tier 2 looked
+    // at the same page.
+    if (documentStatus !== null) {
+      verdict.evidence.documentStatus = documentStatus;
+      verdict.evidence.documentUrl = documentUrl;
+      verdict.evidence.documentMimeType = documentMimeType;
+    }
+
+    // Misattribution guard: if the browser loaded a foreign (same-origin 4xx/5xx)
+    // document, its console errors belong to that page, not the app. Keep tier 1's
+    // verdict and stop BEFORE verdict.tier = 2 and before emitting any tier-2
+    // finding, so the foreign document cannot overwrite evidence.title/h1 either.
+    // Title and h1 never participate in this decision: a client-side title change
+    // after hydration is legitimate.
+    if (
+      shouldDemoteTier2OnDocumentStatus({
+        expectStatus: opts.expectStatus,
+        tier1Status: verdict.evidence.status,
+        tier1ErrorCount: verdict.errors.length,
+        documentStatus,
+        pageUrl,
+        url: opts.url,
+      })
+    ) {
+      verdict.tier2SkipReason =
+        `tier 2 loaded a different document (HTTP ${documentStatus} from ${documentUrl || pageUrl}) ` +
+        `than tier 1 (HTTP ${verdict.evidence.status} from ${opts.url}); ` +
+        'its console/network findings are not attributed to the app';
       verdict.evidence.tier2StoppedEarly = true;
       return;
     }
@@ -549,7 +758,11 @@ async function runTier2(opts, verdict, deadline) {
     else verdict.error('cdp-failure', `could not complete the browser pass: ${err.message}`);
   } finally {
     if (targetId) {
-      try { await session.send('Target.closeTarget', { targetId }); } catch { /* browser may be gone */ }
+      // sendCleanup, not send: by the time we get here the deadline may already
+      // be spent (that is often why we are here), and send() would clamp the
+      // close to 1ms and reject into the catch below — leaving the tab behind
+      // with no evidence. See CDP_CLEANUP_TIMEOUT_MS.
+      try { await session.sendCleanup('Target.closeTarget', { targetId }); } catch { /* browser may be gone */ }
     }
     session.close();
   }
